@@ -1,4 +1,4 @@
-package nist.p_70nanb17h188.demo.pscr19;
+package nist.p_70nanb17h188.demo.pscr19.GUI;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -6,6 +6,9 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+
+import nist.p_70nanb17h188.demo.pscr19.Device;
+import nist.p_70nanb17h188.demo.pscr19.R;
 
 public class MainActivity extends AppCompatActivity {
 
