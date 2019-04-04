@@ -2,6 +2,10 @@ package nist.p_70nanb17h188.demo.pscr19;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -9,5 +13,21 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        showExistingNames();
+    }
+
+    public void showExistingNames() {
+        String existingNames[] = Device.getExistingNames();
+        ListView nameListView = findViewById(R.id.existing_names_listView);
+        ArrayAdapter<String> nameListAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, existingNames);
+        nameListView.setAdapter(nameListAdapter);
+        nameListAdapter.notifyDataSetChanged();
+
+        nameListView.setClickable(true);
+        nameListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+            }
+        });
     }
 }
