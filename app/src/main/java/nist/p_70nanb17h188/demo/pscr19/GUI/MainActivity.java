@@ -1,5 +1,6 @@
 package nist.p_70nanb17h188.demo.pscr19.GUI;
 
+import android.bluetooth.BluetoothAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -10,7 +11,8 @@ import android.widget.ListView;
 import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.R;
 
-public class MainActivity extends AppCompatActivity {
+public class
+MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showExistingNames() {
-        String existingNames[] = Device.getExistingNames();
+        final String existingNames[] = Device.getExistingNames();
         ListView nameListView = findViewById(R.id.existing_names_listView);
         ArrayAdapter<String> nameListAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, existingNames);
         nameListView.setAdapter(nameListAdapter);
@@ -30,7 +32,14 @@ public class MainActivity extends AppCompatActivity {
         nameListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                String name = existingNames[i];
+                setBluetoothName(name);
             }
         });
+    }
+
+    public void setBluetoothName(String name) {
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetoothAdapter.setName(name);
     }
 }
