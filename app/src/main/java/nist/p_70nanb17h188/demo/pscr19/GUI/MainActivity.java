@@ -1,6 +1,5 @@
 package nist.p_70nanb17h188.demo.pscr19.GUI;
 
-import android.bluetooth.BluetoothAdapter;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -8,11 +7,12 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import nist.p_70nanb17h188.demo.pscr19.Constants;
 import nist.p_70nanb17h188.demo.pscr19.Device;
+import nist.p_70nanb17h188.demo.pscr19.link.LinkDiscoveryController;
 import nist.p_70nanb17h188.demo.pscr19.R;
 
-public class
-MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,13 +33,13 @@ MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 String name = existingNames[i];
-                setBluetoothName(name);
+                configureLinkDiscovery(name);
             }
         });
     }
 
-    public void setBluetoothName(String name) {
-        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        bluetoothAdapter.setName(name);
+    public void configureLinkDiscovery(String hostName) {
+        Constants.hostName = hostName;
+        LinkDiscoveryController linkDiscoveryController = new LinkDiscoveryController(this);
     }
 }
