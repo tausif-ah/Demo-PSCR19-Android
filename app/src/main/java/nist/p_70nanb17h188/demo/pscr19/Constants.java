@@ -4,4 +4,7 @@ import nist.p_70nanb17h188.demo.pscr19.GUI.MainActivity;
 
 public class Constants {
     public static MainActivity mainContext;
+    public static final int MESSAGING_BUTTON = 100;
+    public static final int LINK_STATUS_BUTTON = 101;
+    public static final int COMMON_BUTTON = 102;
 }
