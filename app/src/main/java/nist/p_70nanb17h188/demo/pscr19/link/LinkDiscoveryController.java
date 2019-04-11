@@ -4,10 +4,15 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.widget.ArrayAdapter;
+
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 
 import nist.p_70nanb17h188.demo.pscr19.Constants;
 import nist.p_70nanb17h188.demo.pscr19.Device;
@@ -18,6 +23,8 @@ public class LinkDiscoveryController {
     private WifiP2pManager.Channel channel;
     private IntentFilter intentFilter;
     private LinkBroadcastReceiver linkBroadcastReceiver;
+    private ArrayList<Link> wifiDirectLinks;
+    private ArrayList<Link> bluetoothLinks;
 
     LinkDiscoveryController() {
         this.context = Constants.mainContext;
@@ -83,5 +90,32 @@ public class LinkDiscoveryController {
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         bluetoothAdapter.setName(Device.getName());
         intentFilter.addAction(BluetoothDevice.ACTION_FOUND);
+    }
+
+    void WiFiDirectLinkFound(WifiP2pDeviceList deviceList) {
+        if (wifiDirectLinks.size() > 0)
+            wifiDirectLinks.clear();
+        for (WifiP2pDevice device: deviceList
+             ) {
+            if (ifNameExists(device.deviceName)) {
+                Link newLink = new Link(Constants.WIFI_DIRECT_LINK, device, null);
+                wifiDirectLinks.add(newLink);
+            }
+        }
+
+    }
+
+    void BluetoothLinkFound(BluetoothDevice device) {
+
+    }
+
+    boolean ifNameExists(String name) {
+        String[] existingNames = Device.getExistingNames();
+        for (String exisitngName: existingNames
+             ) {
+            if (name.equals(exisitngName))
+                return true;
+        }
+        return false;
     }
 }
