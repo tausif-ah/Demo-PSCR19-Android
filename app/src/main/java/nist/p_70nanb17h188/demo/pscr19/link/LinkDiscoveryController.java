@@ -95,7 +95,7 @@ public class LinkDiscoveryController {
     void WiFiDirectLinkFound(WifiP2pDeviceList deviceList) {
         if (wifiDirectLinks.size() > 0)
             wifiDirectLinks.clear();
-        for (WifiP2pDevice device: deviceList
+        for (WifiP2pDevice device: deviceList.getDeviceList()
              ) {
             if (ifNameExists(device.deviceName)) {
                 Link newLink = new Link(Constants.WIFI_DIRECT_LINK, device, null);
@@ -106,10 +106,24 @@ public class LinkDiscoveryController {
     }
 
     void BluetoothLinkFound(BluetoothDevice device) {
-
+        String newDeviceName = device.getName();
+        if (ifNameExists(newDeviceName)) {
+            boolean deviceAdded = false;
+            for (Link bluetoothLink: bluetoothLinks
+                 ) {
+                if (newDeviceName.equals(bluetoothLink.bluetoothDevice.getName())) {
+                    deviceAdded = true;
+                    break;
+                }
+            }
+            if (!deviceAdded) {
+                Link newLink = new Link(Constants.BLUETOOTH_LINK, null, device);
+                bluetoothLinks.add(newLink);
+            }
+        }
     }
 
-    boolean ifNameExists(String name) {
+    private boolean ifNameExists(String name) {
         String[] existingNames = Device.getExistingNames();
         for (String exisitngName: existingNames
              ) {
