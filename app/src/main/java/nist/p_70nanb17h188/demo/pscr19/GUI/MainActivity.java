@@ -1,5 +1,6 @@
 package nist.p_70nanb17h188.demo.pscr19.GUI;
 
+import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -11,6 +12,7 @@ import nist.p_70nanb17h188.demo.pscr19.Constants;
 import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.link.LinkDiscoveryController;
 import nist.p_70nanb17h188.demo.pscr19.R;
+import nist.p_70nanb17h188.demo.pscr19.link.LinkLayer;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -18,6 +20,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Constants.mainContext = this;
         showExistingNames();
     }
 
@@ -32,14 +35,9 @@ public class MainActivity extends AppCompatActivity {
         nameListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                String name = existingNames[i];
-                configureLinkDiscovery(name);
+                Device.setName(existingNames[i]);
+                LinkLayer.init();
             }
         });
-    }
-
-    public void configureLinkDiscovery(String hostName) {
-        Constants.hostName = hostName;
-        LinkDiscoveryController linkDiscoveryController = new LinkDiscoveryController(this);
     }
 }

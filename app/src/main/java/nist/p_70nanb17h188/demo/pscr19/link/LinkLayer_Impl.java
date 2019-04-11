@@ -1,5 +1,7 @@
 package nist.p_70nanb17h188.demo.pscr19.link;
 
+import android.content.Context;
+
 import java.util.HashSet;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
@@ -14,6 +16,7 @@ final class LinkLayer_Impl {
      */
     LinkLayer_Impl() {
         System.out.printf("LinkLayer_Impl on %s initialized!%n", Device.getName());
+        LinkDiscoveryController linkDiscoveryController = new LinkDiscoveryController();
     }
 
     public boolean addConnectionHandler(ConnectionChangedHandler h) {
