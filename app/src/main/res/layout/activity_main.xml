@@ -14,8 +14,43 @@
         android:layout_marginLeft="24dp"
         android:layout_marginEnd="24dp"
         android:layout_marginRight="24dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/bottomButtonPanel"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:id="@+id/bottomButtonPanel"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="70dp"
+            android:text="Messaging"
+            android:id="@+id/messagingButton"
+            android:background="@android:color/holo_green_dark"
+            android:onClick="buttonClicked"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="70dp"
+            android:text="Link Status"
+            android:id="@+id/linkStatusButton"
+            android:background="@android:color/holo_green_dark"
+            android:onClick="buttonClicked"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="70dp"
+            android:text=""
+            android:id="@+id/commonButton"
+            android:background="@android:color/holo_green_dark"
+            android:onClick="buttonClicked"/>
+    </LinearLayout>
 </android.support.constraint.ConstraintLayout>
