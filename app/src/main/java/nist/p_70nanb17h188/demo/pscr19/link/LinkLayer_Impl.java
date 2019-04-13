@@ -1,7 +1,5 @@
 package nist.p_70nanb17h188.demo.pscr19.link;
 
-import android.content.Context;
-
 import java.util.HashSet;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
@@ -47,11 +45,18 @@ final class LinkLayer_Impl {
      * @param data data received.
      */
     private void onDataReceived(NeighborID id, byte[] data) {
-        dataHandlers.forEach(h -> {
+        for (DataReceivedHandler dataHandler: dataHandlers
+             ) {
             byte[] toForward = new byte[data.length];
             // make a copy and send, so that the users have the freedom to update the content.
             System.arraycopy(data, 0, toForward, 0, data.length);
-            h.dataReceived(id, toForward);
-        });
+            dataHandler.dataReceived(id, toForward);
+        }
+//        dataHandlers.forEach(h -> {
+//            byte[] toForward = new byte[data.length];
+//            // make a copy and send, so that the users have the freedom to update the content.
+//            System.arraycopy(data, 0, toForward, 0, data.length);
+//            h.dataReceived(id, toForward);
+//        });
     }
 }
