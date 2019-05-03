@@ -1,5 +1,8 @@
 package nist.p_70nanb17h188.demo.pscr19;
 
+import java.util.Arrays;
+import java.util.HashSet;
+
 public class Device {
 
     public static final String NAME_PC1 = "PC1";
@@ -11,6 +14,7 @@ public class Device {
     public static final String NAME_S12 = "S12";
     public static final String NAME_S13 = "S13";
     public static final String NAME_S21 = "S21";
+    private static final HashSet<String> ALL_NAMES = new HashSet<>(Arrays.asList(NAME_PC1, NAME_PC2, NAME_M1, NAME_M2, NAME_MULE, NAME_S11, NAME_S12, NAME_S13, NAME_S21));
 
     private static String _name;
 
@@ -38,16 +42,17 @@ public class Device {
      * @return the names of devices.
      */
     public static String[] getExistingNames() {
-        return new String[]{
-                NAME_PC1,
-                NAME_PC2,
-                NAME_M1,
-                NAME_M2,
-                NAME_MULE,
-                NAME_S11,
-                NAME_S12,
-                NAME_S13,
-                NAME_S21
-        };
+        String[] ret = new String[ALL_NAMES.size()];
+        return ALL_NAMES.toArray(ret);
+    }
+
+    /**
+     * Checks if the name is a known device.
+     *
+     * @param name the name to be checked.
+     * @return true if the device is known.
+     */
+    public static boolean isNameExists(String name) {
+        return ALL_NAMES.contains(name);
     }
 }
