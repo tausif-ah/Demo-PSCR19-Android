@@ -14,7 +14,7 @@ final class LinkLayer_Impl {
      */
     LinkLayer_Impl() {
         System.out.printf("LinkLayer_Impl on %s initialized!%n", Device.getName());
-        LinkDiscoveryController linkDiscoveryController = new LinkDiscoveryController();
+//        LinkDiscoveryController linkDiscoveryController = new LinkDiscoveryController();
     }
 
     public boolean addConnectionHandler(ConnectionChangedHandler h) {

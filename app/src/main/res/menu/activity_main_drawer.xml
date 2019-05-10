@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <!--<item android:title="Applications">-->
+    <!--<menu>-->
+    <!--</menu>-->
+
+    <!--</item>-->
+
+    <group
+        android:id="@+id/main_nav_grp1"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/main_nav_messaging"
+            android:checked="true"
+            android:icon="@drawable/ic_menu_messaging"
+            android:title="@string/nav_messaging" />
+        <item
+            android:id="@+id/main_nav_workoffload"
+            android:icon="@drawable/ic_menu_workoffload"
+            android:title="@string/nav_work_offload" />
+    </group>
+    <group
+        android:id="@+id/main_nav_grp2"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/main_nav_link"
+            android:icon="@drawable/ic_menu_link"
+            android:title="@string/nav_link" />
+        <item
+            android:id="@+id/main_nav_naming"
+            android:icon="@drawable/ic_menu_naming"
+            android:title="@string/nav_naming" />
+    </group>
+
+    <group
+        android:id="@+id/main_nav_grp3"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/main_nav_log"
+            android:icon="@drawable/ic_menu_log"
+            android:title="@string/nav_log" />
+    </group>
+</menu>

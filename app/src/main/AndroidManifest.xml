@@ -16,14 +16,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".GUI.OffloadWorkerActivity"></activity>
-        <activity android:name=".GUI.OffloadMasterActivity" />
-        <activity android:name=".GUI.NameRoutingActivity" />
-        <activity android:name=".GUI.LinkStatusActivity" />
-        <activity android:name=".GUI.MessagingActivity" />
-        <activity android:name=".GUI.MainActivity">
+        <activity
+            android:name=".gui.MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity android:name=".gui.LauncherActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>

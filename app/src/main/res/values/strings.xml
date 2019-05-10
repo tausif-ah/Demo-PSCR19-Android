@@ -1,3 +1,22 @@
 <resources>
-    <string name="app_name">Demo-PSCR19-Android</string>
+    <string name="app_name">ReDiCom</string>
+    <string name="title_activity_main"/>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">ReDiCom</string>
+    <string name="nav_header_subtitle">NIST Project 70NANB17H188</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="hello_messaging_fragment">Hello fragment messaging</string>
+    <string name="hello_link_fragment">Hello fragment link</string>
+    <string name="hello_naming_fragment">Hello fragment naming</string>
+    <string name="hello_work_offload_fragment">Hello fragment work offload</string>
+    <string name="hello_log_fragment">Hello fragment log</string>
+    <string name="log_level">Log Level: </string>
+    <string name="nav_messaging">Messaging</string>
+    <string name="nav_work_offload">Work Offloading</string>
+    <string name="nav_link">Link Layer</string>
+    <string name="nav_naming">Naming Layer</string>
+    <string name="nav_log">Log</string>
 </resources>
