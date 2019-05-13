@@ -30,6 +30,14 @@
             android:layout_height="wrap_content"
             android:layout_weight="2"
             android:spinnerMode="dialog" />
+
+        <ImageButton
+            android:id="@+id/log_top"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/log_top"
+            android:src="@drawable/ic_log_top"
+            android:visibility="invisible" />
     </LinearLayout>
 
     <View

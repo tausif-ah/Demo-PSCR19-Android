@@ -15,6 +15,7 @@ public class Device {
     public static final String NAME_S13 = "S13";
     public static final String NAME_S21 = "S21";
     private static final HashSet<String> ALL_NAMES = new HashSet<>(Arrays.asList(NAME_PC1, NAME_PC2, NAME_M1, NAME_M2, NAME_MULE, NAME_S11, NAME_S12, NAME_S13, NAME_S21));
+    private static final HashSet<String> PHONES = new HashSet<>(Arrays.asList(NAME_M1, NAME_M2, NAME_MULE, NAME_S11, NAME_S12, NAME_S13, NAME_S21, NAME_PC2));
 
     private static String _name;
 
@@ -44,6 +45,16 @@ public class Device {
     public static String[] getExistingNames() {
         String[] ret = new String[ALL_NAMES.size()];
         return ALL_NAMES.toArray(ret);
+    }
+
+    /**
+     * Checks if the specified device is a phone.
+     *
+     * @param name the name of the device.
+     * @return if the device is a phone.
+     */
+    public static boolean isPhone(String name) {
+        return PHONES.contains(name);
     }
 
     /**

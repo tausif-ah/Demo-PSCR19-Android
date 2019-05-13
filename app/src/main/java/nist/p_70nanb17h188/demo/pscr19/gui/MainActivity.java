@@ -1,6 +1,12 @@
 package nist.p_70nanb17h188.demo.pscr19.gui;
 
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MutableLiveData;
+import android.arch.lifecycle.ViewModel;
+import android.arch.lifecycle.ViewModelProviders;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -9,15 +15,21 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.MenuItem;
+
+import java.util.Stack;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
+import nist.p_70nanb17h188.demo.pscr19.Log;
 import nist.p_70nanb17h188.demo.pscr19.R;
+import nist.p_70nanb17h188.demo.pscr19.link.LinkLayer;
 
 
 public class MainActivity extends AppCompatActivity {
+    private static final int DEFAULT_FRAGMENT = R.id.main_nav_messaging;
 
     private Fragment messaging, workOffload, link, naming, log;
+    private MainActivityViewModel viewModel;
+    private DrawerLayout drawer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,65 +38,92 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         setTitle(Device.getName());
-        DrawerLayout drawer = findViewById(R.id.main_drawer_layout);
+        drawer = findViewById(R.id.main_drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.nav_drawer_open, R.string.nav_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
-        navigationView.setNavigationItemSelectedListener(this::onNavigationItemSelected);
+
         messaging = new MessagingFragment();
         link = new LinkFragment();
         naming = new NamingFragment();
         workOffload = new WorkOffloadFragment();
         log = new LogFragment();
-        getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment_container, messaging).commit();
-    }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
+        viewModel = ViewModelProviders.of(this).get(MainActivityViewModel.class);
+        navigationView.setNavigationItemSelectedListener(item -> {
+            viewModel.setShowingFragment(item.getItemId());
+            return true;
+        });
+        viewModel.getShowingFragment().observe(this, showingFragment -> {
+            if (showingFragment == null) showingFragment = DEFAULT_FRAGMENT;
+            navigationView.setCheckedItem(showingFragment);
+            switch (showingFragment) {
+                case R.id.main_nav_messaging:
+                    setTitle(Device.getName() + " - " + getString(R.string.nav_messaging));
+                    navigate(messaging);
+                    break;
+                case R.id.main_nav_workoffload:
+                    setTitle(Device.getName() + " - " + getString(R.string.nav_work_offload));
+                    navigate(workOffload);
+                    break;
+                case R.id.main_nav_link:
+                    setTitle(Device.getName() + " - " + getString(R.string.nav_link));
+                    navigate(link);
+                    break;
+                case R.id.main_nav_naming:
+                    setTitle(Device.getName() + " - " + getString(R.string.nav_naming));
+                    navigate(naming);
+                    break;
+                case R.id.main_nav_log:
+                    setTitle(Device.getName() + " - " + getString(R.string.nav_log));
+                    navigate(log);
+                    break;
+            }
+        });
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = findViewById(R.id.main_drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            getSupportFragmentManager().popBackStackImmediate();
+            viewModel.goBack();
         }
     }
 
     private void navigate(Fragment fragment) {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.main_fragment_container, fragment);
-        ft.addToBackStack(null);
         ft.commit();
-    }
-
-    private boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-        switch (id) {
-            case R.id.main_nav_messaging:
-                navigate(messaging);
-                break;
-            case R.id.main_nav_workoffload:
-                navigate(workOffload);
-                break;
-            case R.id.main_nav_link:
-                navigate(link);
-                break;
-            case R.id.main_nav_naming:
-                navigate(naming);
-                break;
-            case R.id.main_nav_log:
-                navigate(log);
-                break;
-        }
-
         DrawerLayout drawer = findViewById(R.id.main_drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
-        return true;
     }
+
+    private static class MainActivityViewModel extends ViewModel {
+        private MutableLiveData<Integer> showingFragment = new MutableLiveData<>();
+        private Stack<Integer> stack = new Stack<>();
+
+        MainActivityViewModel() {
+            showingFragment.setValue(DEFAULT_FRAGMENT);
+        }
+
+        LiveData<Integer> getShowingFragment() {
+            return showingFragment;
+        }
+
+        void setShowingFragment(int showingFragment) {
+            int orig = this.showingFragment.getValue() == null ? DEFAULT_FRAGMENT : this.showingFragment.getValue();
+            if (showingFragment != orig) {
+                stack.push(orig);
+                this.showingFragment.postValue(showingFragment);
+            }
+        }
+
+        void goBack() {
+            if (stack.isEmpty()) return;
+            this.showingFragment.postValue(stack.pop());
+        }
+    }
+
 }

@@ -1,36 +1,20 @@
 package nist.p_70nanb17h188.demo.pscr19.link;
 
-import java.util.HashSet;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Handler;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
 
 final class LinkLayer_Impl {
 
-    private final HashSet<ConnectionChangedHandler> connectionHandlers = new HashSet<>();
-    private final HashSet<DataReceivedHandler> dataHandlers = new HashSet<>();
 
     /**
      * Singleton pattern, prevent the class to be instantiated by the others.
      */
-    LinkLayer_Impl() {
+    LinkLayer_Impl(Context context, Handler handler) {
         System.out.printf("LinkLayer_Impl on %s initialized!%n", Device.getName());
-//        LinkDiscoveryController linkDiscoveryController = new LinkDiscoveryController();
-    }
-
-    public boolean addConnectionHandler(ConnectionChangedHandler h) {
-        return connectionHandlers.add(h);
-    }
-
-    public boolean removeConnectionHandler(ConnectionChangedHandler h) {
-        return connectionHandlers.remove(h);
-    }
-
-    public boolean addDataReceivedHandler(DataReceivedHandler h) {
-        return dataHandlers.add(h);
-    }
-
-    public boolean removeDataReceivedHandler(DataReceivedHandler h) {
-        return dataHandlers.remove(h);
+        WifiLinkManager.init(context, handler);
     }
 
     public boolean sendData(NeighborID id, byte[] data, int start, int len) {
@@ -41,17 +25,19 @@ final class LinkLayer_Impl {
     /**
      * Example function on forwarding a data to all the handlers.
      *
-     * @param id neighbor id.
+     * @param id   neighbor id.
      * @param data data received.
      */
     private void onDataReceived(NeighborID id, byte[] data) {
-        for (DataReceivedHandler dataHandler: dataHandlers
-             ) {
-            byte[] toForward = new byte[data.length];
-            // make a copy and send, so that the users have the freedom to update the content.
-            System.arraycopy(data, 0, toForward, 0, data.length);
-            dataHandler.dataReceived(id, toForward);
-        }
+        Intent intent = new Intent();
+//        intent.putExtra
+
+//        for (DataReceivedHandler dataHandler : dataHandlers) {
+//            byte[] toForward = new byte[data.length];
+//            // make a copy and send, so that the users have the freedom to update the content.
+//            System.arraycopy(data, 0, toForward, 0, data.length);
+//            dataHandler.dataReceived(id, toForward);
+//        }
 //        dataHandlers.forEach(h -> {
 //            byte[] toForward = new byte[data.length];
 //            // make a copy and send, so that the users have the freedom to update the content.

@@ -1,80 +1,56 @@
 package nist.p_70nanb17h188.demo.pscr19.link;
 
+import android.content.Context;
+import android.os.Handler;
+
 public class LinkLayer {
+    /**
+     * Broadcast intent action indicating that a link is either established or disconnected.
+     * One extra EXTRA_NEIGHBOR_ID indicates the ID of the neighbor.
+     * Another extra EXTRA_CONNECTED indicates if the connection is established or disconnected.
+     */
+    public static final String ACTION_LINK_CHANGED = "nist.p_70nanb17h188.demo.pscr19.link.LinkLayer.linkChanged";
+
+    /**
+     * Broadcast intent action indicating that a piece of data is received.
+     * One extra EXTRA_NEIGHBOR_ID indicates the ID of the neighbor that sent the data.
+     * Another extra EXTRA_DATA contains the data sent.
+     */
+    public static final String ACTION_DATA_RECEIVED = "nist.p_70nanb17h188.demo.pscr19.link.LinkLayer.dataReceived";
+    public static final String EXTRA_NEIGHBOR_ID = "neighborId";
+    public static final String EXTRA_CONNECTED = "connected";
+    public static final String EXTRA_DATA = "data";
+
 
     private static LinkLayer_Impl defaultInstance;
-
-    /**
-     * Initiates the link layer.
-     *
-     * Can perform some actions based on the Device.getName()
-     *
-     * @see nist.p_70nanb17h188.demo.pscr19.Device
-     */
-    public static void init() {
-        defaultInstance = new LinkLayer_Impl();
-    }
-
-    /**
-     * Add a connection handler.
-     *
-     * @param h connection callback.
-     * @return true if the handler is added, false if the handler already
-     * exists.
-     */
-    public static boolean addConnectionHandler(ConnectionChangedHandler h) {
-        return defaultInstance.addConnectionHandler(h);
-    }
-
-    /**
-     * Remove a connection handler.
-     *
-     * @param h connection callback.
-     * @return true if the handler is removed, false if the handler does not
-     * exist.
-     */
-    public static boolean removeConnectionHandler(ConnectionChangedHandler h) {
-        return defaultInstance.removeConnectionHandler(h);
-    }
-
-    /**
-     * Add a data handler.
-     *
-     * @param h data callback.
-     * @return true if the handler is added, false if the handler already
-     * exists.
-     */
-    public static boolean addDataReceivedHandler(DataReceivedHandler h) {
-        return defaultInstance.addDataReceivedHandler(h);
-    }
-
-    /**
-     * Remove a data handler.
-     *
-     * @param h data callback.
-     * @return true if the handler is removed, false if the handler does not
-     * exist.
-     */
-    public static boolean removeDataReceivedHandler(DataReceivedHandler h) {
-        return defaultInstance.removeDataReceivedHandler(h);
-    }
-
-    /**
-     * Send a piece of data to a neighbor.
-     *
-     * @param id neighbor id.
-     * @param data data to be sent.
-     * @param start start position in the data to be sent.
-     * @param len length of the data to be sent.
-     * @return true if the data is sent, false otherwise.
-     */
-    public static boolean sendData(NeighborID id, byte[] data, int start, int len) {
-        return defaultInstance.sendData(id, data, start, len);
-    }
 
     /**
      * This class should not be instantiated.
      */
     private LinkLayer() {
+    }
+
+    /**
+     * Initiates the link layer.
+     * <p>
+     * Can perform some actions based on the Device.getName()
+     *
+     * @see nist.p_70nanb17h188.demo.pscr19.Device
+     */
+    public static void init(Context context, Handler handler) {
+        defaultInstance = new LinkLayer_Impl(context, handler);
+    }
+
+    /**
+     * Send a piece of data to a neighbor.
+     *
+     * @param id    neighbor id.
+     * @param data  data to be sent.
+     * @param start start position in the data to be sent.
+     * @param len   length of the data to be sent.
+     * @return true if the data is sent, false otherwise.
+     */
+    public static boolean sendData(NeighborID id, byte[] data, int start, int len) {
+        return defaultInstance.sendData(id, data, start, len);
     }
 }

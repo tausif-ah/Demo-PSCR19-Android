@@ -1,65 +1,67 @@
 package nist.p_70nanb17h188.demo.pscr19.gui;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.design.widget.BaseTransientBottomBar;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import java.util.Arrays;
+
 import nist.p_70nanb17h188.demo.pscr19.Device;
+import nist.p_70nanb17h188.demo.pscr19.Log;
 import nist.p_70nanb17h188.demo.pscr19.R;
+import nist.p_70nanb17h188.demo.pscr19.link.LinkLayer;
 
 public class LauncherActivity extends AppCompatActivity {
-    private ListView nameList;
+    private static final String[] REQUIRED_PERMISSIONS = {
+            Manifest.permission.BLUETOOTH,
+            Manifest.permission.BLUETOOTH_ADMIN,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_NETWORK_STATE,
+            Manifest.permission.ACCESS_WIFI_STATE,
+            Manifest.permission.CHANGE_NETWORK_STATE,
+            Manifest.permission.CHANGE_WIFI_STATE,
+            Manifest.permission.INTERNET,
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        for (String s : REQUIRED_PERMISSIONS) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(s) != PackageManager.PERMISSION_GRANTED)
+                requestPermissions(new String[]{s}, 0);
+        }
         setContentView(R.layout.activity_launcher);
-        nameList = findViewById(R.id.launcher_names);
-        nameList.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, Device.getExistingNames()));
-        nameList.setOnItemClickListener(this::onNameClicked);
+        Log.init(Log.DEFAULT_CAPACITY, getApplicationContext());
+
+        ListView nameList = findViewById(R.id.launcher_names);
+        String[] names = Device.getExistingNames();
+        Arrays.sort(names);
+        nameList.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, names));
+        nameList.setOnItemClickListener((parent, view, position, id) -> {
+            String name = (String) parent.getItemAtPosition(position);
+            if (!Device.isPhone(name)) {
+                Snackbar.make(parent, String.format("%s cannot be chosen on a phone", name), BaseTransientBottomBar.LENGTH_SHORT).show();
+                return;
+            }
+
+            Handler handler = new Handler();
+            Device.setName((String) parent.getItemAtPosition(position));
+            LinkLayer.init(getApplicationContext(), handler);
+
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+        });
     }
 
-    private void onNameClicked(AdapterView<?> parent, View view, int position, long id) {
-        Device.setName((String) parent.getItemAtPosition(position));
-//        LinkLayer.init();
-
-        startActivity(new Intent(this, MainActivity.class));
-        finish();
-    }
-
-//    public void showExistingNames() {
-//        final String existingNames[] = Device.getExistingNames();
-//        ListView nameListView = findViewById(R.id.existing_names_listView);
-//        ArrayAdapter<String> nameListAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, existingNames);
-//        nameListView.setAdapter(nameListAdapter);
-//        nameListAdapter.notifyDataSetChanged();
-//
-//        nameListView.setClickable(true);
-//        nameListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-//                Device.setName(existingNames[i]);
-//                LinkLayer.init();
-//                updateUIAfterNameSelection();
-//            }
-//        });
-//    }
-
-//    public void updateUIAfterNameSelection() {
-//        ListView existingNamesView = findViewById(R.id.existing_names_listView);
-//        existingNamesView.setVisibility(View.INVISIBLE);
-//        LinearLayout bottomPanel = findViewById(R.id.bottomButtonPanel);
-//        Button commonButton = findViewById(R.id.commonButton);
-//        if (Device.getName().equals("Mule"))
-//            commonButton.setText("Name Routing Report");
-//        else if (Device.getName().equals("M1") || Device.getName().equals("M2"))
-//            commonButton.setText("Offload Master");
-//        else
-//            commonButton.setText("Worker");
-//        bottomPanel.setVisibility(View.VISIBLE);
-//    }
 }

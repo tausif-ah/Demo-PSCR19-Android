@@ -24,7 +24,7 @@ public class WrapLinearLayoutManager extends LinearLayoutManager {
         try {
             super.onLayoutChildren(recycler, state);
         } catch (IndexOutOfBoundsException e) {
-            Log.e("WrapLinearLayoutManager", "meet a IOOBE in RecyclerView", e);
+            Log.d("WrapLinearLayoutManager", "meet a IOOBE in RecyclerView");
         }
     }
 }
