@@ -1,10 +1,10 @@
-package nist.p_70nanb17h188.demo.pscr19.link;
+package nist.p_70nanb17h188.demo.pscr19.logic.link;
 
-import android.content.Context;
+import android.app.Application;
 import android.content.Intent;
 import android.os.Handler;
 
-import nist.p_70nanb17h188.demo.pscr19.Device;
+import nist.p_70nanb17h188.demo.pscr19.logic.Device;
 
 final class LinkLayer_Impl {
 
@@ -12,9 +12,9 @@ final class LinkLayer_Impl {
     /**
      * Singleton pattern, prevent the class to be instantiated by the others.
      */
-    LinkLayer_Impl(Context context, Handler handler) {
+    LinkLayer_Impl(Application application, Handler handler) {
         System.out.printf("LinkLayer_Impl on %s initialized!%n", Device.getName());
-        WifiLinkManager.init(context, handler);
+        WifiLinkManager.init(application, handler);
     }
 
     public boolean sendData(NeighborID id, byte[] data, int start, int len) {

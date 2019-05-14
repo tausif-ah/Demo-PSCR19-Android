@@ -5,4 +5,5 @@
     <color name="colorAccent">#D81B60</color>
     <color name="colorWifiDirect">#FFD5AA</color>
     <color name="colorBluetooth">#D5D5FF</color>
+    <color name="coloUnknown">#D5D5D5</color>
 </resources>

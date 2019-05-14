@@ -1,35 +1,39 @@
 <resources>
     <string name="app_name">ReDiCom</string>
-    <string name="title_activity_main"/>
+    <string name="title_activity_main" />
+
     <string name="nav_drawer_open">Open navigation drawer</string>
     <string name="nav_drawer_close">Close navigation drawer</string>
     <string name="nav_header_title">ReDiCom</string>
     <string name="nav_header_subtitle">NIST Project 70NANB17H188</string>
     <string name="nav_header_desc">Navigation header</string>
-
-    <string name="hello_messaging_fragment">Hello fragment messaging</string>
-    <string name="hello_naming_fragment">Hello fragment naming</string>
-    <string name="hello_work_offload_fragment">Hello fragment work offload</string>
     <string name="nav_messaging">Messaging</string>
     <string name="nav_work_offload">Work Offloading</string>
     <string name="nav_link">Link Layer</string>
     <string name="nav_naming">Naming Layer</string>
     <string name="nav_log">Log</string>
+
+    <string name="hello_messaging_fragment">Hello fragment messaging</string>
+    <string name="hello_naming_fragment">Hello fragment naming</string>
+    <string name="hello_work_offload_fragment">Hello fragment work offload</string>
+
     <string name="log_top">Move to top in the log view</string>
-    <string name="link_wifi_direct_short">WFi-D: </string>
+    <string name="link_wifi_direct_short">WiFi-D: </string>
     <string name="link_bluetooth_short">BT: </string>
     <string name="link_wifi_group_name">SSID:</string>
     <string name="link_group_pass">Pass:</string>
     <string name="link_wifi_discovery_status">Status of Wifi Discovery. Green: discovering; red: stopped.</string>
     <string name="link_bluetooth_discovery_status">Status of Bluetooth Discovery. Green: discovering; red: stopped.</string>
     <string name="link_link_status">Status of the link. Green: connected; orange: not connected; red: not found.</string>
-    <string name="link_not_found">Not\nfound</string>
+    <string name="link_not_found">Not\nfnd.</string>
     <string name="link_found">Not\nconn.</string>
     <string name="link_connected">Link\nconn.</string>
     <string name="link_established">TCP\nconn.</string>
-    <string name="nav_exit"><![CDATA[Cleanup & Exit]]></string>
     <string name="link_not_found_icon">Icon indicating that a link is not found.</string>
     <string name="link_found_icon">Icon indicating that a link has been discovered, but not connected.</string>
     <string name="link_connected_icon">Icon indicating that a connection has been established on the link but TCP connection still not established.</string>
     <string name="link_established_icon">Icon indicating that a TCP connection has been established on this link.</string>
+    <string name="link_confusing_characters">[Il10O]</string>
+    <string name="link_invited">Inv-\nited</string>
+    <string name="link_btn_connect">Click to connect to/disconnect from a device.</string>
 </resources>

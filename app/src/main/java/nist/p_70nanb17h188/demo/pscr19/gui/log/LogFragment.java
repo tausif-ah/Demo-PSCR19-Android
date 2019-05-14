@@ -1,4 +1,4 @@
-package nist.p_70nanb17h188.demo.pscr19.gui;
+package nist.p_70nanb17h188.demo.pscr19.gui.log;
 
 
 import android.arch.lifecycle.MutableLiveData;
@@ -34,8 +34,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import nist.p_70nanb17h188.demo.pscr19.Log;
 import nist.p_70nanb17h188.demo.pscr19.R;
+import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 /**
  * A simple {@link Fragment} subclass.

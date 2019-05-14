@@ -12,29 +12,31 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingStart="8dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="4dp"
-        android:paddingBottom="8dp">
+        android:paddingEnd="4dp">
 
         <TextView
             android:id="@+id/link_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:padding="3dp" />
 
-        <android.support.v7.widget.SwitchCompat
+        <ImageButton
             android:id="@+id/link_connect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="3dp"
-            android:theme="@style/Theme.MySwitchTheme"/>
-
+            android:layout_marginTop="3dp"
+            android:background="@android:drawable/btn_default_small"
+            android:contentDescription="@string/link_btn_connect"
+            android:padding="8dp"
+            android:src="@drawable/ic_link_connect" />
 
         <ImageView
             android:id="@+id/link_status"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
             android:contentDescription="@string/link_link_status"
             android:padding="3dp"
             android:src="@drawable/ic_circle_red" />

@@ -1,4 +1,4 @@
-package nist.p_70nanb17h188.demo.pscr19.gui;
+package nist.p_70nanb17h188.demo.pscr19.gui.messaging;
 
 
 import android.os.Bundle;
@@ -10,21 +10,16 @@ import android.view.ViewGroup;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
 
-/**
- * A simple {@link Fragment} subclass.
- */
-public class WorkOffloadFragment extends Fragment {
+public class MessagingFragment extends Fragment {
 
 
-    public WorkOffloadFragment() {
-        // Required empty public constructor
+    public MessagingFragment() {
     }
 
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_work_offload, container, false);
+        return inflater.inflate(R.layout.fragment_messaging, container, false);
     }
 
 }

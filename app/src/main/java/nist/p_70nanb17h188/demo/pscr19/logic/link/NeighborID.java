@@ -1,11 +1,8 @@
-package nist.p_70nanb17h188.demo.pscr19.link;
+package nist.p_70nanb17h188.demo.pscr19.logic.link;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
-
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * ID for neighbors. Unique for each neighbor.
@@ -32,7 +29,6 @@ public class NeighborID implements Parcelable {
         return hash;
     }
 
-    @Contract(value = "null -> false", pure = true)
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -54,9 +50,24 @@ public class NeighborID implements Parcelable {
         return String.format("Neighbor{%s}", id);
     }
 
-    private NeighborID(@NotNull Parcel in) {
+    public static final Creator<NeighborID> CREATOR = new Creator<NeighborID>() {
+        @NonNull
+        @Override
+        public NeighborID createFromParcel(Parcel in) {
+            return new NeighborID(in);
+        }
+
+        @NonNull
+        @Override
+        public NeighborID[] newArray(int size) {
+            return new NeighborID[size];
+        }
+    };
+
+    private NeighborID(@NonNull Parcel in) {
         String tmp = in.readString();
-        if (tmp == null) throw new IllegalArgumentException("Failed in reading NeighborID from parcel!");
+        if (tmp == null)
+            throw new IllegalArgumentException("Failed in reading NeighborID from parcel!");
         id = tmp;
     }
 
@@ -69,20 +80,4 @@ public class NeighborID implements Parcelable {
     public int describeContents() {
         return 0;
     }
-
-    public static final Creator<NeighborID> CREATOR = new Creator<NeighborID>() {
-        @NotNull
-        @Contract("_ -> new")
-        @Override
-        public NeighborID createFromParcel(Parcel in) {
-            return new NeighborID(in);
-        }
-
-        @NotNull
-        @Contract(value = "_ -> new", pure = true)
-        @Override
-        public NeighborID[] newArray(int size) {
-            return new NeighborID[size];
-        }
-    };
 }

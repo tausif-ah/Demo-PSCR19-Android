@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".gui.LinkFragment">
+    tools:context=".gui.link.LinkFragment">
 
 
     <LinearLayout
@@ -22,13 +22,22 @@
 
         <TextView
             android:id="@+id/link_group_name"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="serif-monospace"
+            android:fontFamily="serif"
             android:gravity="start"
             android:padding="3dp"
-            tools:text="Il1" />
+            tools:text="Il1O0" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="?attr/colorPrimary" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -39,15 +48,30 @@
 
         <TextView
             android:id="@+id/link_group_pass"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:fontFamily="serif-monospace"
+            android:fontFamily="serif"
             android:gravity="start"
             android:padding="3dp"
-            tools:text="Il1" />
+            tools:text="Il1O0" />
 
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
 
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="?attr/colorPrimary" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="serif"
+            android:gravity="end"
+            android:padding="3dp"
+            android:text="@string/link_confusing_characters" />
     </LinearLayout>
 
     <View
@@ -103,6 +127,21 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:contentDescription="@string/link_found_icon"
+            android:padding="3dp"
+            android:src="@drawable/ic_circle_magenta" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="start"
+            android:padding="3dp"
+            android:text="@string/link_invited" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
             android:contentDescription="@string/link_connected_icon"
             android:padding="3dp"
             android:src="@drawable/ic_circle_blue" />
@@ -153,13 +192,17 @@
             android:text="@string/link_wifi_direct_short" />
 
         <TextView
-            android:id="@+id/link_wifi_update"
+            android:id="@+id/link_wifi_discover_update"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:gravity="start"
-            android:padding="3dp" />
+            android:paddingStart="3dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="3dp"
+            tools:text="--:--:--.---" />
+
 
         <ImageView
             android:id="@+id/link_wifi_discovery"

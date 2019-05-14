@@ -4,9 +4,7 @@ import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
 import android.arch.lifecycle.ViewModelProviders;
-import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -18,10 +16,13 @@ import android.support.v7.widget.Toolbar;
 
 import java.util.Stack;
 
-import nist.p_70nanb17h188.demo.pscr19.Device;
-import nist.p_70nanb17h188.demo.pscr19.Log;
 import nist.p_70nanb17h188.demo.pscr19.R;
-import nist.p_70nanb17h188.demo.pscr19.link.LinkLayer;
+import nist.p_70nanb17h188.demo.pscr19.gui.link.LinkFragment;
+import nist.p_70nanb17h188.demo.pscr19.gui.log.LogFragment;
+import nist.p_70nanb17h188.demo.pscr19.gui.messaging.MessagingFragment;
+import nist.p_70nanb17h188.demo.pscr19.gui.naming.NamingFragment;
+import nist.p_70nanb17h188.demo.pscr19.gui.work_offload.WorkOffloadFragment;
+import nist.p_70nanb17h188.demo.pscr19.logic.Device;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -104,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
         private MutableLiveData<Integer> showingFragment = new MutableLiveData<>();
         private Stack<Integer> stack = new Stack<>();
 
-        MainActivityViewModel() {
+        public MainActivityViewModel() {
             showingFragment.setValue(DEFAULT_FRAGMENT);
         }
 

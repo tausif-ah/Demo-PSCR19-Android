@@ -1,6 +1,6 @@
-package nist.p_70nanb17h188.demo.pscr19;
+package nist.p_70nanb17h188.demo.pscr19.logic.log;
 
-import android.content.Context;
+import android.app.Application;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 
@@ -16,32 +16,26 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Log {
     public static final int DEFAULT_CAPACITY = 1000;
-    public static final SimpleDateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US);
-
-
-    public static final String ACTION_ITEMS_INSERTED = "nist.p_70nanb17h188.demo.pscr19.Log.itemsInserted";
-
-    public static final String ACTION_ITEMS_REMOVED = "nist.p_70nanb17h188.demo.pscr19.Log.itemsRemoved";
-
-    public static final String ACTION_TAGS_CHANGED = "nist.p_70nanb17h188.demo.pscr19.Log.tagsChanged";
+    public static final String ACTION_ITEMS_INSERTED = "nist.p_70nanb17h188.demo.pscr19.logic.log.Log.itemsInserted";
+    public static final String ACTION_ITEMS_REMOVED = "nist.p_70nanb17h188.demo.pscr19.logic.log.Log.itemsRemoved";
+    public static final String ACTION_TAGS_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.log.Log.tagsChanged";
     public static final String EXTRA_POSITION_START = "positionStart";
     public static final String EXTRA_ITEM_COUNT = "itemCount";
-
+    private static final SimpleDateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US);
     private static Log DEFAULT_INSTANCE = null;
     private final ArrayList<LogItem> logs = new ArrayList<>();
     private final HashMap<String, AtomicInteger> tagCounts = new HashMap<>();
+    private final Application application;
     private int capacity;
-    private final Context context;
 
-    public static void init(int capacity, Context context) {
-        if (DEFAULT_INSTANCE == null)
-            DEFAULT_INSTANCE = new Log(capacity, context);
-    }
-
-    private Log(int capacity, Context context) {
+    private Log(int capacity, Application application) {
         if (capacity <= 0) throw new IllegalArgumentException("Capacity should be > 0");
         this.capacity = capacity;
-        this.context = context;
+        this.application = application;
+    }
+
+    public static void init(int capacity, Application application) {
+        if (DEFAULT_INSTANCE == null) DEFAULT_INSTANCE = new Log(capacity, application);
     }
 
     public static void v(String tag, String fmt, Object... params) {
@@ -253,17 +247,17 @@ public class Log {
 
     private void _fireItemInserted(int positionStart, int itemCount) {
         Intent intent = new Intent(ACTION_ITEMS_INSERTED).putExtra(EXTRA_POSITION_START, positionStart).putExtra(EXTRA_ITEM_COUNT, itemCount);
-        context.sendBroadcast(intent);
+        application.getApplicationContext().sendBroadcast(intent);
     }
 
     private void _fireItemRemoved(int positionStart, int itemCount) {
         Intent intent = new Intent(ACTION_ITEMS_REMOVED).putExtra(EXTRA_POSITION_START, positionStart).putExtra(EXTRA_ITEM_COUNT, itemCount);
-        context.sendBroadcast(intent);
+        application.getApplicationContext().sendBroadcast(intent);
     }
 
     private void _fireTagsChanged() {
         Intent intent = new Intent(ACTION_TAGS_CHANGED);
-        context.sendBroadcast(intent);
+        application.getApplicationContext().sendBroadcast(intent);
     }
 
     public enum LogType {

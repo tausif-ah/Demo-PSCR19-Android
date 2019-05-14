@@ -1,4 +1,4 @@
-package nist.p_70nanb17h188.demo.pscr19;
+package nist.p_70nanb17h188.demo.pscr19.logic;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -9,13 +9,14 @@ public class Device {
     public static final String NAME_PC2 = "PC2";
     public static final String NAME_M1 = "M1";
     public static final String NAME_M2 = "M2";
+    public static final String NAME_ROUTER = "Router";
     public static final String NAME_MULE = "Mule";
     public static final String NAME_S11 = "S11";
     public static final String NAME_S12 = "S12";
     public static final String NAME_S13 = "S13";
     public static final String NAME_S21 = "S21";
-    private static final HashSet<String> ALL_NAMES = new HashSet<>(Arrays.asList(NAME_PC1, NAME_PC2, NAME_M1, NAME_M2, NAME_MULE, NAME_S11, NAME_S12, NAME_S13, NAME_S21));
-    private static final HashSet<String> PHONES = new HashSet<>(Arrays.asList(NAME_M1, NAME_M2, NAME_MULE, NAME_S11, NAME_S12, NAME_S13, NAME_S21, NAME_PC2));
+    private static final HashSet<String> ALL_NAMES = new HashSet<>(Arrays.asList(NAME_PC1, NAME_PC2, NAME_ROUTER, NAME_M1, NAME_M2, NAME_MULE, NAME_S11, NAME_S12, NAME_S13, NAME_S21));
+    private static final HashSet<String> PHONES = new HashSet<>(Arrays.asList(NAME_M1, NAME_M2, NAME_MULE, NAME_S11, NAME_S12, NAME_S13, NAME_S21, NAME_ROUTER));
 
     private static String _name;
 

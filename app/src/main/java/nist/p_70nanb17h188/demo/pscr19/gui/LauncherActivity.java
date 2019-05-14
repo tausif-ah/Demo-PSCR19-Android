@@ -9,17 +9,15 @@ import android.os.Handler;
 import android.support.design.widget.BaseTransientBottomBar;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.Arrays;
 
-import nist.p_70nanb17h188.demo.pscr19.Device;
-import nist.p_70nanb17h188.demo.pscr19.Log;
 import nist.p_70nanb17h188.demo.pscr19.R;
-import nist.p_70nanb17h188.demo.pscr19.link.LinkLayer;
+import nist.p_70nanb17h188.demo.pscr19.logic.Device;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 public class LauncherActivity extends AppCompatActivity {
     private static final String[] REQUIRED_PERMISSIONS = {
@@ -42,7 +40,7 @@ public class LauncherActivity extends AppCompatActivity {
                 requestPermissions(new String[]{s}, 0);
         }
         setContentView(R.layout.activity_launcher);
-        Log.init(Log.DEFAULT_CAPACITY, getApplicationContext());
+        Log.init(Log.DEFAULT_CAPACITY, getApplication());
 
         ListView nameList = findViewById(R.id.launcher_names);
         String[] names = Device.getExistingNames();
@@ -57,7 +55,7 @@ public class LauncherActivity extends AppCompatActivity {
 
             Handler handler = new Handler();
             Device.setName((String) parent.getItemAtPosition(position));
-            LinkLayer.init(getApplicationContext(), handler);
+            LinkLayer.init(getApplication(), handler);
 
             startActivity(new Intent(this, MainActivity.class));
             finish();
