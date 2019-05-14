@@ -39,13 +39,12 @@ import java.util.Locale;
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
-import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class LinkFragment extends Fragment {
-    public static final String TAG = "LinkFragment";
+    //    public static final String TAG = "LinkFragment";
     private static final SimpleDateFormat DEFAULT_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US);
     private static final String DATE_STRING_ON_NULL = "--:--:--.---";
     private LinkFragmentViewModel viewModel;
@@ -206,7 +205,7 @@ public class LinkFragment extends Fragment {
         }
 
         private void updateWifiDeviceList(WifiP2pDeviceList list) {
-            Log.d(TAG, "updateWifiDeviceList, list=%s", list);
+//            Log.d(TAG, "updateWifiDeviceList, list=%s", list);
             if (list == null) return;
             HashMap<String, LinkWifiDirect> remaining = new HashMap<>();
             for (Link l : links) {

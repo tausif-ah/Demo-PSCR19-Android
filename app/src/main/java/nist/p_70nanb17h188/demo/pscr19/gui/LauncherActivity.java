@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.design.widget.BaseTransientBottomBar;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -53,9 +52,8 @@ public class LauncherActivity extends AppCompatActivity {
                 return;
             }
 
-            Handler handler = new Handler();
             Device.setName((String) parent.getItemAtPosition(position));
-            LinkLayer.init(getApplication(), handler);
+            LinkLayer.init(getApplication());
 
             startActivity(new Intent(this, MainActivity.class));
             finish();

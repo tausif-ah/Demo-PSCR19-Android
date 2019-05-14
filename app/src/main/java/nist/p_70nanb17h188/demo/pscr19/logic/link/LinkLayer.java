@@ -1,7 +1,6 @@
 package nist.p_70nanb17h188.demo.pscr19.logic.link;
 
 import android.app.Application;
-import android.os.Handler;
 
 import nist.p_70nanb17h188.demo.pscr19.logic.Device;
 
@@ -39,8 +38,8 @@ public class LinkLayer {
      *
      * @see Device
      */
-    public static void init(Application application, Handler handler) {
-        defaultInstance = new LinkLayer_Impl(application, handler);
+    public static void init(Application application) {
+        defaultInstance = new LinkLayer_Impl(application);
     }
 
     /**

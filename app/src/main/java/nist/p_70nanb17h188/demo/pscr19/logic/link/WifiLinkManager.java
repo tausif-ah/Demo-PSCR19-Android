@@ -16,8 +16,12 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.Date;
 import java.util.Locale;
 
@@ -58,6 +62,7 @@ public class WifiLinkManager {
 
     private static final String TAG = "WifiLinkManager";
     private static final int DEFAULT_DISCOVER_RETRY_DELAY_MS = 2000;
+    private static final int DEFAULT_CREATE_GROUP_RETRY_DELAY_MS = 2000;
     private static final int DEFAULT_DISCOVER_DURATION_MS = 60000;
     private static WifiLinkManager DEFAULT_INSTANCE;
 
@@ -65,14 +70,16 @@ public class WifiLinkManager {
     private final WifiP2pManager wifiP2pManager;
     private final WifiP2pManager.Channel channel;
     private final Handler handler;
+    private final WifiTCPConnectionManager wifiTCPConnectionManager = new WifiTCPConnectionManager();
     private boolean discovering = false;
     private Date lastDiscoverTime = null;
     private WifiP2pDeviceList lastDiscoverList = null;
     private WifiP2pGroup lastGroupInfo = null;
 
-    private WifiLinkManager(@NonNull Application application, @NonNull Handler handler) {
+    private WifiLinkManager(@NonNull Application application) {
         this.application = application;
         Context context = application.getApplicationContext();
+        handler = new Handler(context.getMainLooper());
         wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
         channel = wifiP2pManager.initialize(context, context.getMainLooper(), () -> {
             Toast.makeText(context, "Link disconnected!", Toast.LENGTH_LONG).show();
@@ -107,15 +114,14 @@ public class WifiLinkManager {
             }
         }, filter);
         Log.d(TAG, "Registered linkBroadcastReceiver");
-        this.handler = handler;
         setWifiDirectName();
         createGroup();
         discoverPeers(true);
     }
 
-    static void init(@NonNull Application application, @NonNull Handler handler) {
+    static void init(@NonNull Application application) {
         if (DEFAULT_INSTANCE == null) {
-            DEFAULT_INSTANCE = new WifiLinkManager(application, handler);
+            DEFAULT_INSTANCE = new WifiLinkManager(application);
         }
     }
 
@@ -126,7 +132,7 @@ public class WifiLinkManager {
     private static void setWifiDirectName(@NonNull WifiP2pManager wifiP2pManager, WifiP2pManager.Channel channel, String name, WifiP2pManager.ActionListener listener) {
         try {
             Class[] paramTypes = new Class[]{WifiP2pManager.Channel.class, String.class, WifiP2pManager.ActionListener.class};
-            Method setDeviceName = wifiP2pManager.getClass().getMethod("setDeviceName", paramTypes);
+            Method setDeviceName = WifiP2pManager.class.getMethod("setDeviceName", paramTypes);
             Object[] argList = new Object[]{channel, name, listener};
             setDeviceName.invoke(wifiP2pManager, argList);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
@@ -179,14 +185,18 @@ public class WifiLinkManager {
                 @Override
                 public void onSuccess() {
                     Log.i(TAG, "Succeeded in creating group!");
+                    wifiTCPConnectionManager.startGroupOwner();
                 }
 
                 @Override
                 public void onFailure(int reason) {
-                    Toast.makeText(application.getApplicationContext(), "Fail in creating group! reason=" + reason, Toast.LENGTH_LONG).show();
-                    Log.e(TAG, "Failed in creating group! reason=%d", reason);
+                    String msg = String.format(Locale.US, "Failed in creating group! reason=%d, retry in %dms", reason, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
+                    Toast.makeText(application.getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, msg);
+                    handler.postDelayed(WifiLinkManager.this::createGroup, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
                 }
             });
+
         }
     }
 
@@ -370,6 +380,81 @@ public class WifiLinkManager {
             default:
                 Toast.makeText(application.getApplicationContext(), "Device not in connectable state: " + device.status, Toast.LENGTH_SHORT).show();
                 break;
+        }
+    }
+
+    private static class WifiTCPConnectionManager implements TCPConnectionManager.ServerSocketChannelEventHandler, TCPConnectionManager.SocketChannelEventHandler {
+        private static final String MY_TAG = "WifiTCPConnectionManager";
+
+        void startGroupOwner() {
+            TCPConnectionManager.getDefaultInstance().addServerSocketChannel(new InetSocketAddress(Constants.WIFI_DIRECT_SERVER_LISTEN_PORT), this);
+        }
+
+        @Override
+        public void onServerSocketChannelClosed(ServerSocketChannel serverSocketChannel) {
+
+        }
+
+        @Override
+        public void onServerSocketChannelCloseFailed(ServerSocketChannel serverSocketChannel) {
+
+        }
+
+        @Override
+        public void onServerSocketChannelAcceptFailed(ServerSocketChannel serverSocketChannel) {
+
+        }
+
+        @Override
+        public TCPConnectionManager.SocketChannelEventHandler getSocketChannelEventHandler() {
+            return this;
+        }
+
+        @Override
+        public void onSocketConnected(@NonNull SocketChannel socketChannel) {
+            try {
+                Log.i(MY_TAG, "Connected to a socket, remoteAddr=%s", TCPConnectionManager.getSocketChannelRemoteAddress(socketChannel));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onSocketConnectFailed(@NonNull SocketChannel socketChannel) {
+            try {
+                Log.i(MY_TAG, "Failed in connecting to a socket, remoteAddr=%s", TCPConnectionManager.getSocketChannelRemoteAddress(socketChannel));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onSocketChannelNameReceived(@NonNull SocketChannel socketChannel, String name) {
+
+        }
+
+        @Override
+        public void onSocketChannelDataReceived(@NonNull SocketChannel socketChannel, byte[] data) {
+
+        }
+
+        @Override
+        public void onSocketChannelClosed(@NonNull SocketChannel socketChannel) {
+            try {
+                Log.i(MY_TAG, "Closed a remote socket, remoteAddr=%s", TCPConnectionManager.getSocketChannelRemoteAddress(socketChannel));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        @Override
+        public void onSocketChannelCloseFailed(@NonNull SocketChannel socketChannel) {
+            try {
+                Log.i(MY_TAG, "Failed in closing a remote socket, remoteAddr=%s", TCPConnectionManager.getSocketChannelRemoteAddress(socketChannel));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
