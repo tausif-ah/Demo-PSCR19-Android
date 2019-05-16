@@ -44,7 +44,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
  * A simple {@link Fragment} subclass.
  */
 public class LinkFragment extends Fragment {
-    //    public static final String TAG = "LinkFragment";
+    //        public static final String TAG = "LinkFragment";
     private static final SimpleDateFormat DEFAULT_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US);
     private static final String DATE_STRING_ON_NULL = "--:--:--.---";
     private LinkFragmentViewModel viewModel;
@@ -212,10 +212,16 @@ public class LinkFragment extends Fragment {
                 if (l instanceof LinkWifiDirect) remaining.put(l.name, (LinkWifiDirect) l);
             }
             for (WifiP2pDevice device : list.getDeviceList()) {
-                LinkWifiDirect l = remaining.get(device.deviceName);
-                if (l == null) continue;
+                String name = device.deviceName;
+                if (name.startsWith("[Phone]")) name = name.substring(7).trim();
+
+                LinkWifiDirect l = remaining.get(name);
+                if (l == null) {
+                    continue;
+                }
+//                Log.d(TAG, "updateWifiDeviceList, name=%s, status=%d", device.deviceName, device.status);
                 l.setDeviceInDiscovery(device);
-                remaining.remove(device.deviceName);
+                remaining.remove(name);
             }
             for (LinkWifiDirect l : remaining.values()) {
                 l.setDeviceInDiscovery(null);
@@ -232,12 +238,14 @@ public class LinkFragment extends Fragment {
         private final Observer<Link.LinkStatus> linkStatusObserver = new Observer<Link.LinkStatus>() {
             @Override
             public void onChanged(@Nullable Link.LinkStatus linkStatus) {
+//                Log.d(TAG, "updateWifiDeviceList, name=%s, linkStatus=%s", instance.name, linkStatus);
                 imgStatus.setImageResource(Constants.getLinkStatusImageResource(linkStatus));
             }
         };
         private final Observer<Boolean> linkEstablishObserver = new Observer<Boolean>() {
             @Override
             public void onChanged(@Nullable Boolean establish) {
+//                Log.d(TAG, "updateWifiDeviceList, name=%s, establish=%b", instance.name, establish);
                 btnEstablish.setImageResource(Constants.getEstablishActionImageResource(establish));
             }
         };
@@ -259,8 +267,11 @@ public class LinkFragment extends Fragment {
             }
             instance = link;
             link.getStatus().observe(LinkFragment.this, linkStatusObserver);
+            linkStatusObserver.onChanged(link.status.getValue());
 
             link.getEstablishConnection().observe(LinkFragment.this, linkEstablishObserver);
+            linkEstablishObserver.onChanged(link.establishConnection.getValue());
+
             txtName.setText(link.name);
             container.setBackgroundResource(Constants.getLinkTypeColorResource(instance.getClass()));
             assert link.getStatus().getValue() != null;

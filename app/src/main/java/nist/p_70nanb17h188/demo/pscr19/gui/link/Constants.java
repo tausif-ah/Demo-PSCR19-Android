@@ -4,7 +4,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
-import nist.p_70nanb17h188.demo.pscr19.logic.Device;
 
 class Constants {
     private Constants() {
@@ -12,29 +11,16 @@ class Constants {
 
     @NonNull
     static Link[] getConnections() {
-        switch (Device.getName()) {
-            case Device.NAME_M1:
-                return new Link[]{new LinkWifiDirect(Device.NAME_PC1), new LinkWifiDirect(Device.NAME_M2), new LinkWifiDirect(Device.NAME_MULE), new LinkBluetooth(Device.NAME_S11), new LinkBluetooth(Device.NAME_S13)};
-            case Device.NAME_M2:
-                return new Link[]{new LinkWifiDirect(Device.NAME_M1), new LinkBluetooth(Device.NAME_S21)};
-            case Device.NAME_S11:
-                return new Link[]{new LinkBluetooth(Device.NAME_S12), new LinkBluetooth(Device.NAME_M1)};
-            case Device.NAME_S12:
-                return new Link[]{new LinkBluetooth(Device.NAME_S11), new LinkBluetooth(Device.NAME_S13)};
-            case Device.NAME_S13:
-                return new Link[]{new LinkBluetooth(Device.NAME_M1), new LinkBluetooth(Device.NAME_S12)};
-            case Device.NAME_S21:
-                return new Link[]{new LinkBluetooth(Device.NAME_M2)};
-            case Device.NAME_PC1:
-                return new Link[]{new LinkWifiDirect(Device.NAME_M1)};
-            case Device.NAME_MULE:
-                return new Link[]{new LinkWifiDirect(Device.NAME_M1), new LinkWifiDirect(Device.NAME_ROUTER)};
-            case Device.NAME_PC2:
-                return new Link[]{new LinkWifiDirect(Device.NAME_ROUTER)};
-            case Device.NAME_ROUTER:
-                return new Link[]{new LinkWifiDirect(Device.NAME_MULE), new LinkWifiDirect(Device.NAME_PC2)};
+        String[] wifiDirectNeighbors = nist.p_70nanb17h188.demo.pscr19.logic.link.Constants.getWifiDirectNeighbors();
+        String[] bluetoothNeighbors = nist.p_70nanb17h188.demo.pscr19.logic.link.Constants.getBluetoothNeighbors();
+        Link[] ret = new Link[wifiDirectNeighbors.length + bluetoothNeighbors.length];
+        for (int i = 0; i < wifiDirectNeighbors.length; i++) {
+            ret[i] = new LinkWifiDirect(wifiDirectNeighbors[i]);
         }
-        return new Link[0];
+        for (int i = 0; i < bluetoothNeighbors.length; i++) {
+            ret[i + wifiDirectNeighbors.length] = new LinkBluetooth(bluetoothNeighbors[i]);
+        }
+        return ret;
     }
 
     static int getLinkTypeColorResource(Class<? extends Link> type) {

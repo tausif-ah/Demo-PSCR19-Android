@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import nist.p_70nanb17h188.demo.pscr19.logic.Device;
+import nist.p_70nanb17h188.demo.pscr19.logic.Helper;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 public class WifiLinkManager {
@@ -43,7 +44,7 @@ public class WifiLinkManager {
 
     /**
      * Broadcast intent action indicating that the discovery state of the device has changed.
-     * One extra EXTRA_IS_DISCOVERING (boolean) indicates if the discovery is working.
+     * One extra #EXTRA_IS_DISCOVERING (boolean) indicates if the discovery is working.
      * <p>
      * The value is also available with function isWifiDiscovering().
      */
@@ -63,7 +64,7 @@ public class WifiLinkManager {
     private static final String TAG = "WifiLinkManager";
     private static final int DEFAULT_DISCOVER_RETRY_DELAY_MS = 2000;
     private static final int DEFAULT_CREATE_GROUP_RETRY_DELAY_MS = 2000;
-    private static final int DEFAULT_DISCOVER_DURATION_MS = 60000;
+    private static final int DEFAULT_DISCOVER_DURATION_MS = 20000;
     private static WifiLinkManager DEFAULT_INSTANCE;
 
     private final Application application;
@@ -75,48 +76,73 @@ public class WifiLinkManager {
     private Date lastDiscoverTime = null;
     private WifiP2pDeviceList lastDiscoverList = null;
     private WifiP2pGroup lastGroupInfo = null;
+    private long lastDiscoverInitiateTime = 0;
+    private boolean lastDiscoverSucceed = false;
 
     private WifiLinkManager(@NonNull Application application) {
         this.application = application;
         Context context = application.getApplicationContext();
-        handler = new Handler(context.getMainLooper());
         wifiP2pManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
         channel = wifiP2pManager.initialize(context, context.getMainLooper(), () -> {
-            Toast.makeText(context, "Link disconnected!", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Wifi Direct channel disconnected!", Toast.LENGTH_LONG).show();
             Log.e(TAG, "Channel disconnected!");
         });
-        IntentFilter filter = new IntentFilter();
+
+        if (Constants.getWifiDirectNeighbors().length > 0) {
+            handler = new Handler(context.getMainLooper());
+            IntentFilter filter = new IntentFilter();
 //        filter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
-        filter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
-        filter.addAction(WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION);
-        filter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-        filter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-        context.registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action == null) return;
-                Log.d(TAG, "linkBroadcastReceiver.onReceive, action=%s", action);
-                switch (action) {
-                    case WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION:
-                        onPeersChanged(intent);
-                        break;
-                    case WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION:
-                        onDiscoverStatusChanged(intent);
-                        break;
-                    case WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION:
-                        onThisDeviceChanged(intent);
-                        break;
-                    case WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION:
-                        onConnectionChanged(intent);
-                        break;
+            filter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+            filter.addAction(WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION);
+            filter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+            filter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+            context.registerReceiver(new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    if (action == null) return;
+                    Log.d(TAG, "linkBroadcastReceiver.onReceive, action=%s", action);
+                    switch (action) {
+                        case WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION:
+                            onPeersChanged(intent);
+                            break;
+                        case WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION:
+                            onDiscoverStatusChanged(intent);
+                            break;
+                        case WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION:
+                            onThisDeviceChanged(intent);
+                            break;
+                        case WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION:
+                            onConnectionChanged(intent);
+                            break;
+                    }
                 }
-            }
-        }, filter);
-        Log.d(TAG, "Registered linkBroadcastReceiver");
-        setWifiDirectName();
-        createGroup();
-        discoverPeers(true);
+            }, filter);
+            Log.d(TAG, "Registered linkBroadcastReceiver");
+            setWifiDirectName();
+            createGroup();
+            scheduleDiscoverPeers();
+        } else {
+            String tmpName;
+            do {
+                tmpName = "Android_" + Helper.getRandomString(4, 4, Helper.CANDIDATE_CHARSET_LETTERS_NUMBERS);
+            } while (Device.isNameExists(tmpName));
+            final String newName = tmpName;
+            setWifiDirectName(wifiP2pManager, channel, newName, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    Log.d(TAG, "Changed name to: %s. Close the channel!", newName);
+                    channel.close();
+                }
+
+                @Override
+                public void onFailure(int reason) {
+                    Log.d(TAG, "Failed in changing name to: %s. Close the channel!", newName);
+                    channel.close();
+                }
+            });
+            handler = null;
+        }
     }
 
     static void init(@NonNull Application application) {
@@ -127,17 +153,6 @@ public class WifiLinkManager {
 
     public static WifiLinkManager getDefaultInstance() {
         return DEFAULT_INSTANCE;
-    }
-
-    private static void setWifiDirectName(@NonNull WifiP2pManager wifiP2pManager, WifiP2pManager.Channel channel, String name, WifiP2pManager.ActionListener listener) {
-        try {
-            Class[] paramTypes = new Class[]{WifiP2pManager.Channel.class, String.class, WifiP2pManager.ActionListener.class};
-            Method setDeviceName = WifiP2pManager.class.getMethod("setDeviceName", paramTypes);
-            Object[] argList = new Object[]{channel, name, listener};
-            setDeviceName.invoke(wifiP2pManager, argList);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            Log.e(TAG, e, "Fail to set WifiDirectName.\nmanager=%s\nchannel=%s\nname=%s\nlistener=%s", wifiP2pManager, channel, name, listener);
-        }
     }
 
     private static String getDeviceString(WifiP2pDevice device) {
@@ -162,6 +177,17 @@ public class WifiLinkManager {
         }
     }
 
+    private static void setWifiDirectName(@NonNull WifiP2pManager wifiP2pManager, WifiP2pManager.Channel channel, String name, WifiP2pManager.ActionListener listener) {
+        try {
+            Class[] paramTypes = new Class[]{WifiP2pManager.Channel.class, String.class, WifiP2pManager.ActionListener.class};
+            Method setDeviceName = WifiP2pManager.class.getMethod("setDeviceName", paramTypes);
+            Object[] argList = new Object[]{channel, name, listener};
+            setDeviceName.invoke(wifiP2pManager, argList);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            Log.e(TAG, e, "Fail to set Name.\nmanager=%s\nchannel=%s\nname=%s\nlistener=%s", wifiP2pManager, channel, name, listener);
+        }
+    }
+
     private void setWifiDirectName() {
         String name = Device.getName();
 
@@ -173,7 +199,7 @@ public class WifiLinkManager {
 
             @Override
             public void onFailure(int reason) {
-                Toast.makeText(application.getApplicationContext(), "Fail in changing name! reason=" + reason, Toast.LENGTH_LONG).show();
+                Toast.makeText(application.getApplicationContext(), "Fail in changing Wifi Direct name! reason=" + reason, Toast.LENGTH_LONG).show();
                 Log.e(TAG, "Failed in changing name! reason=%d", reason);
             }
         });
@@ -190,7 +216,7 @@ public class WifiLinkManager {
 
                 @Override
                 public void onFailure(int reason) {
-                    String msg = String.format(Locale.US, "Failed in creating group! reason=%d, retry in %dms", reason, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
+                    String msg = String.format(Locale.US, "Failed in creating Wifi Direct group! reason=%d, retry in %dms", reason, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
                     Toast.makeText(application.getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
                     Log.e(TAG, msg);
                     handler.postDelayed(WifiLinkManager.this::createGroup, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
@@ -200,24 +226,32 @@ public class WifiLinkManager {
         }
     }
 
-    private void discoverPeers(boolean scheduled) {
+    private void scheduleDiscoverPeers() {
+        long now = System.currentTimeMillis();
+        long nextDiscoverTime = lastDiscoverInitiateTime + (lastDiscoverSucceed ? DEFAULT_DISCOVER_DURATION_MS : DEFAULT_DISCOVER_RETRY_DELAY_MS);
+        if (nextDiscoverTime <= now) {
+            discoverPeers();
+        }
+        handler.postDelayed(this::scheduleDiscoverPeers, 500);
+    }
+
+    private void discoverPeers() {
+        lastDiscoverInitiateTime = System.currentTimeMillis();
 //        Log.v(TAG, "Start discovering peers!");
         wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                Log.i(TAG, "Initiated discovering peers!");
+                Log.i(TAG, "Initiated discovering peers! Schedule next discover in %dms", DEFAULT_DISCOVER_DURATION_MS);
+                lastDiscoverSucceed = true;
             }
 
             @Override
             public void onFailure(int reason) {
-                Toast.makeText(application.getApplicationContext(), "Failed in discovering peers! reason=" + reason + ", retry in " + DEFAULT_DISCOVER_RETRY_DELAY_MS + "ms", Toast.LENGTH_SHORT).show();
+                Toast.makeText(application.getApplicationContext(), "Failed in discovering Wifi Direct peers! reason=" + reason + ", retry in " + DEFAULT_DISCOVER_RETRY_DELAY_MS + "ms", Toast.LENGTH_SHORT).show();
                 Log.e(TAG, "Failed in discovering peers! reason=%d, retry in %dms", reason, DEFAULT_DISCOVER_RETRY_DELAY_MS);
-                handler.postDelayed(() -> discoverPeers(false), DEFAULT_DISCOVER_RETRY_DELAY_MS);
+                lastDiscoverSucceed = false;
             }
         });
-        if (scheduled) {
-            handler.postDelayed(() -> discoverPeers(true), DEFAULT_DISCOVER_DURATION_MS);
-        }
     }
 
     private void onThisDeviceChanged(@NonNull Intent intent) {
@@ -241,18 +275,18 @@ public class WifiLinkManager {
         int discoveryState = intent.getIntExtra(WifiP2pManager.EXTRA_DISCOVERY_STATE, 0);
         switch (discoveryState) {
             case WifiP2pManager.WIFI_P2P_DISCOVERY_STARTED:
-                Log.i(TAG, "Link discovery started!");
+                Log.i(TAG, "Discovery started!");
                 discovering = true;
                 application.getApplicationContext().sendBroadcast(new Intent(ACTION_WIFI_DISCOVERY_STATE_CHANGED).putExtra(EXTRA_IS_DISCOVERING, discovering));
                 break;
             case WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED:
-                Log.i(TAG, "Link discovery stopped!");
+                Log.i(TAG, "Discovery stopped!");
+                lastDiscoverSucceed = false;
                 discovering = false;
                 application.getApplicationContext().sendBroadcast(new Intent(ACTION_WIFI_DISCOVERY_STATE_CHANGED).putExtra(EXTRA_IS_DISCOVERING, discovering));
-                discoverPeers(false);
                 break;
             default:
-                Log.e(TAG, "Unknown link discovery state!");
+                Log.e(TAG, "Unknown discovery state!");
                 break;
         }
     }
@@ -306,7 +340,7 @@ public class WifiLinkManager {
 
     public void modifyConnection(WifiP2pDevice device) {
         if (device == null) {
-            Toast.makeText(application.getApplicationContext(), "Cannot connect to a device that is not discovered!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(application.getApplicationContext(), "Cannot connect to a Wifi Direct device that is not discovered!", Toast.LENGTH_SHORT).show();
             return;
         }
         // Since there is no way the group master could uninvite or disconnect (other than remove whole group)
@@ -321,7 +355,7 @@ public class WifiLinkManager {
                 if (lastDiscoverList != null) {
                     for (WifiP2pDevice d : lastDiscoverList.getDeviceList()) {
                         if (d.status == WifiP2pDevice.INVITED || d.status == WifiP2pDevice.CONNECTED) {
-                            Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Already connected or invited to another device: %s", getDeviceString(d)), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Already connected or invited to another Wifi Direct device: %s", getDeviceString(d)), Toast.LENGTH_SHORT).show();
                             return;
                         }
                     }
@@ -337,7 +371,7 @@ public class WifiLinkManager {
 
                     @Override
                     public void onFailure(int reason) {
-                        Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Failed in connecting to device: %s, reason=%d", getDeviceString(device), reason), Toast.LENGTH_LONG).show();
+                        Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Failed in connecting to Wifi Direct device: %s, reason=%d", getDeviceString(device), reason), Toast.LENGTH_LONG).show();
                         Log.e(TAG, "Failed in connecting to device: %s, reason=%d", getDeviceString(device), reason);
                     }
                 });
@@ -352,8 +386,8 @@ public class WifiLinkManager {
 
                     @Override
                     public void onFailure(int reason) {
-                        Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Failed in cancelling connection from device: %s, reason=%d", getDeviceString(device), reason), Toast.LENGTH_LONG).show();
-                        Log.e(TAG, "Failed in connecting to device: %s, reason=%d", getDeviceString(device), reason);
+                        Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Failed in cancelling Wifi Direct connection from device: %s, reason=%d", getDeviceString(device), reason), Toast.LENGTH_LONG).show();
+                        Log.e(TAG, "Failed in canclling connection from device: %s, reason=%d", getDeviceString(device), reason);
                     }
                 });
                 break;
@@ -370,15 +404,14 @@ public class WifiLinkManager {
                     public void onFailure(int reason) {
                         Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Failed in disconnecting from device: %s, reason=%d", getDeviceString(device), reason), Toast.LENGTH_LONG).show();
                         Log.e(TAG, "Failed in disconnecting from device: %s, reason=%d", getDeviceString(device), reason);
-
                     }
                 });
-                discoverPeers(false);
+                lastDiscoverSucceed = false;
                 break;
             case WifiP2pDevice.FAILED:
             case WifiP2pDevice.UNAVAILABLE:
             default:
-                Toast.makeText(application.getApplicationContext(), "Device not in connectable state: " + device.status, Toast.LENGTH_SHORT).show();
+                Toast.makeText(application.getApplicationContext(), "Wifi Direct device not in connectable state: " + device.status, Toast.LENGTH_SHORT).show();
                 break;
         }
     }
@@ -388,6 +421,10 @@ public class WifiLinkManager {
 
         void startGroupOwner() {
             TCPConnectionManager.getDefaultInstance().addServerSocketChannel(new InetSocketAddress(Constants.WIFI_DIRECT_SERVER_LISTEN_PORT), this);
+        }
+
+        void connectToGroupOwner(InetSocketAddress serverAddress) {
+
         }
 
         @Override
@@ -430,7 +467,7 @@ public class WifiLinkManager {
 
         @Override
         public void onSocketChannelNameReceived(@NonNull SocketChannel socketChannel, String name) {
-
+            // If it is my neighbor, connect
         }
 
         @Override
@@ -440,21 +477,14 @@ public class WifiLinkManager {
 
         @Override
         public void onSocketChannelClosed(@NonNull SocketChannel socketChannel) {
-            try {
-                Log.i(MY_TAG, "Closed a remote socket, remoteAddr=%s", TCPConnectionManager.getSocketChannelRemoteAddress(socketChannel));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
+            Log.i(MY_TAG, "Closed a remote socket socketChannel=%s", socketChannel);
+            // If I'm a client and I know who I am, and the user still wants to connect
+            // If I'm a group owner, clean the resource, and tell the the upper layer. Wait for the client to reconnect.
         }
 
         @Override
         public void onSocketChannelCloseFailed(@NonNull SocketChannel socketChannel) {
-            try {
-                Log.i(MY_TAG, "Failed in closing a remote socket, remoteAddr=%s", TCPConnectionManager.getSocketChannelRemoteAddress(socketChannel));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            Log.i(MY_TAG, "Failed in closing a remote socket, socketChannel=%s", socketChannel);
         }
     }
 

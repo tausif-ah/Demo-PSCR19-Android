@@ -214,10 +214,10 @@ public class Log {
     private void _addLog(@NonNull LogItem item) {
         synchronized (this) {
             boolean tagsChanged = false;
-            AtomicInteger count = tagCounts.get(item.getTag());
+            AtomicInteger count = tagCounts.get(item.tag);
             if (count == null) {
                 tagsChanged = true;
-                tagCounts.put(item.getTag(), count = new AtomicInteger());
+                tagCounts.put(item.tag, count = new AtomicInteger());
             }
             logs.add(0, item);
             count.incrementAndGet();
@@ -235,9 +235,9 @@ public class Log {
 
         for (int i = 0; i < toRemove; i++) {
             LogItem item = logs.remove(capacity);
-            AtomicInteger count = tagCounts.get(item.getTag());
+            AtomicInteger count = tagCounts.get(item.tag);
             if (count != null && count.decrementAndGet() == 0) {
-                tagCounts.remove(item.getTag());
+                tagCounts.remove(item.tag);
                 tagsChanged = true;
             }
         }
@@ -263,30 +263,22 @@ public class Log {
     public enum LogType {
         Verbose(2, "V"), Debug(3, "D"), Info(4, "I"), Warn(5, "W"), Error(6, "E");
 
-        private final int val;
-        private final String acry;
+        public final int val;
+        public final String acry;
 
         LogType(int val, String acry) {
             this.val = val;
             this.acry = acry;
         }
-
-        public int getVal() {
-            return val;
-        }
-
-        public String getAcry() {
-            return acry;
-        }
     }
 
     public static class LogItem {
         private static final AtomicLong GLOBAL_SERIAL = new AtomicLong(1);
-        private final long id;
-        private final Date time;
-        private final LogType type;
-        private final String tag;
-        private final String message;
+        public final long id;
+        public final Date time;
+        public final LogType type;
+        public final String tag;
+        public final String message;
 
         LogItem(LogType type, String tag, String message) {
             id = GLOBAL_SERIAL.getAndIncrement();
@@ -296,24 +288,9 @@ public class Log {
             this.message = message;
         }
 
-        public long getId() {
-            return id;
-        }
-
         public String getTimeString() {
             return DEFAULT_DATE_FORMAT.format(time);
         }
 
-        public LogType getType() {
-            return type;
-        }
-
-        public String getTag() {
-            return tag;
-        }
-
-        public String getMessage() {
-            return message;
-        }
     }
 }

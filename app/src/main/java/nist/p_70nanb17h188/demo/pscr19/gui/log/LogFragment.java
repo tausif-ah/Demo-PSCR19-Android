@@ -85,12 +85,68 @@ public class LogFragment extends Fragment {
         viewModel.criteria.removeObservers(this);
     }
 
+    @NonNull
+    private static SpannableStringBuilder getLogText(Log.LogItem item) {
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+        builder.append(String.format(Locale.US, "[ %s | %d ] %s/%s: ", item.getTimeString(), item.id, item.type.acry, item.tag));
+        int position = builder.length();
+        builder.setSpan(new StyleSpan(Typeface.BOLD), 0, position, 0);
+        builder.setSpan(DEFAULT_FIRST_LINE_MARGIN, 0, position, 0);
+        builder.append(item.message);
+        builder.setSpan(DEFAULT_REST_LINE_MARGIN, position, builder.length(), 0);
+        return builder;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        logIntentReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action == null) return;
+                switch (action) {
+                    case Log.ACTION_ITEMS_INSERTED: {
+                        int position = intent.getIntExtra(Log.EXTRA_POSITION_START, 0);
+                        int count = intent.getIntExtra(Log.EXTRA_ITEM_COUNT, 0);
+                        if (count == 0) return;
+                        listAdapter.notifyItemRangeInserted(position, count);
+                        if (isTopLog) {
+                            list.scrollToPosition(0);
+                        }
+                    }
+                    break;
+                    case Log.ACTION_ITEMS_REMOVED: {
+                        int position = intent.getIntExtra(Log.EXTRA_POSITION_START, 0);
+                        int count = intent.getIntExtra(Log.EXTRA_ITEM_COUNT, 0);
+                        if (count == 0) return;
+                        listAdapter.notifyItemRangeRemoved(position, count);
+                    }
+                    break;
+                    case Log.ACTION_TAGS_CHANGED:
+                        viewModel.updateTags();
+                        break;
+                }
+            }
+        };
+        assert getActivity() != null && getActivity().getApplicationContext() != null;
+        getActivity().getApplicationContext().registerReceiver(logIntentReceiver, logIntentFilter);
+
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        assert getActivity() != null && getActivity().getApplicationContext() != null;
+        getActivity().getApplicationContext().unregisterReceiver(logIntentReceiver);
+    }
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_log, container, false);
 
         Log.LogType[] logTypes = Log.LogType.values();
-        Arrays.sort(logTypes, 0, logTypes.length, (a, b) -> Integer.compare(a.getVal(), b.getVal()));
+        Arrays.sort(logTypes, 0, logTypes.length, (a, b) -> Integer.compare(a.val, b.val));
         ArrayAdapter<Log.LogType> logTypeArrayAdapter = new ArrayAdapter<>(view.getContext(), android.R.layout.simple_spinner_dropdown_item, logTypes);
         Spinner spinner_lvMin = view.findViewById(R.id.log_lvMin);
         spinner_lvMin.setAdapter(logTypeArrayAdapter);
@@ -184,62 +240,6 @@ public class LogFragment extends Fragment {
         return view;
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        logIntentReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action == null) return;
-                switch (action) {
-                    case Log.ACTION_ITEMS_INSERTED: {
-                        int position = intent.getIntExtra(Log.EXTRA_POSITION_START, 0);
-                        int count = intent.getIntExtra(Log.EXTRA_ITEM_COUNT, 0);
-                        if (count == 0) return;
-                        listAdapter.notifyItemRangeInserted(position, count);
-                        if (isTopLog) {
-                            list.scrollToPosition(0);
-                        }
-                    }
-                    break;
-                    case Log.ACTION_ITEMS_REMOVED: {
-                        int position = intent.getIntExtra(Log.EXTRA_POSITION_START, 0);
-                        int count = intent.getIntExtra(Log.EXTRA_ITEM_COUNT, 0);
-                        if (count == 0) return;
-                        listAdapter.notifyItemRangeRemoved(position, count);
-                    }
-                    break;
-                    case Log.ACTION_TAGS_CHANGED:
-                        viewModel.updateTags();
-                        break;
-                }
-            }
-        };
-        assert getActivity() != null && getActivity().getApplicationContext() != null;
-        getActivity().getApplicationContext().registerReceiver(logIntentReceiver, logIntentFilter);
-
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        assert getActivity() != null && getActivity().getApplicationContext() != null;
-        getActivity().getApplicationContext().unregisterReceiver(logIntentReceiver);
-    }
-
-    @NonNull
-    private static SpannableStringBuilder getLogText(Log.LogItem item) {
-        SpannableStringBuilder builder = new SpannableStringBuilder();
-        builder.append(String.format(Locale.US, "[ %s | %d ] %s/%s: ", item.getTimeString(), item.getId(), item.getType().getAcry(), item.getTag()));
-        int position = builder.length();
-        builder.setSpan(new StyleSpan(Typeface.BOLD), 0, position, 0);
-        builder.setSpan(DEFAULT_FIRST_LINE_MARGIN, 0, position, 0);
-        builder.append(item.getMessage());
-        builder.setSpan(DEFAULT_REST_LINE_MARGIN, position, builder.length(), 0);
-        return builder;
-    }
-
     private class LogViewHolder extends RecyclerView.ViewHolder {
         private TextView textView;
         private View itemView;
@@ -286,8 +286,8 @@ public class LogFragment extends Fragment {
         }
 
         boolean match(Log.LogItem item) {
-            boolean ret = selectedTag == null || item.getTag().equals(selectedTag);
-            ret = ret && item.getType().getVal() >= lvMin.getVal() && item.getType().getVal() <= lvMax.getVal();
+            boolean ret = selectedTag == null || item.tag.equals(selectedTag);
+            ret = ret && item.type.val >= lvMin.val && item.type.val <= lvMax.val;
             return ret;
         }
 
@@ -308,7 +308,7 @@ public class LogFragment extends Fragment {
             FilterCriteria original = criteria.getValue();
             assert original != null;
             if (original.lvMax == lvMax) return;
-            Log.LogType newMin = original.lvMin.getVal() > lvMax.getVal() ? lvMax : original.lvMin;
+            Log.LogType newMin = original.lvMin.val > lvMax.val ? lvMax : original.lvMin;
             criteria.postValue(new FilterCriteria(newMin, lvMax, original.selectedTag, original.tags));
         }
 
@@ -316,7 +316,7 @@ public class LogFragment extends Fragment {
             FilterCriteria original = criteria.getValue();
             assert original != null;
             if (original.lvMin == lvMin) return;
-            Log.LogType newMax = original.lvMax.getVal() < lvMin.getVal() ? lvMin : original.lvMax;
+            Log.LogType newMax = original.lvMax.val < lvMin.val ? lvMin : original.lvMax;
             criteria.postValue(new FilterCriteria(lvMin, newMax, original.selectedTag, original.tags));
         }
 

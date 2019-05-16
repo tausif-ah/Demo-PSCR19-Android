@@ -13,28 +13,32 @@ class LinkWifiDirect extends Link {
 
     private void updateLinkStatus() {
         if (deviceInDiscovery == null) {
-            status.postValue(LinkStatus.NotFound);
-            establishConnection.postValue(false);
+            status.setValue(LinkStatus.NotFound);
+            establishConnection.setValue(false);
         } else {
             switch (deviceInDiscovery.status) {
                 case WifiP2pDevice.AVAILABLE:
-                    status.postValue(LinkStatus.NotConnected);
-                    establishConnection.postValue(false);
+//                    Log.d("LinkFragment", "updateWifiDeviceList, state=available, name=%s", deviceInDiscovery.deviceName);
+                    status.setValue(LinkStatus.NotConnected);
+                    establishConnection.setValue(false);
                     break;
                 case WifiP2pDevice.INVITED:
-                    status.postValue(LinkStatus.Invited);
-                    establishConnection.postValue(true);
+//                    Log.d("LinkFragment", "updateWifiDeviceList, state=invited, name=%s", deviceInDiscovery.deviceName);
+                    status.setValue(LinkStatus.Invited);
+                    establishConnection.setValue(true);
                     break;
                 case WifiP2pDevice.CONNECTED:
                     //check if tcp established
-                    status.postValue(LinkStatus.Connected);
-                    establishConnection.postValue(true);
+//                    Log.d("LinkFragment", "updateWifiDeviceList, state=connected, name=%s", deviceInDiscovery.deviceName);
+                    status.setValue(LinkStatus.Connected);
+                    establishConnection.setValue(true);
                     break;
 //                case WifiP2pDevice.UNAVAILABLE:
 //                case WifiP2pDevice.FAILED:
                 default:
-                    status.postValue(LinkStatus.NotFound);
-                    establishConnection.postValue(false);
+//                    Log.d("LinkFragment", "updateWifiDeviceList, state=unknown, name=%s", deviceInDiscovery.deviceName);
+                    status.setValue(LinkStatus.NotFound);
+                    establishConnection.setValue(false);
                     break;
 
             }
