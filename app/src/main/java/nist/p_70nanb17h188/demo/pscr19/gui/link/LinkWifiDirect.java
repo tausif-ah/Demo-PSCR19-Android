@@ -3,6 +3,7 @@ package nist.p_70nanb17h188.demo.pscr19.gui.link;
 import android.net.wifi.p2p.WifiP2pDevice;
 
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
+//import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 class LinkWifiDirect extends Link {
     private WifiP2pDevice deviceInDiscovery;
@@ -12,6 +13,12 @@ class LinkWifiDirect extends Link {
     }
 
     private void updateLinkStatus() {
+        if (isTcpConnected()) {
+            status.setValue(LinkStatus.TCPEstablished);
+            establishConnection.setValue(true);
+//            Log.d("LinkWifiDirect", "updateWifiDeviceList, state=%s, name=%s", status.getValue(), name);
+            return;
+        }
         if (deviceInDiscovery == null) {
             status.setValue(LinkStatus.NotFound);
             establishConnection.setValue(false);
@@ -28,7 +35,6 @@ class LinkWifiDirect extends Link {
                     establishConnection.setValue(true);
                     break;
                 case WifiP2pDevice.CONNECTED:
-                    //check if tcp established
 //                    Log.d("LinkFragment", "updateWifiDeviceList, state=connected, name=%s", deviceInDiscovery.deviceName);
                     status.setValue(LinkStatus.Connected);
                     establishConnection.setValue(true);
@@ -47,6 +53,13 @@ class LinkWifiDirect extends Link {
 
     void setDeviceInDiscovery(WifiP2pDevice deviceInDiscovery) {
         this.deviceInDiscovery = deviceInDiscovery;
+        updateLinkStatus();
+    }
+
+    @Override
+    void setTCPConnected(boolean tcpConnected) {
+        super.setTCPConnected(tcpConnected);
+//        Log.d("LinkWifiDirect", "setTCPConnected, connected=%s, %s, name=%s", tcpConnected, isTcpConnected(), name);
         updateLinkStatus();
     }
 

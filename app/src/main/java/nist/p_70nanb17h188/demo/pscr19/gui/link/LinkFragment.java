@@ -38,13 +38,17 @@ import java.util.Locale;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
+//import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class LinkFragment extends Fragment {
-    //        public static final String TAG = "LinkFragment";
+    // public static final String TAG = "LinkFragment";
     private static final SimpleDateFormat DEFAULT_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US);
     private static final String DATE_STRING_ON_NULL = "--:--:--.---";
     private LinkFragmentViewModel viewModel;
@@ -153,6 +157,7 @@ public class LinkFragment extends Fragment {
                 filter.addAction(WifiLinkManager.ACTION_WIFI_GROUP_CHANGED);
                 filter.addAction(WifiLinkManager.ACTION_WIFI_DISCOVERY_STATE_CHANGED);
                 filter.addAction(WifiLinkManager.ACTION_WIFI_LIST_CHANGED);
+                filter.addAction(LinkLayer.ACTION_LINK_CHANGED);
 
                 context.registerReceiver(receiver = new BroadcastReceiver() {
                     @Override
@@ -169,6 +174,19 @@ public class LinkFragment extends Fragment {
                             case WifiLinkManager.ACTION_WIFI_LIST_CHANGED:
                                 wifiDiscoverUpdateTime.postValue((Date) intent.getSerializableExtra(WifiLinkManager.EXTRA_TIME));
                                 updateWifiDeviceList(intent.getParcelableExtra(WifiLinkManager.EXTRA_DEVICE_LIST));
+                                break;
+                            case LinkLayer.ACTION_LINK_CHANGED:
+                                NeighborID neighborID = intent.getParcelableExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
+                                String name = neighborID.getName();
+                                boolean connected = intent.getBooleanExtra(LinkLayer.EXTRA_CONNECTED, false);
+//                                Log.d(TAG, "received ACTION_TCP_CONNECTION_CHANGED %s tcp %s", name, connected ? "CONNECTED" : "DISCONNECTED");
+                                for (Link l : links) {
+                                    if (l instanceof LinkWifiDirect && l.name.equals(name)) {
+//                                        Log.d(TAG, "received ACTION_TCP_CONNECTION_CHANGED %s tcp %s, l=%s", name, connected ? "CONNECTED" : "DISCONNECTED", l);
+                                        l.setTCPConnected(connected);
+
+                                    }
+                                }
                                 break;
                         }
                     }
@@ -195,12 +213,23 @@ public class LinkFragment extends Fragment {
                 wifiDiscoverUpdateTime.postValue(wifiLinkManager.getLastDiscoverTime());
                 wifiGroupInfo.postValue(wifiLinkManager.getLastGroupInfo());
                 updateWifiDeviceList(wifiLinkManager.getLastDiscoverList());
+                updateTCPConnectionList();
             }
 
             //if bluetoothLinkManager != null
             {
                 bluetoothDiscovering.postValue(false);
                 bluetoothUpdateTime.postValue(null);
+            }
+        }
+
+        private void updateTCPConnectionList() {
+            WifiTCPConnectionManager wifiTCPConnectionManager = WifiTCPConnectionManager.getDefaultInstance();
+            if (wifiTCPConnectionManager != null) {
+                for (Link l : links) {
+                    if (l instanceof LinkWifiDirect)
+                        l.setTCPConnected(wifiTCPConnectionManager.isDeviceTCPConnected(l.name));
+                }
             }
         }
 
@@ -238,7 +267,7 @@ public class LinkFragment extends Fragment {
         private final Observer<Link.LinkStatus> linkStatusObserver = new Observer<Link.LinkStatus>() {
             @Override
             public void onChanged(@Nullable Link.LinkStatus linkStatus) {
-//                Log.d(TAG, "updateWifiDeviceList, name=%s, linkStatus=%s", instance.name, linkStatus);
+//                Log.d(TAG, "updateWifiDevice, name=%s, linkStatus=%s", instance.name, linkStatus);
                 imgStatus.setImageResource(Constants.getLinkStatusImageResource(linkStatus));
             }
         };

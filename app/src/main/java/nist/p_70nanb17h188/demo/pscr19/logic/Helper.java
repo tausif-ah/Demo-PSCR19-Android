@@ -1,6 +1,7 @@
 package nist.p_70nanb17h188.demo.pscr19.logic;
 
 import android.os.Build;
+import android.support.annotation.NonNull;
 
 import java.io.PrintStream;
 import java.util.Random;
@@ -34,7 +35,8 @@ public class Helper {
         }
     }
 
-    public static String getRandomString(int lengthMin, int lengthMax, String candidateCharSet) {
+    @NonNull
+    public static String getRandomString(int lengthMin, int lengthMax, @NonNull String candidateCharSet) {
         if (lengthMin <= 0 || lengthMax < lengthMin)
             throw new IllegalArgumentException("lengthMin and lengthMax should be > 0 and lengthMax should > lengthMin");
 

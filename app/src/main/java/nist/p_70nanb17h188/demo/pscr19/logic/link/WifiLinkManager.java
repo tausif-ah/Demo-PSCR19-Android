@@ -16,12 +16,8 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.widget.Toast;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.InetSocketAddress;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 import java.util.Date;
 import java.util.Locale;
 
@@ -61,6 +57,7 @@ public class WifiLinkManager {
     public static final String ACTION_WIFI_LIST_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager.listChanged";
     public static final String EXTRA_DEVICE_LIST = "deviceList";
 
+
     private static final String TAG = "WifiLinkManager";
     private static final int DEFAULT_DISCOVER_RETRY_DELAY_MS = 2000;
     private static final int DEFAULT_CREATE_GROUP_RETRY_DELAY_MS = 2000;
@@ -71,7 +68,6 @@ public class WifiLinkManager {
     private final WifiP2pManager wifiP2pManager;
     private final WifiP2pManager.Channel channel;
     private final Handler handler;
-    private final WifiTCPConnectionManager wifiTCPConnectionManager = new WifiTCPConnectionManager();
     private boolean discovering = false;
     private Date lastDiscoverTime = null;
     private WifiP2pDeviceList lastDiscoverList = null;
@@ -89,7 +85,7 @@ public class WifiLinkManager {
         });
 
         if (Constants.getWifiDirectNeighbors().length > 0) {
-            handler = new Handler(context.getMainLooper());
+            handler = new Handler(application.getMainLooper());
             IntentFilter filter = new IntentFilter();
 //        filter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
             filter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
@@ -211,7 +207,6 @@ public class WifiLinkManager {
                 @Override
                 public void onSuccess() {
                     Log.i(TAG, "Succeeded in creating group!");
-                    wifiTCPConnectionManager.startGroupOwner();
                 }
 
                 @Override
@@ -413,78 +408,6 @@ public class WifiLinkManager {
             default:
                 Toast.makeText(application.getApplicationContext(), "Wifi Direct device not in connectable state: " + device.status, Toast.LENGTH_SHORT).show();
                 break;
-        }
-    }
-
-    private static class WifiTCPConnectionManager implements TCPConnectionManager.ServerSocketChannelEventHandler, TCPConnectionManager.SocketChannelEventHandler {
-        private static final String MY_TAG = "WifiTCPConnectionManager";
-
-        void startGroupOwner() {
-            TCPConnectionManager.getDefaultInstance().addServerSocketChannel(new InetSocketAddress(Constants.WIFI_DIRECT_SERVER_LISTEN_PORT), this);
-        }
-
-        void connectToGroupOwner(InetSocketAddress serverAddress) {
-
-        }
-
-        @Override
-        public void onServerSocketChannelClosed(ServerSocketChannel serverSocketChannel) {
-
-        }
-
-        @Override
-        public void onServerSocketChannelCloseFailed(ServerSocketChannel serverSocketChannel) {
-
-        }
-
-        @Override
-        public void onServerSocketChannelAcceptFailed(ServerSocketChannel serverSocketChannel) {
-
-        }
-
-        @Override
-        public TCPConnectionManager.SocketChannelEventHandler getSocketChannelEventHandler() {
-            return this;
-        }
-
-        @Override
-        public void onSocketConnected(@NonNull SocketChannel socketChannel) {
-            try {
-                Log.i(MY_TAG, "Connected to a socket, remoteAddr=%s", TCPConnectionManager.getSocketChannelRemoteAddress(socketChannel));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void onSocketConnectFailed(@NonNull SocketChannel socketChannel) {
-            try {
-                Log.i(MY_TAG, "Failed in connecting to a socket, remoteAddr=%s", TCPConnectionManager.getSocketChannelRemoteAddress(socketChannel));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void onSocketChannelNameReceived(@NonNull SocketChannel socketChannel, String name) {
-            // If it is my neighbor, connect
-        }
-
-        @Override
-        public void onSocketChannelDataReceived(@NonNull SocketChannel socketChannel, byte[] data) {
-
-        }
-
-        @Override
-        public void onSocketChannelClosed(@NonNull SocketChannel socketChannel) {
-            Log.i(MY_TAG, "Closed a remote socket socketChannel=%s", socketChannel);
-            // If I'm a client and I know who I am, and the user still wants to connect
-            // If I'm a group owner, clean the resource, and tell the the upper layer. Wait for the client to reconnect.
-        }
-
-        @Override
-        public void onSocketChannelCloseFailed(@NonNull SocketChannel socketChannel) {
-            Log.i(MY_TAG, "Failed in closing a remote socket, socketChannel=%s", socketChannel);
         }
     }
 

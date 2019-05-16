@@ -11,21 +11,28 @@ import android.support.annotation.NonNull;
 public class NeighborID implements Parcelable {
 
     @NonNull
-    private final String id;
+    private final String name;
 
-    public NeighborID(@NonNull String id) {
-        this.id = id;
+    NeighborID(@NonNull String name) {
+        this.name = name;
+    }
+
+    private NeighborID(@NonNull Parcel in) {
+        String tmp = in.readString();
+        if (tmp == null)
+            throw new IllegalArgumentException("Failed in reading NeighborID from parcel!");
+        name = tmp;
     }
 
     @NonNull
-    public String getId() {
-        return id;
+    public String getName() {
+        return name;
     }
 
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 53 * hash + this.id.hashCode();
+        hash = 53 * hash + this.name.hashCode();
         return hash;
     }
 
@@ -41,13 +48,7 @@ public class NeighborID implements Parcelable {
             return false;
         }
         final NeighborID other = (NeighborID) obj;
-        return this.id.equals(other.id);
-    }
-
-    @NonNull
-    @Override
-    public String toString() {
-        return String.format("Neighbor{%s}", id);
+        return this.name.equals(other.name);
     }
 
     public static final Creator<NeighborID> CREATOR = new Creator<NeighborID>() {
@@ -64,16 +65,15 @@ public class NeighborID implements Parcelable {
         }
     };
 
-    private NeighborID(@NonNull Parcel in) {
-        String tmp = in.readString();
-        if (tmp == null)
-            throw new IllegalArgumentException("Failed in reading NeighborID from parcel!");
-        id = tmp;
+    @NonNull
+    @Override
+    public String toString() {
+        return String.format("Neighbor{%s}", name);
     }
 
     @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(id);
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
+        dest.writeString(name);
     }
 
     @Override
