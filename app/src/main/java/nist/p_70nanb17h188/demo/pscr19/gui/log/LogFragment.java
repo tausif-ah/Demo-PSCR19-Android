@@ -151,7 +151,7 @@ public class LogFragment extends Fragment {
         viewModel.cache.addOnListChangedCallback(onListChangedCallback = new ObservableList.OnListChangedCallback() {
             @Override
             public void onChanged(ObservableList sender) {
-                listAdapter.notifyItemRangeChanged(0, listAdapter.getItemCount());
+                listAdapter.notifyDataSetChanged();
             }
 
             @Override
@@ -169,7 +169,7 @@ public class LogFragment extends Fragment {
 
             @Override
             public void onItemRangeMoved(ObservableList sender, int fromPosition, int toPosition, int itemCount) {
-                listAdapter.notifyItemRangeChanged(0, listAdapter.getItemCount());
+                listAdapter.notifyDataSetChanged();
             }
 
             @Override
@@ -208,8 +208,8 @@ public class LogFragment extends Fragment {
 
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
+    public void onDestroy() {
+        super.onDestroy();
         viewModel.criteria.removeObservers(this);
         viewModel.cache.removeOnListChangedCallback(onListChangedCallback);
     }

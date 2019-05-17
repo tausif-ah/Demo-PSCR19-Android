@@ -16,7 +16,7 @@ public class LinkLayer {
     /**
      * Broadcast intent action indicating that a piece of data is received.
      * One extra EXTRA_NEIGHBOR_ID (nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID) indicates the ID of the neighbor that sent the data.
-     * Another extra EXTRA_DATA (boolean) contains the data sent.
+     * Another extra EXTRA_DATA (byte[]) contains the data sent.
      */
     public static final String ACTION_DATA_RECEIVED = "nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer.dataReceived";
 

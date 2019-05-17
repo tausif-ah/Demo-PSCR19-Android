@@ -17,6 +17,7 @@ import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.logic.Device;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
+import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 
 public class LauncherActivity extends AppCompatActivity {
     private static final String[] REQUIRED_PERMISSIONS = {
@@ -54,6 +55,7 @@ public class LauncherActivity extends AppCompatActivity {
 
             Device.setName((String) parent.getItemAtPosition(position));
             LinkLayer.init(getApplication());
+            NetLayer.init(getApplication());
 
             startActivity(new Intent(this, MainActivity.class));
             finish();

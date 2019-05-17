@@ -11,7 +11,7 @@ import android.support.annotation.NonNull;
 public class NeighborID implements Parcelable {
 
     @NonNull
-    private final String name;
+    public final String name;
 
     NeighborID(@NonNull String name) {
         this.name = name;
@@ -19,14 +19,8 @@ public class NeighborID implements Parcelable {
 
     private NeighborID(@NonNull Parcel in) {
         String tmp = in.readString();
-        if (tmp == null)
-            throw new IllegalArgumentException("Failed in reading NeighborID from parcel!");
+        assert tmp != null;
         name = tmp;
-    }
-
-    @NonNull
-    public String getName() {
-        return name;
     }
 
     @Override

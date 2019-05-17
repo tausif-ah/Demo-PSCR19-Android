@@ -176,17 +176,18 @@ class TCPConnectionManager {
         innerCloseSocketChannel(key, socketChannelBufferHandler);
     }
 
-    void writeToSocket(@NonNull SocketChannel socketChannel, @NonNull byte[] data) {
+    boolean writeToSocket(@NonNull SocketChannel socketChannel, @NonNull byte[] data) {
         SelectionKey key = socketChannel.keyFor(selector);
         // did not add to selector, not my responsibility
         if (key == null) {
             Log.e(TAG, "Cannot fine key for SocketChannel (%s), not registered!", socketChannel);
-            return;
+            return false;
         }
         SocketChannelBufferHandler socketChannelBufferHandler = (SocketChannelBufferHandler) key.attachment();
         socketChannelBufferHandler.writeData(data);
         key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
         selector.wakeup();
+        return true;
     }
 
     private void mainLoop() {

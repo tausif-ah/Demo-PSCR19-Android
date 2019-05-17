@@ -16,6 +16,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
+import java.util.Locale;
 
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
@@ -53,9 +54,16 @@ public abstract class WifiTCPConnectionManager {
         return DEFAULT_INSTANCE;
     }
 
+    static void checkValidSendDataParams(@NonNull byte[] data, int start, int len) {
+        if (len < 0 || start + len > data.length)
+            throw new IllegalArgumentException(String.format(Locale.US, "wrong start(%d) or len(%d) value, data.length=%d", start, len, data.length));
+    }
+
     public abstract boolean isDeviceTCPConnected(@NonNull String name);
 
     public abstract void modifyConnection(@NonNull String name, boolean establish);
+
+    public abstract boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len);
 
 }
 
@@ -67,6 +75,12 @@ class WifiTCPConnectionManagerDoNothing extends WifiTCPConnectionManager {
     @Override
     public void modifyConnection(@NonNull String name, boolean establish) {
 
+    }
+
+    @Override
+    public boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
+        checkValidSendDataParams(data, start, len);
+        return false;
     }
 
     @Override
@@ -105,6 +119,16 @@ class WifiTCPConnectionManagerGroupOwner extends WifiTCPConnectionManager implem
     @Override
     public void modifyConnection(@NonNull String name, boolean establish) {
         // Do nothing. The Link manager will till the user that we shouldn't do it on the group owner side.
+    }
+
+    @Override
+    public boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
+        checkValidSendDataParams(data, start, len);
+        SocketChannel socketChannel = connectedNeighbors.get(id.name);
+        if (socketChannel == null) return false;
+        byte[] buf = new byte[len];
+        if (len > 0) System.arraycopy(data, start, buf, 0, len);
+        return TCPConnectionManager.getDefaultInstance().writeToSocket(socketChannel, buf);
     }
 
     @Override
@@ -175,7 +199,10 @@ class WifiTCPConnectionManagerGroupOwner extends WifiTCPConnectionManager implem
 
     @Override
     public void onSocketChannelDataReceived(@NonNull SocketChannel socketChannel, @NonNull byte[] data) {
-
+        String name = connectedNeighborsReverse.get(socketChannel);
+        // from a neighbor that does not exist? how can that be?
+        if (name == null) return;
+        application.getApplicationContext().sendBroadcast(new Intent(LinkLayer.ACTION_DATA_RECEIVED).putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).putExtra(LinkLayer.EXTRA_DATA, data));
     }
 
     @Override
@@ -183,8 +210,7 @@ class WifiTCPConnectionManagerGroupOwner extends WifiTCPConnectionManager implem
         String name;
         synchronized (connectedNeighbors) {
             name = connectedNeighborsReverse.remove(socketChannel);
-            if (name != null)
-                connectedNeighbors.remove(name);
+            if (name != null) connectedNeighbors.remove(name);
         }
         if (name != null) {
             Log.i(TAG, "Closed a remote socket socketChannel=%s, original remote device: %s", socketChannel, name);
@@ -280,6 +306,18 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
     }
 
     @Override
+    public boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
+        checkValidSendDataParams(data, start, len);
+        synchronized (this) {
+            if (!id.name.equals(connectedName)) return false;
+            assert currentSocket != null;
+            byte[] buf = new byte[len];
+            if (len > 0) System.arraycopy(data, start, buf, 0, len);
+            return TCPConnectionManager.getDefaultInstance().writeToSocket(currentSocket, buf);
+        }
+    }
+
+    @Override
     public void onSocketConnected(@NonNull SocketChannel socketChannel) {
         // do nothing, wait for the other side to give me the name.
         Log.v(TAG, "Socket connected: %s", socketChannel);
@@ -350,6 +388,9 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
 
     @Override
     public void onSocketChannelDataReceived(@NonNull SocketChannel socketChannel, @NonNull byte[] data) {
+        // from a neighbor that does not exist? how can that be?
+        if (connectedName == null) return;
+        application.getApplicationContext().sendBroadcast(new Intent(LinkLayer.ACTION_DATA_RECEIVED).putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(connectedName)).putExtra(LinkLayer.EXTRA_DATA, data));
 
     }
 

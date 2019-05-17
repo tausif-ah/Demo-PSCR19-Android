@@ -20,9 +20,11 @@ final class LinkLayer_Impl {
         Log.d("LinkLayer_Impl", "%s initialized", Device.getName());
     }
 
-    public boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
-        // Do not forget to flush stream after each send, when in TCP
-        return false;
+    boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
+        // prefer Wifi over Bluetooth
+        WifiTCPConnectionManager manager = WifiTCPConnectionManager.getDefaultInstance();
+        if (manager == null) return false;
+        return manager.sendData(id, data, start, len);
     }
 
 }

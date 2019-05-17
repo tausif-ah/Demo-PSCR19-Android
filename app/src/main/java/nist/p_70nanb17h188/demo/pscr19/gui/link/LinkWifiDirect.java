@@ -3,6 +3,7 @@ package nist.p_70nanb17h188.demo.pscr19.gui.link;
 import android.net.wifi.p2p.WifiP2pDevice;
 
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
 //import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 class LinkWifiDirect extends Link {
@@ -65,6 +66,13 @@ class LinkWifiDirect extends Link {
 
     @Override
     void onEstablishConnectionClick() {
+        if (deviceInDiscovery != null) {
+            WifiTCPConnectionManager wifiTCPConnectionManager = WifiTCPConnectionManager.getDefaultInstance();
+            if (wifiTCPConnectionManager == null) return;
+            Boolean establishConnectionInverse = establishConnection.getValue();
+            assert establishConnectionInverse != null;
+            wifiTCPConnectionManager.modifyConnection(deviceInDiscovery.deviceName, !establishConnectionInverse);
+        }
         WifiLinkManager.getDefaultInstance().modifyConnection(deviceInDiscovery);
     }
 }

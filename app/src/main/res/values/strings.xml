@@ -36,4 +36,8 @@
     <string name="link_confusing_characters">[Il10O]</string>
     <string name="link_invited">Inv-\nited</string>
     <string name="link_btn_connect">Click to connect to/disconnect from a device.</string>
+
+    <string name="name_tab_namespace">Namespace</string>
+    <string name="name_tab_pubsub">Pub/Sub</string>
+    <string name="name_tab_routing">Routing</string>
 </resources>

@@ -20,7 +20,7 @@ import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.link.LinkFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.log.LogFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.messaging.MessagingFragment;
-import nist.p_70nanb17h188.demo.pscr19.gui.naming.NamingFragment;
+import nist.p_70nanb17h188.demo.pscr19.gui.net.NamingFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.work_offload.WorkOffloadFragment;
 import nist.p_70nanb17h188.demo.pscr19.logic.Device;
 

@@ -94,7 +94,7 @@ public class LinkFragment extends Fragment {
     }
 
     @Override
-    public void onDestroyView() {
+    public void onDestroy() {
         viewModel.wifiGroupInfo.removeObservers(this);
         viewModel.strWifiDiscoverUpdateTime.removeObservers(this);
         viewModel.strBluetoothUpdateTime.removeObservers(this);
@@ -104,7 +104,7 @@ public class LinkFragment extends Fragment {
             l.getStatus().removeObservers(this);
             l.getEstablishConnection().removeObservers(this);
         }
-        super.onDestroyView();
+        super.onDestroy();
     }
 
     private class LinkViewHolder extends RecyclerView.ViewHolder {

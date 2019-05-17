@@ -65,7 +65,7 @@ class LinkFragmentViewModel extends ViewModel {
                 break;
             case LinkLayer.ACTION_LINK_CHANGED:
                 NeighborID neighborID = intent.getParcelableExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
-                String name = neighborID.getName();
+                String name = neighborID.name;
                 boolean connected = intent.getBooleanExtra(LinkLayer.EXTRA_CONNECTED, false);
                 // Log.d(TAG, "received ACTION_TCP_CONNECTION_CHANGED %s tcp %s", name, connected ? "CONNECTED" : "DISCONNECTED");
                 for (Link l : links) {

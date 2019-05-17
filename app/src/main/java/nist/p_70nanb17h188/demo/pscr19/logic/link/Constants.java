@@ -36,7 +36,7 @@ public class Constants {
     private Constants() {
     }
 
-    public static boolean isWifiDirectGroupOwner() {
+    static boolean isWifiDirectGroupOwner() {
         return WIFI_DIRECT_GROUP_OWNERS.contains(Device.getName());
     }
 
@@ -57,6 +57,11 @@ public class Constants {
             default:
                 return new String[0];
         }
+    }
+
+    @NonNull
+    public static NeighborID getNeighborID(String name) {
+        return new NeighborID(name);
     }
 
 

@@ -19,6 +19,5 @@
 
     <style name="Theme.MySwitchTheme" parent="ThemeOverlay.AppCompat.Dark">
         <item name="colorControlActivated">@color/colorPrimary</item>
-
     </style>
 </resources>
