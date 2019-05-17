@@ -68,7 +68,7 @@ public class NetLayer_Impl {
         NeighborID neighborID = intent.getParcelableExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
         byte[] data = intent.getByteArrayExtra(LinkLayer.EXTRA_DATA);
         String str = new String(data);
-        if (data.length < 40) {
+        if (data.length <= 40) {
             Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Got from %s, text=%s, buf_size=%d", neighborID.name, str, data.length), Toast.LENGTH_LONG).show();
         } else {
             Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Got from %s, text_len=%d, buf_size=%d", neighborID.name, str.length(), data.length), Toast.LENGTH_LONG).show();

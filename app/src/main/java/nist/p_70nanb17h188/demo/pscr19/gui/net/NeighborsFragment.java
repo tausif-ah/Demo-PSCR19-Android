@@ -117,11 +117,11 @@ public class NeighborsFragment extends Fragment {
                     inputSize.setText("4000");
                     return;
                 }
-                String str = Helper.getRandomString(size, size, Helper.CANDIDATE_CHARSET_LETTERS_NUMBERS);
+                String str = size == 0 ? "" : Helper.getRandomString(size, size, Helper.CANDIDATE_CHARSET_LETTERS_NUMBERS);
                 byte[] buf = str.getBytes();
                 boolean succeed = LinkLayer.sendData(currentNeighborID, buf, 0, buf.length);
                 String result = succeed ? "succeeded" : "failed";
-                if (str.length() < 40) {
+                if (str.length() <= 40) {
                     Toast.makeText(view.getContext(), String.format(Locale.US, "Send to %s, text=%s, buf_len=%d, %s!", currentNeighborID.name, str, buf.length, result), Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(view.getContext(), String.format(Locale.US, "Send to %s, text_len=%d, buf_len=%d, %s!", currentNeighborID.name, str.length(), buf.length, result), Toast.LENGTH_LONG).show();
