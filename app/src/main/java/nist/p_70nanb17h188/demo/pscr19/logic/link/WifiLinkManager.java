@@ -27,8 +27,6 @@ import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 public class WifiLinkManager {
 
-    public static final String EXTRA_TIME = "time";
-
     /**
      * Broadcast intent action indicating that the group status of the current device has changed.
      * One extra EXTRA_GROUP_INFO (java.lang.String) indicates group info, which should contain the group owner and client list..
@@ -56,6 +54,8 @@ public class WifiLinkManager {
      */
     public static final String ACTION_WIFI_LIST_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager.listChanged";
     public static final String EXTRA_DEVICE_LIST = "deviceList";
+    public static final String EXTRA_TIME = "time";
+
 
 
     private static final String TAG = "WifiLinkManager";

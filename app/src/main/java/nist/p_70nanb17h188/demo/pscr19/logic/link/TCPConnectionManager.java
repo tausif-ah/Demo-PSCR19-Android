@@ -15,6 +15,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -23,6 +24,8 @@ import nist.p_70nanb17h188.demo.pscr19.logic.Helper;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 class TCPConnectionManager {
+    private final ArrayList<PendingSocketChannel> toConnects = new ArrayList<>();
+
 
     private static final String TAG = "TCPConnectionManager";
     private static final int DEFAULT_READ_BUFFER_SIZE = 8192;
@@ -34,6 +37,32 @@ class TCPConnectionManager {
     @NonNull
     private final Selector selector;
     private final ByteBuffer readBuffer = ByteBuffer.allocate(DEFAULT_READ_BUFFER_SIZE);
+
+    /**
+     * Create a connection to a remote address.
+     *
+     * @param remoteAddress             The remote address to connect to.
+     * @param socketChannelEventHandler The handler that deals with events
+     *                                  related to the socket.
+     * @return The created SocketChannel. Null on failure.
+     */
+    @Nullable
+    SocketChannel addSocketChannel(@NonNull InetSocketAddress remoteAddress, @Nullable SocketChannelEventHandler socketChannelEventHandler) {
+        try {
+            SocketChannel socketChannel = SocketChannel.open();
+            socketChannel.configureBlocking(false);
+            setSocketChannelOptions(socketChannel);
+            selector.wakeup();
+            socketChannel.register(selector, SelectionKey.OP_CONNECT, new SocketChannelBufferHandler(socketChannel, socketChannelEventHandler));
+            synchronized (toConnects) {
+                toConnects.add(new PendingSocketChannel(socketChannel, remoteAddress));
+            }
+            return socketChannel;
+        } catch (IOException e) {
+            Log.e(TAG, e, "Failed in adding Socket Channel!");
+            return null;
+        }
+    }
 
     private TCPConnectionManager() throws IOException {
         selector = SelectorProvider.provider().openSelector();
@@ -134,31 +163,65 @@ class TCPConnectionManager {
         }
     }
 
-    /**
-     * Create a connection to a remote address.
-     *
-     * @param remoteAddress             The remote address to connect to.
-     * @param socketChannelEventHandler The handler that deals with events
-     *                                  related to the socket.
-     * @return The created SocketChannel. Null on failure.
-     */
-    @Nullable
-    SocketChannel addSocketChannel(@NonNull InetSocketAddress remoteAddress, @Nullable SocketChannelEventHandler socketChannelEventHandler) {
-        SelectionKey key = null;
-        try {
-            SocketChannel socketChannel = SocketChannel.open();
-            socketChannel.configureBlocking(false);
-            setSocketChannelOptions(socketChannel);
-            selector.wakeup();
-            key = socketChannel.register(selector, SelectionKey.OP_CONNECT, new SocketChannelBufferHandler(socketChannel, socketChannelEventHandler));
-            socketChannel.connect(remoteAddress);
-            return socketChannel;
-        } catch (IOException e) {
-            if (key != null) {
-                key.cancel();
+    private void mainLoop() {
+        while (true) {
+            synchronized (toConnects) {
+                for (PendingSocketChannel toConnect : toConnects) {
+                    try {
+                        toConnect.channel.connect(toConnect.remoteAddress);
+                    } catch (IOException e) {
+                        Log.e(TAG, e, "Failed in connecting to address: %s", toConnect.remoteAddress);
+                    }
+                }
+                toConnects.clear();
             }
-            Log.e(TAG, e, "Failed in adding Socket Channel!");
-            return null;
+
+            try {
+                selector.select(SELECTOR_SELECT_TIMEOUT_MS);
+            } catch (IOException | RuntimeException ex) {
+                Log.e(TAG, ex, "Failed in selecting selector!");
+                continue;
+            }
+            for (SelectionKey selectedKey : selector.selectedKeys()) {
+                if (selectedKey == null || !selectedKey.isValid()) {
+                    continue;
+                }
+                try {
+//                    Log.d(TAG, "mainLoop, key.readyOps=%d", selectedKey.readyOps());
+                    if (selectedKey.isAcceptable()) {
+                        accept(selectedKey);
+                    } else if (selectedKey.isConnectable()) {
+                        connect(selectedKey);
+                    } else if (selectedKey.isReadable()) {
+                        read(selectedKey);
+                    } else if (selectedKey.isWritable()) {
+                        write(selectedKey);
+                    }
+                } catch (RuntimeException ex) {
+                    Log.e(TAG, ex, "Failed in handling key %s.", selectedKey);
+                }
+            }
+            selector.selectedKeys().clear();
+//            Log.d(TAG, "key size: %d", selector.keys().size());
+            for (SelectionKey key : selector.keys()) {
+                if (!key.isValid()) {
+                    continue;
+                }
+                try {
+                    Object attachment = key.attachment();
+                    if (attachment instanceof SocketChannelBufferHandler) {
+                        SocketChannelBufferHandler socketChannelBufferHandler = (SocketChannelBufferHandler) attachment;
+                        int ret = socketChannelBufferHandler.tryKeepAlive();
+                        if (ret > 0) {
+                            key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                        } else if (ret < 0) {
+                            innerCloseSocketChannel(key, socketChannelBufferHandler);
+                        }
+                    }
+                } catch (RuntimeException ex) {
+                    Log.e(TAG, ex, "Failed in handling key %s.", key);
+                }
+            }
         }
     }
 
@@ -207,54 +270,13 @@ class TCPConnectionManager {
         key.cancel();
     }
 
-    private void mainLoop() {
-        while (true) {
-            try {
-                selector.select(SELECTOR_SELECT_TIMEOUT_MS);
-            } catch (IOException | RuntimeException ex) {
-                Log.e(TAG, ex, "Failed in selecting selector!");
-                continue;
-            }
-            for (SelectionKey selectedKey : selector.selectedKeys()) {
-                if (selectedKey == null || !selectedKey.isValid()) {
-                    continue;
-                }
-                try {
-//                    Log.d(TAG, "mainLoop, key.readyOps=%d", selectedKey.readyOps());
-                    if (selectedKey.isAcceptable()) {
-                        accept(selectedKey);
-                    } else if (selectedKey.isConnectable()) {
-                        connect(selectedKey);
-                    } else if (selectedKey.isReadable()) {
-                        read(selectedKey);
-                    } else if (selectedKey.isWritable()) {
-                        write(selectedKey);
-                    }
-                } catch (RuntimeException ex) {
-                    Log.e(TAG, ex, "Failed in handling key %s.", selectedKey);
-                }
-            }
-            selector.selectedKeys().clear();
-//            Log.d(TAG, "key size: %d", selector.keys().size());
-            for (SelectionKey key : selector.keys()) {
-                if (!key.isValid()) {
-                    continue;
-                }
-                try {
-                    Object attachment = key.attachment();
-                    if (attachment instanceof SocketChannelBufferHandler) {
-                        SocketChannelBufferHandler socketChannelBufferHandler = (SocketChannelBufferHandler) attachment;
-                        int ret = socketChannelBufferHandler.tryKeepAlive();
-                        if (ret > 0) {
-                            key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                        } else if (ret < 0) {
-                            innerCloseSocketChannel(key, socketChannelBufferHandler);
-                        }
-                    }
-                } catch (RuntimeException ex) {
-                    Log.e(TAG, ex, "Failed in handling key %s.", key);
-                }
-            }
+    private static class PendingSocketChannel {
+        final SocketChannel channel;
+        final InetSocketAddress remoteAddress;
+
+        PendingSocketChannel(SocketChannel channel, InetSocketAddress remoteAddress) {
+            this.channel = channel;
+            this.remoteAddress = remoteAddress;
         }
     }
 
