@@ -24,9 +24,6 @@ import nist.p_70nanb17h188.demo.pscr19.logic.Helper;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 class TCPConnectionManager {
-    private final ArrayList<PendingSocketChannel> toConnects = new ArrayList<>();
-
-
     private static final String TAG = "TCPConnectionManager";
     private static final int DEFAULT_READ_BUFFER_SIZE = 8192;
     // if the value is too small, a lot of computation overhead
@@ -37,32 +34,7 @@ class TCPConnectionManager {
     @NonNull
     private final Selector selector;
     private final ByteBuffer readBuffer = ByteBuffer.allocate(DEFAULT_READ_BUFFER_SIZE);
-
-    /**
-     * Create a connection to a remote address.
-     *
-     * @param remoteAddress             The remote address to connect to.
-     * @param socketChannelEventHandler The handler that deals with events
-     *                                  related to the socket.
-     * @return The created SocketChannel. Null on failure.
-     */
-    @Nullable
-    SocketChannel addSocketChannel(@NonNull InetSocketAddress remoteAddress, @Nullable SocketChannelEventHandler socketChannelEventHandler) {
-        try {
-            SocketChannel socketChannel = SocketChannel.open();
-            socketChannel.configureBlocking(false);
-            setSocketChannelOptions(socketChannel);
-            selector.wakeup();
-            socketChannel.register(selector, SelectionKey.OP_CONNECT, new SocketChannelBufferHandler(socketChannel, socketChannelEventHandler));
-            synchronized (toConnects) {
-                toConnects.add(new PendingSocketChannel(socketChannel, remoteAddress));
-            }
-            return socketChannel;
-        } catch (IOException e) {
-            Log.e(TAG, e, "Failed in adding Socket Channel!");
-            return null;
-        }
-    }
+    private final ArrayList<PendingSocketChannel> toConnects = new ArrayList<>();
 
     private TCPConnectionManager() throws IOException {
         selector = SelectorProvider.provider().openSelector();
@@ -110,7 +82,6 @@ class TCPConnectionManager {
             socketChannel.socket().setTcpNoDelay(true);
             socketChannel.socket().setKeepAlive(true);
         }
-
     }
 
     /**
@@ -161,6 +132,61 @@ class TCPConnectionManager {
         if (serverSocketChannelEventHandler != null) {
             serverSocketChannelEventHandler.onServerSocketChannelClosed(serverSocketChannel);
         }
+    }
+
+    /**
+     * Create a connection to a remote address.
+     *
+     * @param remoteAddress             The remote address to connect to.
+     * @param socketChannelEventHandler The handler that deals with events
+     *                                  related to the socket.
+     * @return The created SocketChannel. Null on failure.
+     */
+    @Nullable
+    SocketChannel addSocketChannel(@NonNull InetSocketAddress remoteAddress, @Nullable SocketChannelEventHandler socketChannelEventHandler) {
+        try {
+            SocketChannel socketChannel = SocketChannel.open();
+            socketChannel.configureBlocking(false);
+            setSocketChannelOptions(socketChannel);
+            selector.wakeup();
+            socketChannel.register(selector, SelectionKey.OP_CONNECT, new SocketChannelBufferHandler(socketChannel, socketChannelEventHandler));
+            synchronized (toConnects) {
+                toConnects.add(new PendingSocketChannel(socketChannel, remoteAddress));
+            }
+            return socketChannel;
+        } catch (IOException e) {
+            Log.e(TAG, e, "Failed in adding Socket Channel!");
+            return null;
+        }
+    }
+
+    /**
+     * Stop connection of a SocketChannel.
+     *
+     * @param socketChannel The SocketChannel to stop listen from.
+     */
+    void closeSocketChannel(@NonNull SocketChannel socketChannel) {
+        SelectionKey key = socketChannel.keyFor(selector);
+        // did not add to selector, not my responsibility
+        if (key == null) {
+            Log.e(TAG, "Cannot fine key for SocketChannel (%s), not registered!", socketChannel);
+            return;
+        }
+        SocketChannelBufferHandler socketChannelBufferHandler = (SocketChannelBufferHandler) key.attachment();
+        innerCloseSocketChannel(key, socketChannelBufferHandler);
+    }
+
+    void writeToSocket(@NonNull SocketChannel socketChannel, @NonNull byte[] data) {
+        SelectionKey key = socketChannel.keyFor(selector);
+        // did not add to selector, not my responsibility
+        if (key == null) {
+            Log.e(TAG, "Cannot fine key for SocketChannel (%s), not registered!", socketChannel);
+            return;
+        }
+        SocketChannelBufferHandler socketChannelBufferHandler = (SocketChannelBufferHandler) key.attachment();
+        socketChannelBufferHandler.writeData(data);
+        key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+        selector.wakeup();
     }
 
     private void mainLoop() {
@@ -225,34 +251,6 @@ class TCPConnectionManager {
         }
     }
 
-    /**
-     * Stop connection of a SocketChannel.
-     *
-     * @param socketChannel The SocketChannel to stop listen from.
-     */
-    void closeSocketChannel(@NonNull SocketChannel socketChannel) {
-        SelectionKey key = socketChannel.keyFor(selector);
-        // did not add to selector, not my responsibility
-        if (key == null) {
-            Log.e(TAG, "Cannot fine key for SocketChannel (%s), not registered!", socketChannel);
-            return;
-        }
-        SocketChannelBufferHandler socketChannelBufferHandler = (SocketChannelBufferHandler) key.attachment();
-        innerCloseSocketChannel(key, socketChannelBufferHandler);
-    }
-
-    void writeToSocket(@NonNull SocketChannel socketChannel, @NonNull byte[] data) {
-        SelectionKey key = socketChannel.keyFor(selector);
-        // did not add to selector, not my responsibility
-        if (key == null) {
-            Log.e(TAG, "Cannot fine key for SocketChannel (%s), not registered!", socketChannel);
-            return;
-        }
-        SocketChannelBufferHandler socketChannelBufferHandler = (SocketChannelBufferHandler) key.attachment();
-        socketChannelBufferHandler.writeData(data);
-        key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-        selector.wakeup();
-    }
 
     private void innerCloseSocketChannel(@NonNull SelectionKey key, @NonNull SocketChannelBufferHandler socketChannelBufferHandler) {
         SocketChannel socketChannel = socketChannelBufferHandler.socketChannel;
@@ -268,16 +266,6 @@ class TCPConnectionManager {
             }
         }
         key.cancel();
-    }
-
-    private static class PendingSocketChannel {
-        final SocketChannel channel;
-        final InetSocketAddress remoteAddress;
-
-        PendingSocketChannel(SocketChannel channel, InetSocketAddress remoteAddress) {
-            this.channel = channel;
-            this.remoteAddress = remoteAddress;
-        }
     }
 
     private void accept(@NonNull SelectionKey key) {
@@ -360,6 +348,16 @@ class TCPConnectionManager {
         }
         innerCloseSocketChannel(key, socketChannelBufferHandler);
 
+    }
+
+    private static class PendingSocketChannel {
+        final SocketChannel channel;
+        final InetSocketAddress remoteAddress;
+
+        PendingSocketChannel(SocketChannel channel, InetSocketAddress remoteAddress) {
+            this.channel = channel;
+            this.remoteAddress = remoteAddress;
+        }
     }
 
     interface ServerSocketChannelEventHandler {
