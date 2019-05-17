@@ -6,35 +6,31 @@ import android.support.annotation.NonNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class Log {
+    /**
+     * Broadcast intent action indicating that a log item is added to the log list.
+     * One extra EXTRA_LOG_ITEM (nist.p_70nanb17h188.demo.pscr19.logic.log.LogItem) is the log item added.
+     * <p>
+     * The latest logs can be retrieved from getLatestLogItems().
+     */
+    public static final String ACTION_LOG_ITEM_INSERTED = "nist.p_70nanb17h188.demo.pscr19.logic.log.Log.itemsInserted";
+    public static final String EXTRA_LOG_ITEM = "logItem";
     public static final int DEFAULT_CAPACITY = 1000;
-    public static final String ACTION_ITEMS_INSERTED = "nist.p_70nanb17h188.demo.pscr19.logic.log.Log.itemsInserted";
-    public static final String ACTION_ITEMS_REMOVED = "nist.p_70nanb17h188.demo.pscr19.logic.log.Log.itemsRemoved";
-    public static final String ACTION_TAGS_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.log.Log.tagsChanged";
-    public static final String EXTRA_POSITION_START = "positionStart";
-    public static final String EXTRA_ITEM_COUNT = "itemCount";
-    private static final SimpleDateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US);
-    private static Log DEFAULT_INSTANCE = null;
-    private final ArrayList<LogItem> logs = new ArrayList<>();
-    private final HashMap<String, AtomicInteger> tagCounts = new HashMap<>();
-    private final Application application;
-    private int capacity;
 
-    private Log(int capacity, Application application) {
-        if (capacity <= 0) throw new IllegalArgumentException("Capacity should be > 0");
-        this.capacity = capacity;
+    private static Log DEFAULT_INSTANCE = null;
+    private final Application application;
+    private final ArrayList<LogItem> items;
+    private final int capacity;
+
+    private Log(int capacity, @NonNull Application application) {
         this.application = application;
+        items = new ArrayList<>(capacity);
+        this.capacity = capacity;
     }
 
-    public static void init(int capacity, Application application) {
+    public static void init(int capacity, @NonNull Application application) {
         if (DEFAULT_INSTANCE == null) DEFAULT_INSTANCE = new Log(capacity, application);
     }
 
@@ -98,80 +94,63 @@ public class Log {
         DEFAULT_INSTANCE._e(tag, tr, msg);
     }
 
+    public static ArrayList<LogItem> getLatestLogItems() {
+        return DEFAULT_INSTANCE._getLatestLogItems();
+    }
+
     public static int getCapacity() {
-        if (DEFAULT_INSTANCE == null) return 0;
         return DEFAULT_INSTANCE._getCapacity();
     }
 
-    public static void setCapacity(int newCapacity) {
-        if (DEFAULT_INSTANCE == null) return;
-        DEFAULT_INSTANCE._setCapacity(newCapacity);
-    }
-
-    public static int getSize() {
-        if (DEFAULT_INSTANCE == null) return 0;
-        return DEFAULT_INSTANCE._getSize();
-    }
-
-    public static String[] getTags() {
-        if (DEFAULT_INSTANCE == null) return new String[0];
-        return DEFAULT_INSTANCE._getTags();
-    }
-
-    public static LogItem getItemAt(int position) {
-        if (DEFAULT_INSTANCE == null) return null;
-        return DEFAULT_INSTANCE._getItemAt(position);
-    }
-
-    public void _v(String tag, String fmt, Object... params) {
+    private void _v(String tag, String fmt, Object... params) {
         _v(tag, String.format(fmt, params));
     }
 
-    public void _d(String tag, String fmt, Object... params) {
+    private void _d(String tag, String fmt, Object... params) {
         _d(tag, String.format(fmt, params));
     }
 
-    public void _i(String tag, String fmt, Object... params) {
+    private void _i(String tag, String fmt, Object... params) {
         _i(tag, String.format(fmt, params));
     }
 
-    public void _w(String tag, String fmt, Object... params) {
+    private void _w(String tag, String fmt, Object... params) {
         _w(tag, String.format(fmt, params));
     }
 
-    public void _e(String tag, String fmt, Object... params) {
+    private void _e(String tag, String fmt, Object... params) {
         _e(tag, null, String.format(fmt, params));
     }
 
-    public void _e(String tag, Throwable tr, String fmt, Object... params) {
+    private void _e(String tag, Throwable tr, String fmt, Object... params) {
         _e(tag, tr, String.format(fmt, params));
     }
 
-    public void _v(String tag, String msg) {
+    private void _v(String tag, String msg) {
         android.util.Log.v(tag, msg);
         _addLog(new LogItem(LogType.Verbose, tag, msg));
     }
 
-    public void _d(String tag, String msg) {
+    private void _d(String tag, String msg) {
         android.util.Log.d(tag, msg);
         _addLog(new LogItem(LogType.Debug, tag, msg));
     }
 
-    public void _i(String tag, String msg) {
+    private void _i(String tag, String msg) {
         android.util.Log.i(tag, msg);
         _addLog(new LogItem(LogType.Info, tag, msg));
     }
 
-    public void _w(String tag, String msg) {
+    private void _w(String tag, String msg) {
         android.util.Log.w(tag, msg);
         _addLog(new LogItem(LogType.Warn, tag, msg));
     }
 
-    public void _e(String tag, String msg) {
+    private void _e(String tag, String msg) {
         _e(tag, null, msg);
     }
 
-    public void _e(String tag, Throwable tr, String msg) {
+    private void _e(String tag, Throwable tr, String msg) {
         android.util.Log.e(tag, msg, tr);
         if (tr == null) {
             _addLog(new LogItem(LogType.Error, tag, msg));
@@ -184,113 +163,23 @@ public class Log {
         }
     }
 
-    public void _setCapacity(int newCapacity) {
-        if (newCapacity <= 0) throw new IllegalArgumentException("Capacity should be > 0");
-        synchronized (this) {
-            capacity = newCapacity;
-            if (_removeExtra()) _fireTagsChanged();
+    private void _addLog(@NonNull LogItem item) {
+        synchronized (items) {
+            if (items.size() == capacity) {
+                items.remove(capacity - 1);
+            }
+            items.add(0, item);
         }
+        application.getApplicationContext().sendBroadcast(new Intent(ACTION_LOG_ITEM_INSERTED).putExtra(EXTRA_LOG_ITEM, item));
     }
 
-    public int _getCapacity() {
+    private int _getCapacity() {
         return capacity;
     }
 
-    public int _getSize() {
-        return logs.size();
-    }
-
-    public LogItem _getItemAt(int position) {
-        if (position < 0 || position >= logs.size()) return null;
-        return logs.get(position);
-    }
-
-    public String[] _getTags() {
-        String[] tags = new String[tagCounts.size()];
-        tagCounts.keySet().toArray(tags);
-        return tags;
-    }
-
-    private void _addLog(@NonNull LogItem item) {
-        synchronized (this) {
-            boolean tagsChanged = false;
-            AtomicInteger count = tagCounts.get(item.tag);
-            if (count == null) {
-                tagsChanged = true;
-                tagCounts.put(item.tag, count = new AtomicInteger());
-            }
-            logs.add(0, item);
-            count.incrementAndGet();
-            _fireItemInserted(0, 1);
-
-            tagsChanged |= _removeExtra();
-            if (tagsChanged) _fireTagsChanged();
+    private ArrayList<LogItem> _getLatestLogItems() {
+        synchronized (items) {
+            return new ArrayList<>(items);
         }
-    }
-
-    private boolean _removeExtra() {
-        int toRemove = logs.size() - capacity;
-        if (toRemove <= 0) return false;
-        boolean tagsChanged = false;
-
-        for (int i = 0; i < toRemove; i++) {
-            LogItem item = logs.remove(capacity);
-            AtomicInteger count = tagCounts.get(item.tag);
-            if (count != null && count.decrementAndGet() == 0) {
-                tagCounts.remove(item.tag);
-                tagsChanged = true;
-            }
-        }
-        _fireItemRemoved(capacity, toRemove);
-        return tagsChanged;
-    }
-
-    private void _fireItemInserted(int positionStart, int itemCount) {
-        Intent intent = new Intent(ACTION_ITEMS_INSERTED).putExtra(EXTRA_POSITION_START, positionStart).putExtra(EXTRA_ITEM_COUNT, itemCount);
-        application.getApplicationContext().sendBroadcast(intent);
-    }
-
-    private void _fireItemRemoved(int positionStart, int itemCount) {
-        Intent intent = new Intent(ACTION_ITEMS_REMOVED).putExtra(EXTRA_POSITION_START, positionStart).putExtra(EXTRA_ITEM_COUNT, itemCount);
-        application.getApplicationContext().sendBroadcast(intent);
-    }
-
-    private void _fireTagsChanged() {
-        Intent intent = new Intent(ACTION_TAGS_CHANGED);
-        application.getApplicationContext().sendBroadcast(intent);
-    }
-
-    public enum LogType {
-        Verbose(2, "V"), Debug(3, "D"), Info(4, "I"), Warn(5, "W"), Error(6, "E");
-
-        public final int val;
-        public final String acry;
-
-        LogType(int val, String acry) {
-            this.val = val;
-            this.acry = acry;
-        }
-    }
-
-    public static class LogItem {
-        private static final AtomicLong GLOBAL_SERIAL = new AtomicLong(1);
-        public final long id;
-        public final Date time;
-        public final LogType type;
-        public final String tag;
-        public final String message;
-
-        LogItem(LogType type, String tag, String message) {
-            id = GLOBAL_SERIAL.getAndIncrement();
-            time = new Date();
-            this.type = type;
-            this.tag = tag;
-            this.message = message;
-        }
-
-        public String getTimeString() {
-            return DEFAULT_DATE_FORMAT.format(time);
-        }
-
     }
 }
