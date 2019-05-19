@@ -10,13 +10,13 @@ import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 
 class FilterCriteria {
     @NonNull
-    final LogType lvMin;
+    private final LogType lvMin;
     @NonNull
-    final LogType lvMax;
+    private final LogType lvMax;
     @Nullable
-    final String selectedTag;
+    private final String selectedTag;
     @NonNull
-    final List<String> tags;
+    private final List<String> tags;
 
     FilterCriteria(@NonNull LogType lvMin, @NonNull LogType lvMax, @Nullable String selectedTag, @NonNull List<String> tags) {
         this.lvMin = lvMin;
@@ -25,9 +25,29 @@ class FilterCriteria {
         this.tags = tags;
     }
 
+    @NonNull
+    LogType getLvMin() {
+        return lvMin;
+    }
+
+    @NonNull
+    LogType getLvMax() {
+        return lvMax;
+    }
+
+    @Nullable
+    String getSelectedTag() {
+        return selectedTag;
+    }
+
+    @NonNull
+    List<String> getTags() {
+        return tags;
+    }
+
     boolean match(LogItem item) {
-        boolean ret = selectedTag == null || item.tag.equals(selectedTag);
-        ret = ret && item.type.val >= lvMin.val && item.type.val <= lvMax.val;
+        boolean ret = selectedTag == null || item.getTag().equals(selectedTag);
+        ret = ret && item.getType().getVal() >= lvMin.getVal() && item.getType().getVal() <= lvMax.getVal();
         return ret;
     }
 

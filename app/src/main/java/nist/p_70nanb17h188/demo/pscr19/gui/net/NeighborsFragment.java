@@ -15,20 +15,21 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.util.Locale;
-
+import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
-import nist.p_70nanb17h188.demo.pscr19.logic.Helper;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
+import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl;
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class NeighborsFragment extends Fragment {
+
     private NeighborsFragmentViewModel viewModel;
 
     public NeighborsFragment() {
@@ -40,7 +41,6 @@ public class NeighborsFragment extends Fragment {
         Activity activity = getActivity();
         assert activity != null;
         viewModel = ViewModelProviders.of(getActivity()).get(NeighborsFragmentViewModel.class);
-        viewModel.setApplication(getActivity().getApplication());
     }
 
     @NonNull
@@ -99,6 +99,7 @@ public class NeighborsFragment extends Fragment {
             super(itemView);
             txNeighbor = itemView.findViewById(R.id.name_neighbor_id);
             inputSize = itemView.findViewById(R.id.name_input_size);
+            inputSize.setHint("[0," + NetLayer_Impl.MAX_SEND_SIZE + "]");
             btnSend = itemView.findViewById(R.id.name_send);
             btnSend.setOnClickListener(this::onSendClick);
         }
@@ -108,32 +109,35 @@ public class NeighborsFragment extends Fragment {
             try {
                 int size = Integer.parseInt(txt);
                 if (size < 0) {
-                    Toast.makeText(view.getContext(), "Min size: 0", Toast.LENGTH_SHORT).show();
+                    Helper.notifyUser(LogType.Info, "Size should be in range [0, %d]", NetLayer_Impl.MAX_SEND_SIZE);
                     inputSize.setText("0");
                     return;
                 }
-                if (size > 4000) {
-                    Toast.makeText(view.getContext(), "Max size: 4000", Toast.LENGTH_SHORT).show();
-                    inputSize.setText("4000");
+                if (size > NetLayer_Impl.MAX_SEND_SIZE) {
+                    Helper.notifyUser(LogType.Info, "Max size: ");
+                    Helper.notifyUser(LogType.Info, "Size should be in range [0, %d]", NetLayer_Impl.MAX_SEND_SIZE);
+                    inputSize.setText(NetLayer_Impl.MAX_SEND_SIZE + "");
                     return;
                 }
                 String str = size == 0 ? "" : Helper.getRandomString(size, size, Helper.CANDIDATE_CHARSET_LETTERS_NUMBERS);
                 byte[] buf = str.getBytes();
                 boolean succeed = LinkLayer.sendData(currentNeighborID, buf, 0, buf.length);
                 String result = succeed ? "succeeded" : "failed";
-                if (str.length() <= 40) {
-                    Toast.makeText(view.getContext(), String.format(Locale.US, "Send to %s, text=%s, buf_len=%d, %s!", currentNeighborID.name, str, buf.length, result), Toast.LENGTH_LONG).show();
+                if (str.length() <= NetLayer_Impl.MAX_SHOW_SIZE) {
+                    Log.d(NetLayer_Impl.TAG, "Send to %s, buf_len=%d, %s! text=%n%s", currentNeighborID.getName(), buf.length, result, str);
+                    Helper.notifyUser(LogType.Info, "Send to %s, buf_len=%d, %s! text=%n%s", currentNeighborID.getName(), buf.length, result, str);
                 } else {
-                    Toast.makeText(view.getContext(), String.format(Locale.US, "Send to %s, text_len=%d, buf_len=%d, %s!", currentNeighborID.name, str.length(), buf.length, result), Toast.LENGTH_LONG).show();
+                    Log.d(NetLayer_Impl.TAG, "Send to %s, buf_len=%d, %s! text_len=%d", currentNeighborID.getName(), buf.length, result, str.length());
+                    Helper.notifyUser(LogType.Info, "Send to %s, buf_len=%d, %s! text_len=%d", currentNeighborID.getName(), buf.length, result, str.length());
                 }
             } catch (Exception e) {
-                Toast.makeText(view.getContext(), "Should type number!", Toast.LENGTH_SHORT).show();
+                Helper.notifyUser(LogType.Info, "Size should be a number!");
             }
         }
 
         private void bind(NeighborID neighborID) {
             currentNeighborID = neighborID;
-            txNeighbor.setText(neighborID.name);
+            txNeighbor.setText(neighborID.getName());
         }
     }
 }

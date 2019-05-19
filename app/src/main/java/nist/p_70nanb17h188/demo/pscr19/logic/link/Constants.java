@@ -7,7 +7,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import nist.p_70nanb17h188.demo.pscr19.logic.Device;
+import nist.p_70nanb17h188.demo.pscr19.Device;
 
 public class Constants {
     static final int MAX_GROUP_OWNER_INTENT = 15;

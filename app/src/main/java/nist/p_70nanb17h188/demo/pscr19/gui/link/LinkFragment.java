@@ -37,7 +37,6 @@ public class LinkFragment extends Fragment {
         super.onCreate(savedInstanceState);
         assert getActivity() != null;
         viewModel = ViewModelProviders.of(getActivity()).get(LinkFragmentViewModel.class);
-        viewModel.setApplication(getActivity().getApplication());
     }
 
     @Override

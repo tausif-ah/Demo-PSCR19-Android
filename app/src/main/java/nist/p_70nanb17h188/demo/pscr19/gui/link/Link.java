@@ -15,15 +15,15 @@ abstract class Link {
 
     Link(@NonNull String name) {
         this.name = name;
-        this.establishConnection.setValue(false);
-        this.status.setValue(LinkStatus.NotFound);
+        this.establishConnection.postValue(false);
+        this.status.postValue(LinkStatus.NotFound);
     }
 
-    boolean isEstablishConnection() {
-        Boolean ret = establishConnection.getValue();
-        assert ret != null;
-        return ret;
-    }
+//    boolean isEstablishConnection() {
+//        Boolean ret = establishConnection.getValue();
+//        assert ret != null;
+//        return ret;
+//    }
 
     boolean isTcpConnected() {
         return tcpConnected;

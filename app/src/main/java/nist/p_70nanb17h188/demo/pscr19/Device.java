@@ -1,4 +1,4 @@
-package nist.p_70nanb17h188.demo.pscr19.logic;
+package nist.p_70nanb17h188.demo.pscr19;
 
 import java.util.Arrays;
 import java.util.HashSet;

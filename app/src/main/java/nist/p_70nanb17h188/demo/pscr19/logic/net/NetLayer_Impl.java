@@ -1,49 +1,48 @@
 package nist.p_70nanb17h188.demo.pscr19.logic.net;
 
-import android.app.Application;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.support.annotation.NonNull;
-import android.widget.Toast;
 
 import java.util.HashSet;
-import java.util.Locale;
 
+import nist.p_70nanb17h188.demo.pscr19.Helper;
+import nist.p_70nanb17h188.demo.pscr19.imc.Context;
+import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
+import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 
 public class NetLayer_Impl {
-    public static final String ACTION_NEIGHBOR_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.neighborChanged";
+    public static final int MAX_SEND_SIZE = 2000000;
+    public static final int MAX_SHOW_SIZE = 40;
+
+    public static final String CONTEXT_NET_LAYER_IMPL = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl";
+    public static final String ACTION_NEIGHBOR_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl.neighborChanged";
+    public static final String EXTRA_NEIGHBORS = "neighbors";
+    public static final String TAG = "NetLayer_Impl";
 
     private static NetLayer_Impl defaultInstance;
     @NonNull
-    private final Application application;
     private final HashSet<NeighborID> connectedNeighbors = new HashSet<>();
 
-    NetLayer_Impl(@NonNull Application application) {
-        this.application = application;
+    NetLayer_Impl() {
         defaultInstance = this;
 
-        Context context = application.getApplicationContext();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(LinkLayer.ACTION_LINK_CHANGED);
-        filter.addAction(LinkLayer.ACTION_DATA_RECEIVED);
-        context.registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (intent.getAction() == null) return;
-                switch (intent.getAction()) {
-                    case LinkLayer.ACTION_LINK_CHANGED:
-                        onLinkChanged(intent);
-                        break;
-                    case LinkLayer.ACTION_DATA_RECEIVED:
-                        onDataReceived(intent);
-                        break;
-                }
-            }
-        }, filter);
+        Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).registerReceiver((context, intent) -> {
+                    switch (intent.getAction()) {
+                        case LinkLayer.ACTION_LINK_CHANGED:
+                            onLinkChanged(intent);
+                            break;
+                        case LinkLayer.ACTION_DATA_RECEIVED:
+                            onDataReceived(intent);
+                            break;
+                    }
+                },
+                new IntentFilter()
+                        .addAction(LinkLayer.ACTION_LINK_CHANGED)
+                        .addAction(LinkLayer.ACTION_DATA_RECEIVED)
+        );
     }
 
     public static NetLayer_Impl getDefaultInstance() {
@@ -51,13 +50,15 @@ public class NetLayer_Impl {
     }
 
     private void onLinkChanged(Intent intent) {
-        NeighborID neighborID = intent.getParcelableExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
-        boolean connected = intent.getBooleanExtra(LinkLayer.EXTRA_CONNECTED, false);
+        NeighborID neighborID = intent.getExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
+        Boolean connected = intent.getExtra(LinkLayer.EXTRA_CONNECTED);
+        assert neighborID != null && connected != null;
         boolean changed;
         if (connected) changed = connectedNeighbors.add(neighborID);
         else changed = connectedNeighbors.remove(neighborID);
+
         if (changed)
-            application.getApplicationContext().sendBroadcast(new Intent(ACTION_NEIGHBOR_CHANGED));
+            Context.getContext(CONTEXT_NET_LAYER_IMPL).sendBroadcast(new Intent(ACTION_NEIGHBOR_CHANGED).putExtra(EXTRA_NEIGHBORS, connectedNeighbors.toArray(new NeighborID[0])));
     }
 
     public NeighborID[] getConnectNeighbors() {
@@ -65,13 +66,17 @@ public class NetLayer_Impl {
     }
 
     private void onDataReceived(Intent intent) {
-        NeighborID neighborID = intent.getParcelableExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
-        byte[] data = intent.getByteArrayExtra(LinkLayer.EXTRA_DATA);
+        NeighborID neighborID = intent.getExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
+        byte[] data = intent.getExtra(LinkLayer.EXTRA_DATA);
+        assert neighborID != null && data != null;
+
         String str = new String(data);
-        if (data.length <= 40) {
-            Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Got from %s, text=%s, buf_size=%d", neighborID.name, str, data.length), Toast.LENGTH_LONG).show();
+        if (data.length <= MAX_SHOW_SIZE) {
+            Log.d(TAG, "Got from %s, buf_size=%d, text=%n%s", neighborID.getName(), data.length, str);
+            Helper.notifyUser(LogType.Info, "Got from %s, buf_size=%d, text=%n%s", neighborID.getName(), data.length, str);
         } else {
-            Toast.makeText(application.getApplicationContext(), String.format(Locale.US, "Got from %s, text_len=%d, buf_size=%d", neighborID.name, str.length(), data.length), Toast.LENGTH_LONG).show();
+            Log.d(TAG, "Got from %s, buf_size=%d, text_len=%d", neighborID.getName(), data.length, str.length());
+            Helper.notifyUser(LogType.Info, "Got from %s, buf_size=%d, text_len=%d", neighborID.getName(), data.length, str.length());
         }
     }
 

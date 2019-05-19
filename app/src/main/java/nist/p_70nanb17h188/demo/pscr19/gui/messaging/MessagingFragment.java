@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 public class MessagingFragment extends Fragment {
 
@@ -22,4 +23,9 @@ public class MessagingFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_messaging, container, false);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        Log.d("LAUNCHER", "MESSAGE RESUMED");
+    }
 }

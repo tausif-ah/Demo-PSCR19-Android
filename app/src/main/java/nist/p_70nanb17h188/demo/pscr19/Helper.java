@@ -1,12 +1,40 @@
-package nist.p_70nanb17h188.demo.pscr19.logic;
+package nist.p_70nanb17h188.demo.pscr19;
 
 import android.os.Build;
 import android.support.annotation.NonNull;
 
 import java.io.PrintStream;
+import java.util.Locale;
 import java.util.Random;
 
+import nist.p_70nanb17h188.demo.pscr19.imc.Context;
+import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
+
 public class Helper {
+    /**
+     * A common interface shared between the logic and the gui, mostly for ui updates like notifications.
+     */
+    public static final String CONTEXT_USER_INTERFACE = "nist.p_70nanb17h188.demo.pscr19.gui";
+
+    /**
+     * An action to let the gui notify the user something is happening.
+     * It should have extra EXTRA_NOTIFICATION_CONTENT (String) for the text to be notified.
+     * It also has an extra EXTRA_NOTIFICATION_TYPE (LogType) for the type of the notification.
+     */
+    public static final String ACTION_NOTIFY_USER = "nist.p_70nanb17h188.demo.pscr19.gui.notifyUser";
+    public static final String EXTRA_NOTIFICATION_CONTENT = "notificationContent";
+    public static final String EXTRA_NOTIFICATION_TYPE = "notificationType";
+
+
+    public static void notifyUser(@NonNull LogType type, @NonNull String content) {
+        Context.getContext(CONTEXT_USER_INTERFACE).sendBroadcast(new Intent(ACTION_NOTIFY_USER).putExtra(EXTRA_NOTIFICATION_CONTENT, content).putExtra(EXTRA_NOTIFICATION_TYPE, type));
+    }
+
+    public static void notifyUser(@NonNull LogType type, @NonNull String fmt, Object... params) {
+        notifyUser(type, String.format(Locale.US, fmt, params));
+    }
+
     public static final Random DEFAULT_RANDOM = new Random();
     public static final String CANDIDATE_CHARSET_NUMBERS = "0123456789";
     public static final String CANDIDATE_CHARSET_LETTERS_CAPITALIZED = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";

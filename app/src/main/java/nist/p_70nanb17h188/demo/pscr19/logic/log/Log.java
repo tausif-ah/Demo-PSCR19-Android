@@ -1,14 +1,16 @@
 package nist.p_70nanb17h188.demo.pscr19.logic.log;
 
-import android.app.Application;
-import android.content.Intent;
 import android.support.annotation.NonNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 
+import nist.p_70nanb17h188.demo.pscr19.imc.Context;
+import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
+
 public class Log {
+    public static final String CONTEXT_LOG = "nist.p_70nanb17h188.demo.pscr19.logic.log";
     /**
      * Broadcast intent action indicating that a log item is added to the log list.
      * One extra EXTRA_LOG_ITEM (nist.p_70nanb17h188.demo.pscr19.logic.log.LogItem) is the log item added.
@@ -20,18 +22,16 @@ public class Log {
     public static final int DEFAULT_CAPACITY = 1000;
 
     private static Log DEFAULT_INSTANCE = null;
-    private final Application application;
     private final ArrayList<LogItem> items;
     private final int capacity;
 
-    private Log(int capacity, @NonNull Application application) {
-        this.application = application;
+    private Log(int capacity) {
         items = new ArrayList<>(capacity);
         this.capacity = capacity;
     }
 
-    public static void init(int capacity, @NonNull Application application) {
-        if (DEFAULT_INSTANCE == null) DEFAULT_INSTANCE = new Log(capacity, application);
+    public static void init(int capacity) {
+        if (DEFAULT_INSTANCE == null) DEFAULT_INSTANCE = new Log(capacity);
     }
 
     public static void v(String tag, String fmt, Object... params) {
@@ -170,7 +170,7 @@ public class Log {
             }
             items.add(0, item);
         }
-        application.getApplicationContext().sendBroadcast(new Intent(ACTION_LOG_ITEM_INSERTED).putExtra(EXTRA_LOG_ITEM, item));
+        Context.getContext(CONTEXT_LOG).sendBroadcast(new Intent(ACTION_LOG_ITEM_INSERTED).putExtra(EXTRA_LOG_ITEM, item));
     }
 
     private int _getCapacity() {

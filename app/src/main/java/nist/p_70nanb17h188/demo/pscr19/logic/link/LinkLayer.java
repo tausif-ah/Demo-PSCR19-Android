@@ -1,11 +1,16 @@
 package nist.p_70nanb17h188.demo.pscr19.logic.link;
 
-import android.app.Application;
 import android.support.annotation.NonNull;
 
-import nist.p_70nanb17h188.demo.pscr19.logic.Device;
+import java.io.IOException;
+
+import nist.p_70nanb17h188.demo.pscr19.Device;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 public class LinkLayer {
+    private static final String TAG = "LinkLayer";
+
+    public static final String CONTEXT_LINK_LAYER = "nist.p_70nanb17h188.demo.pscr19.logic.link";
     /**
      * Broadcast intent action indicating that a link is either established or disconnected.
      * One extra EXTRA_NEIGHBOR_ID (nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID) indicates the ID of the neighbor.
@@ -25,7 +30,7 @@ public class LinkLayer {
     public static final String EXTRA_DATA = "data";
 
 
-    private static LinkLayer_Impl defaultInstance;
+    private static LinkLayer_Impl defaultImplementation;
 
     /**
      * This class should not be instantiated.
@@ -40,8 +45,12 @@ public class LinkLayer {
      *
      * @see Device
      */
-    public static void init(@NonNull Application application) {
-        defaultInstance = new LinkLayer_Impl(application);
+    public static void init() {
+        try {
+            defaultImplementation = new LinkLayer_Impl();
+        } catch (IOException e) {
+            Log.e(TAG, e, "Failed in creating defaultImplementation!");
+        }
     }
 
     /**
@@ -54,6 +63,10 @@ public class LinkLayer {
      * @return true if the data is sent, false otherwise.
      */
     public static boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
-        return defaultInstance.sendData(id, data, start, len);
+        return defaultImplementation.sendData(id, data, start, len);
+    }
+
+    public static LinkLayer_Impl getDefaultImplementation() {
+        return defaultImplementation;
     }
 }

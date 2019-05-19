@@ -1,15 +1,10 @@
 package nist.p_70nanb17h188.demo.pscr19.gui.link;
 
-import android.app.Application;
 import android.arch.core.util.Function;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.Transformations;
 import android.arch.lifecycle.ViewModel;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pGroup;
@@ -20,6 +15,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
+import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
+import nist.p_70nanb17h188.demo.pscr19.imc.Context;
+import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
+import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
@@ -36,37 +35,45 @@ class LinkFragmentViewModel extends ViewModel {
     private final Function<Date, String> updateTimeTransformation = d -> d == null ? DATE_STRING_ON_NULL : DEFAULT_TIME_FORMAT.format(d);
     final LiveData<String> strWifiDiscoverUpdateTime = Transformations.map(wifiDiscoverUpdateTime, updateTimeTransformation);
     final LiveData<String> strBluetoothUpdateTime = Transformations.map(bluetoothUpdateTime, updateTimeTransformation);
-    private final BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            onReceiveBroadcastIntent(intent);
-        }
-    };
-    private Application application;
+    private final BroadcastReceiver receiver = (context, intent) -> onReceiveBroadcastIntent(intent);
 
     public LinkFragmentViewModel() {
         links = Constants.getConnections();
         Arrays.sort(links, 0, links.length, (a, b) -> a.name.compareTo(b.name));
+        Context.getContext(WifiLinkManager.CONTEXT_WIFI_LINK_MANAGER).registerReceiver(
+                receiver,
+                new IntentFilter()
+                        .addAction(WifiLinkManager.ACTION_WIFI_GROUP_CHANGED)
+                        .addAction(WifiLinkManager.ACTION_WIFI_DISCOVERY_STATE_CHANGED)
+                        .addAction(WifiLinkManager.ACTION_WIFI_LIST_CHANGED)
+        );
+        Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).registerReceiver(
+                receiver,
+                new IntentFilter()
+                        .addAction(LinkLayer.ACTION_LINK_CHANGED)
+        );
+        synchronizeData();
     }
 
     private void onReceiveBroadcastIntent(Intent intent) {
         String action = intent.getAction();
-        if (action == null) return;
         switch (action) {
             case WifiLinkManager.ACTION_WIFI_DISCOVERY_STATE_CHANGED:
-                wifiDiscovering.postValue(intent.getBooleanExtra(WifiLinkManager.EXTRA_IS_DISCOVERING, false));
+                wifiDiscovering.postValue(intent.getExtra(WifiLinkManager.EXTRA_IS_DISCOVERING));
                 break;
             case WifiLinkManager.ACTION_WIFI_GROUP_CHANGED:
-                wifiGroupInfo.postValue(intent.getParcelableExtra(WifiLinkManager.EXTRA_GROUP_INFO));
+                wifiGroupInfo.postValue(intent.getExtra(WifiLinkManager.EXTRA_GROUP_INFO));
                 break;
             case WifiLinkManager.ACTION_WIFI_LIST_CHANGED:
-                wifiDiscoverUpdateTime.postValue((Date) intent.getSerializableExtra(WifiLinkManager.EXTRA_TIME));
-                updateWifiDeviceList(intent.getParcelableExtra(WifiLinkManager.EXTRA_DEVICE_LIST));
+                wifiDiscoverUpdateTime.postValue(intent.getExtra(WifiLinkManager.EXTRA_TIME));
+                updateWifiDeviceList(intent.getExtra(WifiLinkManager.EXTRA_DEVICE_LIST));
                 break;
             case LinkLayer.ACTION_LINK_CHANGED:
-                NeighborID neighborID = intent.getParcelableExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
-                String name = neighborID.name;
-                boolean connected = intent.getBooleanExtra(LinkLayer.EXTRA_CONNECTED, false);
+                NeighborID neighborID = intent.getExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
+                assert neighborID != null;
+                String name = neighborID.getName();
+                Boolean connected = intent.getExtra(LinkLayer.EXTRA_CONNECTED);
+                assert connected != null;
                 // Log.d(TAG, "received ACTION_TCP_CONNECTION_CHANGED %s tcp %s", name, connected ? "CONNECTED" : "DISCONNECTED");
                 for (Link l : links) {
                     if (l instanceof LinkWifiDirect && l.name.equals(name)) {
@@ -78,43 +85,21 @@ class LinkFragmentViewModel extends ViewModel {
         }
     }
 
-    void setApplication(Application application) {
-        synchronized (this) {
-            if (this.application != null) return;
-            this.application = application;
-            synchronizeData();
-        }
-        Context context = application.getApplicationContext();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(WifiLinkManager.ACTION_WIFI_GROUP_CHANGED);
-        filter.addAction(WifiLinkManager.ACTION_WIFI_DISCOVERY_STATE_CHANGED);
-        filter.addAction(WifiLinkManager.ACTION_WIFI_LIST_CHANGED);
-        filter.addAction(LinkLayer.ACTION_LINK_CHANGED);
-
-        context.registerReceiver(receiver, filter);
-    }
-
     @Override
     protected void onCleared() {
         super.onCleared();
-        synchronized (this) {
-            if (application != null) {
-                application.getApplicationContext().unregisterReceiver(receiver);
-                application = null;
-            }
-        }
+        Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).unregisterReceiver(receiver);
+        Context.getContext(WifiLinkManager.CONTEXT_WIFI_LINK_MANAGER).unregisterReceiver(receiver);
     }
 
     private void synchronizeData() {
-        WifiLinkManager wifiLinkManager = WifiLinkManager.getDefaultInstance();
-        if (wifiLinkManager != null) {
-            wifiGroupInfo.postValue(wifiLinkManager.getLastGroupInfo());
-            wifiDiscovering.postValue(wifiLinkManager.isWifiDiscovering());
-            wifiDiscoverUpdateTime.postValue(wifiLinkManager.getLastDiscoverTime());
-            wifiGroupInfo.postValue(wifiLinkManager.getLastGroupInfo());
-            updateWifiDeviceList(wifiLinkManager.getLastDiscoverList());
-            updateTCPConnectionList();
-        }
+        WifiLinkManager wifiLinkManager = LinkLayer.getDefaultImplementation().getWifiLinkManager();
+        wifiGroupInfo.postValue(wifiLinkManager.getLastGroupInfo());
+        wifiDiscovering.postValue(wifiLinkManager.isWifiDiscovering());
+        wifiDiscoverUpdateTime.postValue(wifiLinkManager.getLastDiscoverTime());
+        wifiGroupInfo.postValue(wifiLinkManager.getLastGroupInfo());
+        updateWifiDeviceList(wifiLinkManager.getLastDiscoverList());
+        updateTCPConnectionList();
 
         //if bluetoothLinkManager != null
         {
@@ -124,12 +109,10 @@ class LinkFragmentViewModel extends ViewModel {
     }
 
     private void updateTCPConnectionList() {
-        WifiTCPConnectionManager wifiTCPConnectionManager = WifiTCPConnectionManager.getDefaultInstance();
-        if (wifiTCPConnectionManager != null) {
-            for (Link l : links) {
-                if (l instanceof LinkWifiDirect)
-                    l.setTCPConnected(wifiTCPConnectionManager.isDeviceTCPConnected(l.name));
-            }
+        WifiTCPConnectionManager wifiTCPConnectionManager = LinkLayer.getDefaultImplementation().getWifiTCPConnectionManager();
+        for (Link l : links) {
+            if (l instanceof LinkWifiDirect)
+                l.setTCPConnected(wifiTCPConnectionManager.isDeviceTCPConnected(l.name));
         }
     }
 

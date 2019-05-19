@@ -2,7 +2,7 @@ package nist.p_70nanb17h188.demo.pscr19.gui.link;
 
 import android.net.wifi.p2p.WifiP2pDevice;
 
-import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
 //import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
@@ -15,37 +15,37 @@ class LinkWifiDirect extends Link {
 
     private void updateLinkStatus() {
         if (isTcpConnected()) {
-            status.setValue(LinkStatus.TCPEstablished);
-            establishConnection.setValue(true);
+            status.postValue(LinkStatus.TCPEstablished);
+            establishConnection.postValue(true);
 //            Log.d("LinkWifiDirect", "updateWifiDeviceList, state=%s, name=%s", status.getValue(), name);
             return;
         }
         if (deviceInDiscovery == null) {
-            status.setValue(LinkStatus.NotFound);
-            establishConnection.setValue(false);
+            status.postValue(LinkStatus.NotFound);
+            establishConnection.postValue(false);
         } else {
             switch (deviceInDiscovery.status) {
                 case WifiP2pDevice.AVAILABLE:
 //                    Log.d("LinkFragment", "updateWifiDeviceList, state=available, name=%s", deviceInDiscovery.deviceName);
-                    status.setValue(LinkStatus.NotConnected);
-                    establishConnection.setValue(false);
+                    status.postValue(LinkStatus.NotConnected);
+                    establishConnection.postValue(false);
                     break;
                 case WifiP2pDevice.INVITED:
 //                    Log.d("LinkFragment", "updateWifiDeviceList, state=invited, name=%s", deviceInDiscovery.deviceName);
-                    status.setValue(LinkStatus.Invited);
-                    establishConnection.setValue(true);
+                    status.postValue(LinkStatus.Invited);
+                    establishConnection.postValue(true);
                     break;
                 case WifiP2pDevice.CONNECTED:
 //                    Log.d("LinkFragment", "updateWifiDeviceList, state=connected, name=%s", deviceInDiscovery.deviceName);
-                    status.setValue(LinkStatus.Connected);
-                    establishConnection.setValue(true);
+                    status.postValue(LinkStatus.Connected);
+                    establishConnection.postValue(true);
                     break;
 //                case WifiP2pDevice.UNAVAILABLE:
 //                case WifiP2pDevice.FAILED:
                 default:
 //                    Log.d("LinkFragment", "updateWifiDeviceList, state=unknown, name=%s", deviceInDiscovery.deviceName);
-                    status.setValue(LinkStatus.NotFound);
-                    establishConnection.setValue(false);
+                    status.postValue(LinkStatus.NotFound);
+                    establishConnection.postValue(false);
                     break;
 
             }
@@ -67,12 +67,11 @@ class LinkWifiDirect extends Link {
     @Override
     void onEstablishConnectionClick() {
         if (deviceInDiscovery != null) {
-            WifiTCPConnectionManager wifiTCPConnectionManager = WifiTCPConnectionManager.getDefaultInstance();
-            if (wifiTCPConnectionManager == null) return;
+            WifiTCPConnectionManager wifiTCPConnectionManager = LinkLayer.getDefaultImplementation().getWifiTCPConnectionManager();
             Boolean establishConnectionInverse = establishConnection.getValue();
             assert establishConnectionInverse != null;
             wifiTCPConnectionManager.modifyConnection(deviceInDiscovery.deviceName, !establishConnectionInverse);
         }
-        WifiLinkManager.getDefaultInstance().modifyConnection(deviceInDiscovery);
+        LinkLayer.getDefaultImplementation().getWifiLinkManager().modifyConnection(deviceInDiscovery);
     }
 }

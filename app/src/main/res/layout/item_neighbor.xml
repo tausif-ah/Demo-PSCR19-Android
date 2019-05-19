@@ -27,7 +27,6 @@
             android:layout_height="wrap_content"
             android:ems="5"
             android:gravity="end"
-            android:hint="[0,4000]"
             android:inputType="number" />
 
         <Button

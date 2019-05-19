@@ -1,14 +1,7 @@
 package nist.p_70nanb17h188.demo.pscr19.logic.link;
 
-import android.app.Application;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -18,45 +11,41 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Locale;
 
+import nist.p_70nanb17h188.demo.pscr19.MyApplication;
+import nist.p_70nanb17h188.demo.pscr19.imc.Context;
+import nist.p_70nanb17h188.demo.pscr19.imc.DelayRunner;
+import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 public abstract class WifiTCPConnectionManager {
     static final long SERVER_SOCKET_RETRY_DURATION_MS = 2000;
     static final long SOCKET_RCONNECT_DURATION_MS = 2000;
-    private static WifiTCPConnectionManager DEFAULT_INSTANCE = null;
-    @NonNull
-    final Application application;
-    @NonNull
-    final Context context;
-    @NonNull
-    final Handler handler;
 
-    WifiTCPConnectionManager(@NonNull Application application) {
-        this.application = application;
-        context = application.getApplicationContext();
-        handler = new Handler(application.getMainLooper());
-    }
-
-    static void init(@NonNull Application application) {
-        if (DEFAULT_INSTANCE == null) {
-            if (Constants.getWifiDirectNeighbors().length == 0) {
-                DEFAULT_INSTANCE = new WifiTCPConnectionManagerDoNothing(application);
-            } else if (Constants.isWifiDirectGroupOwner()) {
-                DEFAULT_INSTANCE = new WifiTCPConnectionManagerGroupOwner(application);
-            } else {
-                DEFAULT_INSTANCE = new WifiTCPConnectionManagerClient(application);
-            }
+    static WifiTCPConnectionManager createWifiTCPConnectionManager(@NonNull TCPConnectionManager tcpConnectionManager) {
+        if (Constants.getWifiDirectNeighbors().length == 0) {
+            return new WifiTCPConnectionManagerDoNothing(tcpConnectionManager);
+        } else if (Constants.isWifiDirectGroupOwner()) {
+            return new WifiTCPConnectionManagerGroupOwner(tcpConnectionManager);
+        } else {
+            return new WifiTCPConnectionManagerClient(tcpConnectionManager);
         }
     }
 
-    @Nullable
-    public static WifiTCPConnectionManager getDefaultInstance() {
-        return DEFAULT_INSTANCE;
+    @NonNull
+    private final TCPConnectionManager tcpConnectionManager;
+
+    WifiTCPConnectionManager(@NonNull TCPConnectionManager tcpConnectionManager) {
+        this.tcpConnectionManager = tcpConnectionManager;
     }
 
     static void checkValidSendDataParams(@NonNull byte[] data, int start, int len) {
         if (len < 0 || start + len > data.length)
             throw new IllegalArgumentException(String.format(Locale.US, "wrong start(%d) or len(%d) value, data.length=%d", start, len, data.length));
+    }
+
+    @NonNull
+    TCPConnectionManager getTcpConnectionManager() {
+        return tcpConnectionManager;
     }
 
     public abstract boolean isDeviceTCPConnected(@NonNull String name);
@@ -68,8 +57,8 @@ public abstract class WifiTCPConnectionManager {
 }
 
 class WifiTCPConnectionManagerDoNothing extends WifiTCPConnectionManager {
-    WifiTCPConnectionManagerDoNothing(@NonNull Application application) {
-        super(application);
+    WifiTCPConnectionManagerDoNothing(TCPConnectionManager tcpConnectionManager) {
+        super(tcpConnectionManager);
     }
 
     @Override
@@ -97,10 +86,10 @@ class WifiTCPConnectionManagerGroupOwner extends WifiTCPConnectionManager implem
     private final HashMap<SocketChannel, String> connectedNeighborsReverse = new HashMap<>();
 
 
-    WifiTCPConnectionManagerGroupOwner(@NonNull Application application) {
-        super(application);
+    WifiTCPConnectionManagerGroupOwner(TCPConnectionManager tcpConnectionManager) {
+        super(tcpConnectionManager);
 //        wifiDirectNeighbors = Constants.getWifiDirectNeighbors();
-        startServerSocket();
+        DelayRunner.getDefaultInstance().post(this::startServerSocket);
     }
 
     @Override
@@ -109,10 +98,10 @@ class WifiTCPConnectionManagerGroupOwner extends WifiTCPConnectionManager implem
     }
 
     private void startServerSocket() {
-        ServerSocketChannel serverSocketChannel = TCPConnectionManager.getDefaultInstance().addServerSocketChannel(new InetSocketAddress(Constants.WIFI_DIRECT_SERVER_LISTEN_PORT), this);
+        ServerSocketChannel serverSocketChannel = getTcpConnectionManager().addServerSocketChannel(new InetSocketAddress(Constants.WIFI_DIRECT_SERVER_LISTEN_PORT), this);
         if (serverSocketChannel == null) {
             Log.i(TAG, "Failed in listening to port %d, retry in %dms.", Constants.WIFI_DIRECT_SERVER_LISTEN_PORT, SERVER_SOCKET_RETRY_DURATION_MS);
-            handler.postDelayed(this::startServerSocket, SERVER_SOCKET_RETRY_DURATION_MS);
+            DelayRunner.getDefaultInstance().postDelayed(SERVER_SOCKET_RETRY_DURATION_MS, this::startServerSocket);
         }
     }
 
@@ -124,23 +113,23 @@ class WifiTCPConnectionManagerGroupOwner extends WifiTCPConnectionManager implem
     @Override
     public boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
         checkValidSendDataParams(data, start, len);
-        SocketChannel socketChannel = connectedNeighbors.get(id.name);
+        SocketChannel socketChannel = connectedNeighbors.get(id.getName());
         if (socketChannel == null) return false;
         byte[] buf = new byte[len];
         if (len > 0) System.arraycopy(data, start, buf, 0, len);
-        return TCPConnectionManager.getDefaultInstance().writeToSocket(socketChannel, buf);
+        return getTcpConnectionManager().writeToSocket(socketChannel, buf);
     }
 
-    @Override
-    public void onServerSocketChannelClosed(@NonNull ServerSocketChannel serverSocketChannel) {
-        Log.i(TAG, "ServerSocketChannel closed: %s, retry in %dms!", serverSocketChannel, SERVER_SOCKET_RETRY_DURATION_MS);
-        handler.postDelayed(this::startServerSocket, SERVER_SOCKET_RETRY_DURATION_MS);
-    }
-
-    @Override
-    public void onServerSocketChannelCloseFailed(@NonNull ServerSocketChannel serverSocketChannel) {
-        Log.e(TAG, "Should not reach here (onServerSocketChannelCloseFailed). I'll never close server socket!");
-    }
+//    @Override
+//    public void onServerSocketChannelClosed(@NonNull ServerSocketChannel serverSocketChannel) {
+//        Log.i(TAG, "ServerSocketChannel closed: %s, retry in %dms!", serverSocketChannel, SERVER_SOCKET_RETRY_DURATION_MS);
+//        DelayRunner.getDefaultInstance().postDelayed(SERVER_SOCKET_RETRY_DURATION_MS, this::startServerSocket);
+//    }
+//
+//    @Override
+//    public void onServerSocketChannelCloseFailed(@NonNull ServerSocketChannel serverSocketChannel) {
+//        Log.e(TAG, "Should not reach here (onServerSocketChannelCloseFailed). I'll never close server socket!");
+//    }
 
     @Override
     public void onServerSocketChannelAcceptFailed(@NonNull ServerSocketChannel serverSocketChannel) {
@@ -188,11 +177,12 @@ class WifiTCPConnectionManagerGroupOwner extends WifiTCPConnectionManager implem
             connectedNeighborsReverse.put(socketChannel, name);
         }
         if (originalSocketChannel != null) {
-            TCPConnectionManager.getDefaultInstance().closeSocketChannel(originalSocketChannel);
+            getTcpConnectionManager().closeSocketChannel(originalSocketChannel);
         } else {
-            context.sendBroadcast(new Intent(LinkLayer.ACTION_LINK_CHANGED).
-                    putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).
-                    putExtra(LinkLayer.EXTRA_CONNECTED, true));
+            Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).sendBroadcast(
+                    new Intent(LinkLayer.ACTION_LINK_CHANGED).
+                            putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).
+                            putExtra(LinkLayer.EXTRA_CONNECTED, true));
         }
         // if not null, it is already in the connected state
     }
@@ -202,7 +192,10 @@ class WifiTCPConnectionManagerGroupOwner extends WifiTCPConnectionManager implem
         String name = connectedNeighborsReverse.get(socketChannel);
         // from a neighbor that does not exist? how can that be?
         if (name == null) return;
-        application.getApplicationContext().sendBroadcast(new Intent(LinkLayer.ACTION_DATA_RECEIVED).putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).putExtra(LinkLayer.EXTRA_DATA, data));
+        Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).sendBroadcast(
+                new Intent(LinkLayer.ACTION_DATA_RECEIVED).
+                        putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).
+                        putExtra(LinkLayer.EXTRA_DATA, data));
     }
 
     @Override
@@ -214,9 +207,10 @@ class WifiTCPConnectionManagerGroupOwner extends WifiTCPConnectionManager implem
         }
         if (name != null) {
             Log.i(TAG, "Closed a remote socket socketChannel=%s, original remote device: %s", socketChannel, name);
-            context.sendBroadcast(new Intent(LinkLayer.ACTION_LINK_CHANGED).
-                    putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).
-                    putExtra(LinkLayer.EXTRA_CONNECTED, false));
+            Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).sendBroadcast(
+                    new Intent(LinkLayer.ACTION_LINK_CHANGED).
+                            putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).
+                            putExtra(LinkLayer.EXTRA_CONNECTED, false));
         } else {
             Log.i(TAG, "Closed a remote socket socketChannel=%s", socketChannel);
         }
@@ -239,26 +233,26 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
 //    @NonNull
 //    private final String[] wifiDirectNeighbors;
 
-    WifiTCPConnectionManagerClient(@NonNull Application application) {
-        super(application);
-//        wifiDirectNeighbors = Constants.getWifiDirectNeighbors();
+    WifiTCPConnectionManagerClient(@NonNull TCPConnectionManager tcpConnectionManager) {
+        super(tcpConnectionManager);
+        // wifiDirectNeighbors = Constants.getWifiDirectNeighbors();
 
         // need to wait for group formation, and then connect to group owner
-        IntentFilter filter = new IntentFilter();
+        android.content.IntentFilter filter = new android.content.IntentFilter();
         filter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
-        context.registerReceiver(new BroadcastReceiver() {
+        MyApplication.getDefaultInstance().getApplicationContext().registerReceiver(new android.content.BroadcastReceiver() {
             @Override
-            public void onReceive(Context context, Intent intent) {
+            public void onReceive(android.content.Context context, android.content.Intent intent) {
                 if (intent == null || !WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(intent.getAction()))
                     return;
                 WifiP2pInfo wifiP2pInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_INFO);
-                NetworkInfo networkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
-                Log.v(TAG, "Connection Changed: %nwifiP2pInfo=%s%nnetworkInfo=%s", wifiP2pInfo, networkInfo);
+//                NetworkInfo networkInfo = intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+                Log.v(TAG, "Connection Changed: %nwifiP2pInfo=%s", wifiP2pInfo);
                 // has to be connection changed action
                 reconnect = wifiP2pInfo.groupFormed;
                 if (reconnect) {
                     address = new InetSocketAddress(wifiP2pInfo.groupOwnerAddress, Constants.WIFI_DIRECT_SERVER_LISTEN_PORT);
-                    establishConnection();
+                    DelayRunner.getDefaultInstance().post(WifiTCPConnectionManagerClient.this::establishConnection);
                 } else {
                     closeConnection();
                 }
@@ -270,7 +264,8 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
         synchronized (this) {
             if (currentSocket != null) {
                 Log.v(TAG, "closeConnection, currentSocket=%s", currentSocket);
-                TCPConnectionManager.getDefaultInstance().closeSocketChannel(currentSocket);
+                getTcpConnectionManager().closeSocketChannel(currentSocket);
+                // do not set the current socket, let the close handler set it to null
             } else {
                 Log.v(TAG, "closeConnection, currentSocket == null");
             }
@@ -283,8 +278,15 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
             // If we somehow decided to disconnect (reconnect == false) we also don't connect.
             Log.v(TAG, "establishConnection, currentSocket=%s, reconnect = %b", currentSocket, reconnect);
 
-            if (currentSocket != null || !reconnect) return;
-            TCPConnectionManager.getDefaultInstance().addSocketChannel(address, this);
+            synchronized (this) {
+                if (currentSocket != null || !reconnect) return;
+                SocketChannel channel = getTcpConnectionManager().addSocketChannel(address, this);
+                if (channel == null) {
+                    Log.i(TAG, "Failed in creating socketChannel, retry in %dms", SOCKET_RCONNECT_DURATION_MS);
+                    DelayRunner.getDefaultInstance().postDelayed(SOCKET_RCONNECT_DURATION_MS, this::establishConnection);
+                }
+                currentSocket = channel;
+            }
         }
     }
 
@@ -309,26 +311,32 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
     public boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
         checkValidSendDataParams(data, start, len);
         synchronized (this) {
-            if (!id.name.equals(connectedName)) return false;
-            assert currentSocket != null;
+            if (!id.getName().equals(connectedName) || currentSocket == null) return false;
             byte[] buf = new byte[len];
             if (len > 0) System.arraycopy(data, start, buf, 0, len);
-            return TCPConnectionManager.getDefaultInstance().writeToSocket(currentSocket, buf);
+            return getTcpConnectionManager().writeToSocket(currentSocket, buf);
         }
     }
 
     @Override
     public void onSocketConnected(@NonNull SocketChannel socketChannel) {
         // do nothing, wait for the other side to give me the name.
+        synchronized (this) {
+            if (socketChannel != currentSocket) return;
+        }
         Log.v(TAG, "Socket connected: %s", socketChannel);
     }
 
     @Override
     public void onSocketConnectFailed(@NonNull SocketChannel socketChannel) {
+        synchronized (this) {
+            if (socketChannel != currentSocket) return;
+            currentSocket = null;
+        }
         Log.v(TAG, "onSocketConnectFailed: %s, reconnect=%b", socketChannel, reconnect);
         if (reconnect) {
             Log.i(TAG, "Connection failed on socketChannel %s, reconnect in %dms.", socketChannel, SOCKET_RCONNECT_DURATION_MS);
-            handler.postDelayed(this::establishConnection, SOCKET_RCONNECT_DURATION_MS);
+            DelayRunner.getDefaultInstance().postDelayed(SOCKET_RCONNECT_DURATION_MS, this::establishConnection);
         }
     }
 
@@ -347,13 +355,14 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
 //            return;
 //        }
         synchronized (this) {
-            currentSocket = socketChannel;
+            if (socketChannel != currentSocket) return;
             connectedName = name;
-            Log.i(TAG, "Connected to %s, %s", name, socketChannel);
         }
-        context.sendBroadcast(new Intent(LinkLayer.ACTION_LINK_CHANGED).
-                putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).
-                putExtra(LinkLayer.EXTRA_CONNECTED, true));
+        Log.i(TAG, "Connected to %s, %s", name, socketChannel);
+        Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).sendBroadcast(
+                new Intent(LinkLayer.ACTION_LINK_CHANGED).
+                        putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).
+                        putExtra(LinkLayer.EXTRA_CONNECTED, true));
 
     }
 
@@ -361,21 +370,24 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
     public void onSocketChannelClosed(@NonNull SocketChannel socketChannel) {
         // If I'm a client and I know who I am, and the user still wants to connect
         String name = connectedName;
-        Log.v(TAG, "onSocketChannelClosed: %s, name=%s, reconnect=%b", socketChannel, name, reconnect);
+        Log.v(TAG, "onSocketChannelClosed: %s, currentSocket: %s name=%s, reconnect=%b", socketChannel, currentSocket, name, reconnect);
         synchronized (this) {
             // not closing the current socket, ignore
             if (socketChannel != currentSocket) return;
             currentSocket = null;
             connectedName = null;
         }
-        context.sendBroadcast(new Intent(LinkLayer.ACTION_LINK_CHANGED).
-                putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).
-                putExtra(LinkLayer.EXTRA_CONNECTED, false));
+        if (name != null) {
+            Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).sendBroadcast(
+                    new Intent(LinkLayer.ACTION_LINK_CHANGED).
+                            putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(name)).
+                            putExtra(LinkLayer.EXTRA_CONNECTED, false));
+        }
         if (reconnect) {
-            Log.i(TAG, "Closed a remote socket to %s, socketChannel=%s, reconnect in %dms", name, socketChannel, SOCKET_RCONNECT_DURATION_MS);
-            handler.postDelayed(this::establishConnection, SOCKET_RCONNECT_DURATION_MS);
+            Log.i(TAG, "Closed socketChannel=%s, reconnect in %dms", socketChannel, SOCKET_RCONNECT_DURATION_MS);
+            DelayRunner.getDefaultInstance().postDelayed(SOCKET_RCONNECT_DURATION_MS, this::establishConnection);
         } else {
-            Log.i(TAG, "Closed a remote socket to %s socketChannel=%s", name, socketChannel);
+            Log.i(TAG, "Closed socketChannel=%s", socketChannel);
         }
 
     }
@@ -390,7 +402,10 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
     public void onSocketChannelDataReceived(@NonNull SocketChannel socketChannel, @NonNull byte[] data) {
         // from a neighbor that does not exist? how can that be?
         if (connectedName == null) return;
-        application.getApplicationContext().sendBroadcast(new Intent(LinkLayer.ACTION_DATA_RECEIVED).putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(connectedName)).putExtra(LinkLayer.EXTRA_DATA, data));
+        Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).sendBroadcast(
+                new Intent(LinkLayer.ACTION_DATA_RECEIVED)
+                        .putExtra(LinkLayer.EXTRA_NEIGHBOR_ID, new NeighborID(connectedName))
+                        .putExtra(LinkLayer.EXTRA_DATA, data));
 
     }
 

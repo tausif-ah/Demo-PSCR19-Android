@@ -6,6 +6,7 @@ import android.content.Context;
 import android.databinding.ObservableList;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -46,11 +47,11 @@ public class LogFragment extends Fragment {
     @NonNull
     private static SpannableStringBuilder getLogText(LogItem item) {
         SpannableStringBuilder builder = new SpannableStringBuilder();
-        builder.append(String.format(Locale.US, "[ %s | %d ] %s/%s: ", DEFAULT_TIME_FORMAT.format(item.time), item.id, item.type.acry, item.tag));
+        builder.append(String.format(Locale.US, "[ %s | %d ] %s/%s: ", DEFAULT_TIME_FORMAT.format(item.getTime()), item.getId(), item.getType().getAcry(), item.getTag()));
         int position = builder.length();
         builder.setSpan(new StyleSpan(Typeface.BOLD), 0, position, 0);
         builder.setSpan(DEFAULT_FIRST_LINE_MARGIN, 0, position, 0);
-        builder.append(item.message);
+        builder.append(item.getMessage());
         builder.setSpan(DEFAULT_REST_LINE_MARGIN, position, builder.length(), 0);
         return builder;
     }
@@ -61,14 +62,14 @@ public class LogFragment extends Fragment {
         FragmentActivity activity = getActivity();
         assert activity != null;
         viewModel = ViewModelProviders.of(activity).get(LogFragmentViewModel.class);
-        viewModel.setApplication(getActivity().getApplication());
+        viewModel.setMainLoopHandler(new Handler());
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_log, container, false);
         LogType[] logTypes = LogType.values();
-        Arrays.sort(logTypes, 0, logTypes.length, (a, b) -> Integer.compare(a.val, b.val));
+        Arrays.sort(logTypes, 0, logTypes.length, (a, b) -> Integer.compare(a.getVal(), b.getVal()));
         ArrayAdapter<LogType> logTypeArrayAdapter = new ArrayAdapter<>(view.getContext(), android.R.layout.simple_spinner_dropdown_item, logTypes);
         Spinner spinner_lvMin = view.findViewById(R.id.log_lvMin);
         spinner_lvMin.setAdapter(logTypeArrayAdapter);
@@ -137,12 +138,12 @@ public class LogFragment extends Fragment {
 
         Observer<FilterCriteria> observer = criteria -> {
             assert criteria != null;
-            spinner_lvMin.setSelection(logTypeArrayAdapter.getPosition(criteria.lvMin));
-            spinner_lvMax.setSelection(logTypeArrayAdapter.getPosition(criteria.lvMax));
+            spinner_lvMin.setSelection(logTypeArrayAdapter.getPosition(criteria.getLvMin()));
+            spinner_lvMax.setSelection(logTypeArrayAdapter.getPosition(criteria.getLvMax()));
             tagAdapter.clear();
-            tagAdapter.addAll(criteria.tags);
+            tagAdapter.addAll(criteria.getTags());
             tagAdapter.notifyDataSetChanged();
-            spinner_tag.setSelection(criteria.selectedTag == null ? 0 : tagAdapter.getPosition(criteria.selectedTag));
+            spinner_tag.setSelection(criteria.getSelectedTag() == null ? 0 : tagAdapter.getPosition(criteria.getSelectedTag()));
             listAdapter.notifyItemRangeChanged(0, listAdapter.getItemCount());
         };
         viewModel.criteria.observe(this, observer);
@@ -162,9 +163,7 @@ public class LogFragment extends Fragment {
             @Override
             public void onItemRangeInserted(ObservableList sender, int positionStart, int itemCount) {
                 listAdapter.notifyItemRangeInserted(positionStart, itemCount);
-                if (isTopLog) {
-                    list.scrollToPosition(0);
-                }
+                if (isTopLog) list.scrollToPosition(0);
             }
 
             @Override
@@ -212,6 +211,7 @@ public class LogFragment extends Fragment {
         super.onDestroy();
         viewModel.criteria.removeObservers(this);
         viewModel.cache.removeOnListChangedCallback(onListChangedCallback);
+        viewModel.setMainLoopHandler(null);
     }
 
     private class LogViewHolder extends RecyclerView.ViewHolder {
