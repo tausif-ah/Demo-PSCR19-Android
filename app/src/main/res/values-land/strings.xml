@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="link_not_found">Not found</string>
+    <string name="link_found">Not connected</string>
+    <string name="link_connected">Link connected</string>
+    <string name="link_established">TCP connected</string>
+    <string name="link_invited">Invited</string>
+
+</resources>

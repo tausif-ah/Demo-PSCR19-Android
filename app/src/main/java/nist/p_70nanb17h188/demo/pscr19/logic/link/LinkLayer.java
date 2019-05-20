@@ -13,8 +13,8 @@ public class LinkLayer {
     public static final String CONTEXT_LINK_LAYER = "nist.p_70nanb17h188.demo.pscr19.logic.link";
     /**
      * Broadcast intent action indicating that a link is either established or disconnected.
-     * One extra EXTRA_NEIGHBOR_ID (nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID) indicates the ID of the neighbor.
-     * Another extra EXTRA_CONNECTED (boolean) indicates if the connection is established or disconnected.
+     * One extra EXTRA_NEIGHBOR_ID ({@link NeighborID}) indicates the ID of the neighbor. {@code EXTRA_NEIGHBOR_ID}
+     * Another extra EXTRA_CONNECTED ({@link boolean}) indicates if the connection is established or disconnected.
      */
     public static final String ACTION_LINK_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer.linkChanged";
 

@@ -1,5 +1,7 @@
 package nist.p_70nanb17h188.demo.pscr19.imc;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
@@ -9,6 +11,7 @@ import java.util.Map;
 
 public class Context {
     private static final HashMap<String, Context> EXISTING_CONTEXTS = new HashMap<>();
+    private static final Handler MAIN_LOOP_HANDLER = new Handler(Looper.getMainLooper());
 
     /**
      * Gets an existing context. If it does not exist, create one.
@@ -27,6 +30,7 @@ public class Context {
 
 
     private final HashMap<String, HashSet<BroadcastReceiver>> broadcastReceivers = new HashMap<>();
+
 
     public void registerReceiver(@NonNull BroadcastReceiver broadcastReceiver, @NonNull IntentFilter filter) {
         synchronized (broadcastReceivers) {
@@ -58,7 +62,7 @@ public class Context {
             HashSet<BroadcastReceiver> receivers = broadcastReceivers.get(intent.getAction());
             if (receivers != null) {
                 for (BroadcastReceiver receiver : receivers) {
-                    receiver.onReceive(this, intent);
+                    MAIN_LOOP_HANDLER.post(() -> receiver.onReceive(this, intent));
                 }
             }
         }

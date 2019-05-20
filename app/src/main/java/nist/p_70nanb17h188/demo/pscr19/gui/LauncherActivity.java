@@ -18,7 +18,6 @@ import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
-import nist.p_70nanb17h188.demo.pscr19.imc.DelayRunner;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
@@ -46,7 +45,7 @@ public class LauncherActivity extends AppCompatActivity {
 //        int duration = (type.val >= LogType.Warn.val) ? Snackbar.LENGTH_LONG : Snackbar.LENGTH_SHORT;
 //        Snackbar.make(this.get, msg, duration).show();
         int duration = (type.getVal() >= LogType.Warn.getVal()) ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
-        DelayRunner.getDefaultInstance().post(() -> Toast.makeText(this, msg, duration).show());
+        Toast.makeText(this, msg, duration).show();
     };
 
     @Override
@@ -70,7 +69,11 @@ public class LauncherActivity extends AppCompatActivity {
     }
 
 
+    private boolean nameClicked = false;
+
     private void nameListClicked(AdapterView<?> parent, View view, int position, long id) {
+        if (nameClicked) return;
+        nameClicked = true;
         String name = (String) parent.getItemAtPosition(position);
         if (!Device.isPhone(name)) {
             Helper.notifyUser(LogType.Info, "%s cannot be chosen on a phone", name);

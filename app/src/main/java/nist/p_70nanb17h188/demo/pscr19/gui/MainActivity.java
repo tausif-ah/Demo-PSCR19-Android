@@ -23,7 +23,6 @@ import nist.p_70nanb17h188.demo.pscr19.gui.net.NamingFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.work_offload.WorkOffloadFragment;
 import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
-import nist.p_70nanb17h188.demo.pscr19.imc.DelayRunner;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
@@ -46,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
 //        int duration = (type.val >= LogType.Warn.val) ? Snackbar.LENGTH_LONG : Snackbar.LENGTH_SHORT;
 //        Snackbar.make(this.get, msg, duration).show();
         int duration = (type.getVal() >= LogType.Warn.getVal()) ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
-        DelayRunner.getDefaultInstance().post(() -> Toast.makeText(this, msg, duration).show());
+        Toast.makeText(this, msg, duration).show();
     };
 
     @Override
@@ -115,28 +114,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     private void mShowFragment(int showFragment) {
         navigationView.setCheckedItem(showFragment);
         Fragment fragment;
         switch (showFragment) {
             case R.id.main_nav_messaging:
-                setTitle(Device.getName() + " - " + getString(R.string.nav_messaging));
                 fragment = new MessagingFragment();
                 break;
             case R.id.main_nav_workoffload:
-                setTitle(Device.getName() + " - " + getString(R.string.nav_work_offload));
                 fragment = new WorkOffloadFragment();
                 break;
             case R.id.main_nav_link:
-                setTitle(Device.getName() + " - " + getString(R.string.nav_link));
                 fragment = new LinkFragment();
                 break;
             case R.id.main_nav_naming:
-                setTitle(Device.getName() + " - " + getString(R.string.nav_naming));
                 fragment = new NamingFragment();
                 break;
             case R.id.main_nav_log:
-                setTitle(Device.getName() + " - " + getString(R.string.nav_log));
                 fragment = new LogFragment();
                 break;
             default:

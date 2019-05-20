@@ -278,15 +278,13 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
             // If we somehow decided to disconnect (reconnect == false) we also don't connect.
             Log.v(TAG, "establishConnection, currentSocket=%s, reconnect = %b", currentSocket, reconnect);
 
-            synchronized (this) {
-                if (currentSocket != null || !reconnect) return;
-                SocketChannel channel = getTcpConnectionManager().addSocketChannel(address, this);
-                if (channel == null) {
-                    Log.i(TAG, "Failed in creating socketChannel, retry in %dms", SOCKET_RCONNECT_DURATION_MS);
-                    DelayRunner.getDefaultInstance().postDelayed(SOCKET_RCONNECT_DURATION_MS, this::establishConnection);
-                }
-                currentSocket = channel;
+            if (currentSocket != null || !reconnect) return;
+            SocketChannel channel = getTcpConnectionManager().addSocketChannel(address, this);
+            if (channel == null) {
+                Log.i(TAG, "Failed in creating socketChannel, retry in %dms", SOCKET_RCONNECT_DURATION_MS);
+                DelayRunner.getDefaultInstance().postDelayed(SOCKET_RCONNECT_DURATION_MS, this::establishConnection);
             }
+            currentSocket = channel;
         }
     }
 
