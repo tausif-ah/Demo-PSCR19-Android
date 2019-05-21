@@ -2,11 +2,14 @@ package nist.p_70nanb17h188.demo.pscr19.gui.link;
 
 import android.net.wifi.p2p.WifiP2pDevice;
 
+import nist.p_70nanb17h188.demo.pscr19.imc.DelayRunner;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 //import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 class LinkWifiDirect extends Link {
+    private static final long WIFI_DIRECT_CONNECTION_CLOSE_DELAY_MS = 500;
     private WifiP2pDevice deviceInDiscovery;
 
     LinkWifiDirect(String name) {
@@ -66,12 +69,16 @@ class LinkWifiDirect extends Link {
 
     @Override
     void onEstablishConnectionClick() {
-        if (deviceInDiscovery != null) {
-            WifiTCPConnectionManager wifiTCPConnectionManager = LinkLayer.getDefaultImplementation().getWifiTCPConnectionManager();
-            Boolean establishConnectionInverse = establishConnection.getValue();
-            assert establishConnectionInverse != null;
-            wifiTCPConnectionManager.modifyConnection(deviceInDiscovery.deviceName, !establishConnectionInverse);
-        }
-        LinkLayer.getDefaultImplementation().getWifiLinkManager().modifyConnection(deviceInDiscovery);
+        Log.d("LAUNCHER", "onEstablishConnectionClick start");
+        DelayRunner.getDefaultInstance().post(() -> {
+            if (deviceInDiscovery != null) {
+                WifiTCPConnectionManager wifiTCPConnectionManager = LinkLayer.getDefaultImplementation().getWifiTCPConnectionManager();
+                Boolean establishConnectionInverse = establishConnection.getValue();
+                assert establishConnectionInverse != null;
+                wifiTCPConnectionManager.modifyConnection(deviceInDiscovery.deviceName, !establishConnectionInverse);
+            }
+            DelayRunner.getDefaultInstance().postDelayed(WIFI_DIRECT_CONNECTION_CLOSE_DELAY_MS, () -> LinkLayer.getDefaultImplementation().getWifiLinkManager().modifyConnection(deviceInDiscovery));
+        });
+        Log.d("LAUNCHER", "onEstablishConnectionClick end");
     }
 }
