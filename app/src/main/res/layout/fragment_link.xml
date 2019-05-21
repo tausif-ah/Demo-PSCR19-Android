@@ -154,66 +154,27 @@
         android:orientation="horizontal">
 
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:gravity="center"
-            android:padding="3dp"
-            android:text="@string/link_wifi_direct_short" />
-
-        <TextView
+        <Button
             android:id="@+id/link_wifi_discover_update"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
             android:layout_weight="1"
-            android:gravity="start"
-            android:paddingStart="3dp"
-            android:paddingTop="3dp"
-            android:paddingEnd="3dp"
-            tools:text="--:--:--.---" />
-
-
-        <ImageView
-            android:id="@+id/link_wifi_discovery"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="center_vertical"
-            android:contentDescription="@string/link_wifi_discovery_status"
-            android:padding="3dp"
-            android:src="@drawable/ic_circle_red" />
+            android:drawableEnd="@drawable/ic_circle_red"
+            android:gravity="start|center_vertical" />
 
         <View
             android:layout_width="1dp"
             android:layout_height="match_parent"
             android:background="?attr/colorPrimary" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:gravity="start"
-            android:padding="3dp"
-            android:text="@string/link_bluetooth_short" />
-
-        <TextView
+        <Button
             android:id="@+id/link_bluetooth_update"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
             android:layout_weight="1"
-            android:gravity="start"
-            android:padding="3dp" />
+            android:drawableEnd="@drawable/ic_circle_red"
+            android:gravity="start|center_vertical" />
 
-        <ImageView
-            android:id="@+id/link_bluetooth_discovery"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="center_vertical"
-            android:contentDescription="@string/link_bluetooth_discovery_status"
-            android:padding="3dp"
-            android:src="@drawable/ic_circle_red" />
 
     </LinearLayout>
 

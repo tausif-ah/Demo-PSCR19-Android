@@ -9,7 +9,7 @@ import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl;
 
-class NeighborsFragmentViewModel extends ViewModel {
+public class NeighborsFragmentViewModel extends ViewModel {
     final MutableLiveData<NeighborID[]> connectedNeighbors = new MutableLiveData<>();
     private final BroadcastReceiver broadcastReceiver = (context, intent) -> {
         if (!NetLayer_Impl.ACTION_NEIGHBOR_CHANGED.equals(intent.getAction()))

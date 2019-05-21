@@ -12,6 +12,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -19,6 +20,7 @@ import android.widget.TextView;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 //import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 /**
@@ -56,16 +58,18 @@ public class LinkFragment extends Fragment {
                 txtGroupPass.setText(p.getPassphrase());
             }
         });
-        TextView txtWifiDiscoverUpdate = view.findViewById(R.id.link_wifi_discover_update);
+        Button txtWifiDiscoverUpdate = view.findViewById(R.id.link_wifi_discover_update);
         txtWifiDiscoverUpdate.setText(LinkFragmentViewModel.DATE_STRING_ON_NULL);
-        viewModel.strWifiDiscoverUpdateTime.observe(this, txtWifiDiscoverUpdate::setText);
-        TextView txtBluetoothUpdate = view.findViewById(R.id.link_bluetooth_update);
+        viewModel.strWifiDiscoverUpdateTime.observe(this, timeString -> txtWifiDiscoverUpdate.setText("Wifi-D: " + timeString));
+        Button txtBluetoothUpdate = view.findViewById(R.id.link_bluetooth_update);
         txtBluetoothUpdate.setText(LinkFragmentViewModel.DATE_STRING_ON_NULL);
-        viewModel.strBluetoothUpdateTime.observe(this, txtBluetoothUpdate::setText);
-        ImageView imgWifiDiscover = view.findViewById(R.id.link_wifi_discovery);
-        viewModel.wifiDiscovering.observe(this, discovering -> imgWifiDiscover.setImageResource(Constants.getDiscoverStatusImageResource(discovering)));
-        ImageView imgBluetoothDiscover = view.findViewById(R.id.link_bluetooth_discovery);
-        viewModel.bluetoothDiscovering.observe(this, discovering -> imgBluetoothDiscover.setImageResource(Constants.getDiscoverStatusImageResource(discovering)));
+        viewModel.strBluetoothUpdateTime.observe(this, timeString -> txtBluetoothUpdate.setText("BT: " + timeString));
+        viewModel.wifiDiscovering.observe(this, discovering -> txtWifiDiscoverUpdate.setCompoundDrawablesWithIntrinsicBounds(0, 0, Constants.getDiscoverStatusImageResource(discovering), 0));
+        viewModel.bluetoothDiscovering.observe(this, discovering -> txtBluetoothUpdate.setCompoundDrawablesWithIntrinsicBounds(0, 0, Constants.getDiscoverStatusImageResource(discovering), 0));
+        txtWifiDiscoverUpdate.setOnClickListener(v -> LinkLayer.getDefaultImplementation().getWifiLinkManager().discoverPeers());
+        txtBluetoothUpdate.setOnClickListener(v -> {
+//            Context.getContext(Helper.CONTEXT_USER_INTERFACE).sendBroadcast(new Intent(Helper.ACTION_NOTIFY_USER).putExtra(Helper.EXTRA_NOTIFICATION_TYPE, LogType.Info).putExtra(Helper.EXTRA_NOTIFICATION_CONTENT, "txtBluetoothUpdate clicked!"));
+        });
 
         RecyclerView list = view.findViewById(R.id.link_links);
         LinearLayoutManager listLayoutManager = new WrapLinearLayoutManager(view.getContext());

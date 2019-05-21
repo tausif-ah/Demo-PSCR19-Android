@@ -24,7 +24,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
 
-class LinkFragmentViewModel extends ViewModel {
+public class LinkFragmentViewModel extends ViewModel {
     static final String DATE_STRING_ON_NULL = "--:--:--.---";
     private static final SimpleDateFormat DEFAULT_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US);
     final MutableLiveData<WifiP2pGroup> wifiGroupInfo = new MutableLiveData<>();

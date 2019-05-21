@@ -19,7 +19,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.LogItem;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 
-class LogFilterFragmentViewModel extends ViewModel {
+public class LogFilterFragmentViewModel extends ViewModel {
 
 
     private static final String TAG_ALL = "__ALL__";
@@ -29,7 +29,7 @@ class LogFilterFragmentViewModel extends ViewModel {
     private final List<String> showingTags = new ArrayList<>();
     private Consumer<List<String>> showingTagUpdated;
 
-    LogFilterFragmentViewModel() {
+    public LogFilterFragmentViewModel() {
         filter = new LogFilterLevelTag(LogType.Verbose, LogType.Error, null);
 
         synchronizeData();

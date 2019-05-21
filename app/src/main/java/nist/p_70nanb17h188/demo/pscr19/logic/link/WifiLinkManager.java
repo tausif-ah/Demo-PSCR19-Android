@@ -198,7 +198,6 @@ public class WifiLinkManager {
                 @Override
                 public void onSuccess() {
                     Log.i(TAG, "Succeeded in creating group!");
-                    DelayRunner.getDefaultInstance().post(WifiLinkManager.this::discoverPeers);
                 }
 
                 @Override
@@ -209,34 +208,23 @@ public class WifiLinkManager {
                 }
             });
 
-        } else {
-            DelayRunner.getDefaultInstance().post(WifiLinkManager.this::discoverPeers);
         }
     }
 
-    private long nextDiscoverTime = 0;
+    public void discoverPeers() {
+        wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Helper.notifyUser(LogType.Info, "Succeeded in initializing peer discovery!");
+                Log.i(TAG, "Succeeded in initializing peer discovery!");
+            }
 
-    // Shall only be called once in the class!
-    // to trigger re-discover, change nextDescoverTime to 0
-    private void discoverPeers() {
-        long now = System.currentTimeMillis();
-        if (nextDiscoverTime <= now) {
-            wifiP2pManager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
-                @Override
-                public void onSuccess() {
-                    Log.i(TAG, "Initiated discovering peers! Schedule next discover in %dms", DEFAULT_DISCOVER_DURATION_MS);
-                    nextDiscoverTime = System.currentTimeMillis() + DEFAULT_DISCOVER_DURATION_MS;
-                }
-
-                @Override
-                public void onFailure(int reason) {
-                    Helper.notifyUser(LogType.Info, "Failed in discovering peers! reason=%d, retry in %dms", reason, DEFAULT_DISCOVER_RETRY_DELAY_MS);
-                    Log.e(TAG, "Failed in discovering peers! reason=%d, retry in %dms", reason, DEFAULT_DISCOVER_RETRY_DELAY_MS);
-                    nextDiscoverTime = System.currentTimeMillis() + DEFAULT_DISCOVER_RETRY_DELAY_MS;
-                }
-            });
-        }
-        DelayRunner.getDefaultInstance().postDelayed(DISCOVER_PEERS_CHECK_DELAY_MS, this::discoverPeers);
+            @Override
+            public void onFailure(int reason) {
+                Helper.notifyUser(LogType.Info, "Failed in discovering peers! reason=%d", reason);
+                Log.e(TAG, "Failed in discovering peers! reason=%d", reason);
+            }
+        });
     }
 
     private void onThisDeviceChanged(@NonNull android.content.Intent intent) {
@@ -264,9 +252,8 @@ public class WifiLinkManager {
         if (discovering) {
             Log.i(TAG, "Discovery started!");
         } else {
-            nextDiscoverTime = 0;
-            Helper.notifyUser(LogType.Error, "Discovery stopped! Restart immediately!");
-            Log.i(TAG, "Discovery stopped! Restart immediately!");
+            Helper.notifyUser(LogType.Error, "Discovery stopped!");
+            Log.i(TAG, "Discovery stopped!");
         }
         Context.getContext(CONTEXT_WIFI_LINK_MANAGER).sendBroadcast(new Intent(ACTION_WIFI_DISCOVERY_STATE_CHANGED).putExtra(EXTRA_IS_DISCOVERING, discovering));
     }
@@ -375,7 +362,6 @@ public class WifiLinkManager {
                     @Override
                     public void onSuccess() {
                         Log.v(TAG, "Started disconnecting from device: %s", getDeviceString(device));
-                        nextDiscoverTime = 0;
                     }
 
                     @Override
