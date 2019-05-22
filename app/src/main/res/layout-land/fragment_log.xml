@@ -8,14 +8,19 @@
 
     <fragment
         android:id="@+id/log_fragment_filter"
+        android:name="nist.p_70nanb17h188.demo.pscr19.gui.log.LogFilterFragment"
         android:layout_width="wrap_content"
+        android:layout_height="match_parent" />
+
+    <View
+        android:layout_width="1dp"
         android:layout_height="match_parent"
-        android:name="nist.p_70nanb17h188.demo.pscr19.gui.log.LogFilterFragment" />
+        android:background="?attr/colorPrimary" />
 
     <fragment
         android:id="@+id/log_fragment_content"
+        android:name="nist.p_70nanb17h188.demo.pscr19.gui.log.LogContentFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:name="nist.p_70nanb17h188.demo.pscr19.gui.log.LogContentFragment" />
+        android:layout_height="match_parent" />
 
 </LinearLayout>

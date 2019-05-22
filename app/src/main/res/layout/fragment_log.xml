@@ -12,6 +12,10 @@
         android:layout_height="wrap_content"
         android:name="nist.p_70nanb17h188.demo.pscr19.gui.log.LogFilterFragment" />
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorPrimary" />
     <fragment
         android:id="@+id/log_fragment_content"
         android:layout_width="match_parent"
