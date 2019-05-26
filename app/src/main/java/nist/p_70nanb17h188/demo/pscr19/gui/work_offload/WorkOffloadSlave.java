@@ -15,8 +15,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 
 public class WorkOffloadSlave extends ViewModel {
-    private static final long WAIT_WORK_DELAY_MS = 2000;
-    private static final long WORK_DELAY = 2000;
+    private static final long WAIT_WORK_DELAY_MS = 4000;
 
     enum SlaveState {
         IDLE(R.string.work_offload_slave_state_idle),
