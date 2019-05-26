@@ -71,14 +71,14 @@ public class LauncherActivity extends AppCompatActivity {
 
     private boolean nameClicked = false;
 
-    private void nameListClicked(AdapterView<?> parent, View view, int position, long id) {
+    private synchronized void nameListClicked(AdapterView<?> parent, View view, int position, long id) {
         if (nameClicked) return;
-        nameClicked = true;
         String name = (String) parent.getItemAtPosition(position);
         if (!Device.isPhone(name)) {
             Helper.notifyUser(LogType.Info, "%s cannot be chosen on a phone", name);
             return;
         }
+        nameClicked = true;
 
         Device.setName((String) parent.getItemAtPosition(position));
         Log.d("LAUNCHER", "INIT START");

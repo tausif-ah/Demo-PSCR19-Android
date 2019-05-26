@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".gui.work_offload.WorkOffloadFragment">
+
+    <Button
+        android:id="@+id/work_offload_slave_enable"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="Enabled" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/work_offload_slave_my_name"
+        app:layout_constraintBaseline_toBaselineOf="@id/work_offload_slave_my_name"
+        app:layout_constraintEnd_toEndOf="@id/work_offload_slave_txt3" />
+
+    <TextView
+        android:id="@+id/work_offload_slave_my_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:fontFamily="monospace"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/work_offload_slave_txt3"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Name{2}" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/work_offload_state"
+        app:layout_constraintBaseline_toBaselineOf="@id/work_offload_slave_state"
+        app:layout_constraintRight_toRightOf="@id/work_offload_slave_txt3" />
+
+    <TextView
+        android:id="@+id/work_offload_slave_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/work_offload_slave_txt3"
+        app:layout_constraintTop_toBottomOf="@id/work_offload_slave_my_name"
+        tools:text="@string/work_offload_slave_state_wait_for_work" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/work_offload_task_id"
+        app:layout_constraintBaseline_toBaselineOf="@id/work_offload_slave_task_id"
+        app:layout_constraintEnd_toEndOf="@id/work_offload_slave_txt3" />
+
+    <TextView
+        android:id="@+id/work_offload_slave_task_id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:fontFamily="monospace"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/work_offload_slave_txt3"
+        app:layout_constraintTop_toBottomOf="@id/work_offload_slave_state"
+        tools:text="0x12345678" />
+
+    <TextView
+        android:id="@+id/work_offload_slave_txt3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="@string/work_offload_slave_master_name"
+        app:layout_constraintBaseline_toBaselineOf="@id/work_offload_slave_master_name"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/work_offload_slave_master_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:fontFamily="monospace"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/work_offload_slave_txt3"
+        app:layout_constraintTop_toBottomOf="@id/work_offload_slave_task_id"
+        tools:text="Name{1}" />
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/work_offload_duration"
+        app:layout_constraintBaseline_toBaselineOf="@id/work_offload_slave_duration"
+        app:layout_constraintEnd_toEndOf="@id/work_offload_slave_txt3" />
+
+    <TextView
+        android:id="@+id/work_offload_slave_duration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/work_offload_slave_txt3"
+        app:layout_constraintTop_toBottomOf="@id/work_offload_slave_master_name"
+        tools:text="1,234" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="@string/millisecond"
+        app:layout_constraintBaseline_toBaselineOf="@id/work_offload_slave_duration"
+        app:layout_constraintStart_toEndOf="@id/work_offload_slave_duration" />
+
+</android.support.constraint.ConstraintLayout>

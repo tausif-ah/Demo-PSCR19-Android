@@ -88,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
             pastFragments.add(0, currentFragment);
             currentFragment = fragment;
             mShowFragment(currentFragment);
+            mSetTitle(currentFragment);
             return true;
         });
 

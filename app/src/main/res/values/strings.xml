@@ -41,4 +41,32 @@
     <string name="name_tab_pubsub">Pub/Sub</string>
     <string name="name_tab_routing">Routing</string>
 
+    <string name="work_offload_nothing">This device does not have work offload</string>
+    <string name="work_offload_task_id">"Task ID: "</string>
+    <string name="work_offload_state">"State: "</string>
+    <string name="work_offload_master_result">"Result: "</string>
+    <string name="work_offload_duration">"Duration: "</string>
+    <string name="work_offload_master_available">Available</string>
+    <string name="work_offload_master_working">Working</string>
+    <string name="work_offload_master_finished">Finished</string>
+    <string name="work_offload_master_state_idle">Idle</string>
+    <string name="work_offload_master_state_wait_for_response">Waiting for slaves&#8230;</string>
+    <string name="work_offload_master_state_distribute_work">Distributing work&#8230;</string>
+    <string name="work_offload_master_state_wait_for_result">Waiting for results&#8230;</string>
+    <string name="work_offload_master_state_compute_result">Completing task&#8230;</string>
+    <string name="work_offload_master_start_start">Start</string>
+    <string name="work_offload_master_start_stop">Cancel</string>
+    <string name="work_offload_master_offload_local">Local</string>
+    <string name="work_offload_master_offload_offload">Offload</string>
+    <string name="work_offload_master_no_slave_text">Cannot find slaves. Give up task!</string>
+
+    <string name="work_offload_slave_state_idle">Idle</string>
+    <string name="work_offload_slave_state_wait_for_work">Waiting for work&#8230;</string>
+    <string name="work_offload_slave_state_working">Working&#8230;</string>
+    <string name="work_offload_slave_my_name">"My Name: "</string>
+    <string name="work_offload_slave_master_name">"Master Name: "</string>
+    <string name="work_offload_slave_enabled">Enabled</string>
+    <string name="work_offload_slave_disabled">Disabled</string>
+
+    <string name="millisecond">ms</string>
 </resources>

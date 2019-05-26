@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/work_offload_state"
+        app:layout_constraintBaseline_toBaselineOf="@+id/work_offload_master_state"
+        app:layout_constraintEnd_toEndOf="@+id/work_offload_master_txt3"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/work_offload_master_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/work_offload_master_btn_start"
+        app:layout_constraintEnd_toStartOf="@+id/work_offload_master_btn_start"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/work_offload_master_txt3"
+        app:layout_constraintTop_toTopOf="@+id/work_offload_master_btn_start"
+        tools:text="Waiting for slaves..." />
+
+    <Button
+        android:id="@+id/work_offload_master_btn_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Start" />
+
+    <View
+        android:id="@+id/view"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/work_offload_master_btn_start" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/work_offload_task_id"
+        app:layout_constraintBaseline_toBaselineOf="@+id/work_offload_master_task_id"
+        app:layout_constraintEnd_toEndOf="@+id/work_offload_master_txt3"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/work_offload_master_task_id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:fontFamily="monospace"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/work_offload_master_btn_offload"
+        app:layout_constraintEnd_toStartOf="@+id/work_offload_master_btn_offload"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/work_offload_master_txt3"
+        app:layout_constraintTop_toTopOf="@+id/work_offload_master_btn_offload"
+        tools:text="1234" />
+
+    <Button
+        android:id="@+id/work_offload_master_btn_offload"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/work_offload_master_btn_start"
+        tools:text="Offload" />
+
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/work_offload_master_btn_offload" />
+
+    <LinearLayout
+        android:id="@+id/work_offload_master_slave_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/work_offload_master_btn_offload">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/work_offload_master_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:id="@+id/work_offload_master_no_slave_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:gravity="center_horizontal"
+            android:text="@string/work_offload_master_no_slave_text" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:drawableStart="@drawable/ic_circle_yellow"
+                android:gravity="center_vertical"
+                android:text="@string/work_offload_master_available" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:drawableStart="@drawable/ic_circle_blue"
+                android:gravity="center_vertical"
+                android:text="@string/work_offload_master_working" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:drawableStart="@drawable/ic_circle_green"
+                android:gravity="center_vertical"
+                android:text="@string/work_offload_master_finished" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:background="?attr/colorPrimary" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/work_offload_master_txt3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="@string/work_offload_duration"
+        app:layout_constraintBaseline_toBaselineOf="@+id/work_offload_master_duration"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/work_offload_master_duration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
+        android:minHeight="24sp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@+id/work_offload_master_txt3"
+        app:layout_constraintTop_toBottomOf="@+id/work_offload_master_slave_container"
+        tools:text="4,123.45" />
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="@string/millisecond"
+        app:layout_constraintBaseline_toBaselineOf="@+id/work_offload_master_duration"
+        app:layout_constraintStart_toEndOf="@+id/work_offload_master_duration" />
+</android.support.constraint.ConstraintLayout>

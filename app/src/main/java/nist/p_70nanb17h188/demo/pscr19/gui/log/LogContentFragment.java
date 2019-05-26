@@ -97,7 +97,7 @@ public class LogContentFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_log_content, container, false);
         list = view.findViewById(R.id.log_list);
-        list.setLayoutManager(new WrapLinearLayoutManager(getContext()));
+        list.setLayoutManager(new WrapLinearLayoutManager(view.getContext()));
         list.setAdapter(adapter);
 
         btnScrollTop = view.findViewById(R.id.log_scroll_top);

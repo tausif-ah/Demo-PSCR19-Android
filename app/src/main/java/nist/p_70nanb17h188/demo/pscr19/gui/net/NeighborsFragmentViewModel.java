@@ -7,6 +7,7 @@ import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
+import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl;
 
 public class NeighborsFragmentViewModel extends ViewModel {
@@ -30,7 +31,7 @@ public class NeighborsFragmentViewModel extends ViewModel {
     }
 
     private void synchronizeData() {
-        connectedNeighbors.postValue(NetLayer_Impl.getDefaultInstance().getConnectNeighbors());
+        connectedNeighbors.postValue(NetLayer.getDefaultInstance().getConnectNeighbors());
     }
 
     @Override
