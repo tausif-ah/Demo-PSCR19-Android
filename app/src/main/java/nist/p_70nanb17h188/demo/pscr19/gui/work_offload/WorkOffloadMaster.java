@@ -21,7 +21,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 
 public class WorkOffloadMaster extends ViewModel {
     private static final String TAG = "WorkOffloadMaster";
-    private static final long WAIT_RESPONSE_DELAY_MS = 1000;
+    private static final long WAIT_RESPONSE_DELAY_MS = 2000;
     private static final long PERFORM_TASK_DURATION = 5000;
 
     enum MasterState {
