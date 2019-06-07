@@ -10,14 +10,17 @@ import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
 
 public class Log {
+    /**
+     * The context for log events.
+     */
     public static final String CONTEXT_LOG = "nist.p_70nanb17h188.demo.pscr19.logic.log";
     /**
      * Broadcast intent action indicating that a log item is added to the log list.
-     * One extra EXTRA_LOG_ITEM_INSERTED ({@link LogItem}) is the log item added.
-     * Another extra EXTRA_LOG_ITEM_REMOVED ({@link LogItem} is the log item removed.
+     * One extra {@link #EXTRA_LOG_ITEM_INSERTED} ({@link LogItem}) is the log item added.
+     * Another extra {@link #EXTRA_LOG_ITEM_REMOVED} ({@link LogItem} is the log item removed.
      * Both could be null.
      * <p>
-     * The latest logs can be retrieved from getLatestLogItems().
+     * The latest logs can be retrieved from {@link #getLatestLogItems()}.
      */
     public static final String ACTION_LOG_ITEM_UPDATED = "nist.p_70nanb17h188.demo.pscr19.logic.log.itemUpdated";
     public static final String EXTRA_LOG_ITEM_INSERTED = "logItemInserted";

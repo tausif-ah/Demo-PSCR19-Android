@@ -21,6 +21,16 @@ public class Name {
         return value < 0;
     }
 
+    /**
+     * Gets the value of the name.
+     * Should not be used by app layer. Do not set it public.
+     *
+     * @return the value of the name
+     */
+    long getValue() {
+        return value;
+    }
+
     @Override
     public int hashCode() {
         int hash = 7;

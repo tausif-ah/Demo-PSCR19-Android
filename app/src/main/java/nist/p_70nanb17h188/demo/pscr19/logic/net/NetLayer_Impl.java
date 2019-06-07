@@ -18,7 +18,17 @@ public class NetLayer_Impl {
     public static final int MAX_SEND_SIZE = 2000000;
     public static final int MAX_SHOW_SIZE = 40;
 
+    /**
+     * The context for wifi NetLayer_Impl events.
+     */
     public static final String CONTEXT_NET_LAYER_IMPL = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl";
+
+    /**
+     * Broadcast intent action indicating that a neighbor list has changed.
+     * One extra {@link #EXTRA_NEIGHBORS} ({@link NeighborID}[]) indicates the neighbors that ar connected.
+     * <p>
+     * The values are also available with function {@link #getConnectNeighbors()} .
+     */
     public static final String ACTION_NEIGHBOR_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl.neighborChanged";
     public static final String EXTRA_NEIGHBORS = "neighbors";
     public static final String TAG = "NetLayer_Impl";
@@ -136,6 +146,7 @@ public class NetLayer_Impl {
         buffer.putInt(len);
         buffer.put(data, start, len);
 
+        // also send the data to local subscribers
         onDataReceived(new Intent(LinkLayer.ACTION_DATA_RECEIVED).putExtra(LinkLayer.EXTRA_DATA, buffer.array()));
 
         return true;

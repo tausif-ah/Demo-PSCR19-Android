@@ -19,8 +19,8 @@ public class Helper {
 
     /**
      * An action to let the gui notify the user something is happening.
-     * It should have extra EXTRA_NOTIFICATION_CONTENT (String) for the text to be notified.
-     * It also has an extra EXTRA_NOTIFICATION_TYPE (LogType) for the type of the notification.
+     * It should have extra {@link #EXTRA_NOTIFICATION_CONTENT} ({@link String}) for the text to be notified.
+     * It also has an extra {@link #EXTRA_NOTIFICATION_TYPE} ({@link LogType}) for the type of the notification.
      */
     public static final String ACTION_NOTIFY_USER = "nist.p_70nanb17h188.demo.pscr19.gui.notifyUser";
     public static final String EXTRA_NOTIFICATION_CONTENT = "notificationContent";
