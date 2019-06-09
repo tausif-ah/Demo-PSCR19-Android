@@ -24,32 +24,32 @@ public class WifiLinkManager {
     /**
      * The context for wifi link manager events.
      */
-    public static final String CONTEXT_WIFI_LINK_MANAGER = "nist.p_70nanb17h188.demo.pscr19.logic.link.wifiLinkManager";
+    public static final String CONTEXT_WIFI_LINK_MANAGER = "nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager";
 
     /**
      * Broadcast intent action indicating that the group status of the current device has changed.
-     * One extra EXTRA_GROUP_INFO (java.lang.String) indicates group info, which should contain the group owner and client list..
+     * One extra {@link #EXTRA_GROUP_INFO} ({@link String}) indicates group info, which should contain the group owner and client list.
      * <p>
-     * The values are also available with function getLastGroupInfo().
+     * The values are also available with function {@link #getLastGroupInfo()}.
      */
     public static final String ACTION_WIFI_GROUP_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager.groupChanged";
     public static final String EXTRA_GROUP_INFO = "groupInfo";
 
     /**
      * Broadcast intent action indicating that the discovery state of the device has changed.
-     * One extra #EXTRA_IS_DISCOVERING (boolean) indicates if the discovery is working.
+     * One extra {@link #EXTRA_IS_DISCOVERING} ({@link Boolean}) indicates if the discovery is working.
      * <p>
-     * The value is also available with function isWifiDiscovering().
+     * The value is also available with function {@link #isWifiDiscovering()}.
      */
     public static final String ACTION_WIFI_DISCOVERY_STATE_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager.discoveryStateChanged";
     public static final String EXTRA_IS_DISCOVERING = "isDiscovering";
 
     /**
      * Broadcast intent action indicating that the discovered wifi p2p device list has changed.
-     * One extra EXTRA_TIME (java.util.Date) indicates time the change is observed.
-     * Another extra EXTRA_DEVICE_LIST (android.net.wifi.p2p.WifiP2pDeviceList) indicates the new device list.
+     * One extra {@link #EXTRA_TIME} ({@link Date}) indicates time the change is observed.
+     * Another extra {@link #EXTRA_DEVICE_LIST} ({@link WifiP2pDeviceList}) indicates the new device list.
      * <p>
-     * The values are also available with functions getLastDiscoverTime() and getLastDiscoverList().
+     * The values are also available with functions {@link #getLastDiscoverTime()} and {@link #getLastDiscoverList()}.
      */
     public static final String ACTION_WIFI_LIST_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager.listChanged";
     public static final String EXTRA_DEVICE_LIST = "deviceList";
@@ -57,11 +57,11 @@ public class WifiLinkManager {
 
 
     private static final String TAG = "WifiLinkManager";
-    private static final int DEFAULT_DISCOVER_RETRY_DELAY_MS = 2000;
+    //    private static final int DEFAULT_DISCOVER_RETRY_DELAY_MS = 2000;
     private static final int DEFAULT_CHANGE_NAME_RETRY_DELAY_MS = 2000;
     private static final int DEFAULT_CREATE_GROUP_RETRY_DELAY_MS = 2000;
-    private static final int DEFAULT_DISCOVER_DURATION_MS = 20000;
-    private static final int DISCOVER_PEERS_CHECK_DELAY_MS = 500;
+//    private static final int DEFAULT_DISCOVER_DURATION_MS = 20000;
+//    private static final int DISCOVER_PEERS_CHECK_DELAY_MS = 500;
 
     @NonNull
     private static String getDeviceString(WifiP2pDevice device) {
