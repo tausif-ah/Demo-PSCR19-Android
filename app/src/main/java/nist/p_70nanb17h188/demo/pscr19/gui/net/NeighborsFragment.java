@@ -15,7 +15,12 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import java.nio.charset.StandardCharsets;
 
+
+import java.util.Arrays;
+
+import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
@@ -23,6 +28,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
+import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl;
 
 /**
@@ -46,6 +52,21 @@ public class NeighborsFragment extends Fragment {
     @NonNull
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        if(Device.getName()=="M1") {
+            String message = "M1abcdefgh446ew4d6e4a6jfkdsjmclksdmlkcmwdlkmv  oierj oigj54oh4u h g54joi tjeroijhoirtoijo o4wjroi hjoi jhorij oirejhoihoi hoih oirhtoirehtoerhoi";
+            byte [] messageBytes = message.getBytes();
+            Log.e(NetLayer_Impl.TAG, "message 1 created by "+Device.getName()+ " --- in bytes: "+messageBytes);
+            String messageHash = NetLayer_Impl.getSHA(messageBytes);
+            NetLayer_Impl.addBufferEntry(messageHash, messageBytes);
+
+            String message2 = "M1i";
+            byte [] messageBytes2 = message2.getBytes();
+            Log.e(NetLayer_Impl.TAG, "message 2 created by "+Device.getName()+ " --- in bytes: "+messageBytes2);
+            String messageHash2 = NetLayer_Impl.getSHA(messageBytes2);
+            NetLayer_Impl.addBufferEntry(messageHash2, messageBytes2);
+
+            Log.e(NetLayer_Impl.TAG, "buffer at "+Device.getName()+" : "+NetLayer_Impl.getMessageBuffer());
+        }
         View view = inflater.inflate(R.layout.fragment_naming_neighbors, container, false);
 
         RecyclerView list = view.findViewById(R.id.name_routing_list);
