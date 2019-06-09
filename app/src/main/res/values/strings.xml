@@ -69,4 +69,6 @@
     <string name="work_offload_slave_disabled">Disabled</string>
 
     <string name="millisecond">ms</string>
+    <string name="to_anyone">To anyone</string>
+    <string name="propagate">Propagate</string>
 </resources>
