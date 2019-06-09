@@ -37,6 +37,7 @@ public class Helper {
 
     public static final Random DEFAULT_RANDOM = new Random();
     public static final String CANDIDATE_CHARSET_NUMBERS = "0123456789";
+    public static final String CANDIDATE_CHARSET_HEX_NUMBERS = "0123456789ABCDEF";
     public static final String CANDIDATE_CHARSET_LETTERS_CAPITALIZED = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     public static final String CANDIDATE_CHARSET_LETTERS_UNCAPITALIZED = "abcdefghijklmnopqrstuvwxyz";
     public static final String CANDIDATE_CHARSET_LETTERS = CANDIDATE_CHARSET_LETTERS_UNCAPITALIZED + CANDIDATE_CHARSET_LETTERS_CAPITALIZED;
@@ -63,6 +64,17 @@ public class Helper {
             StackTraceElement s = elements[i];
             ps.printf("\tat %s.%s(%s:%d)%n", s.getClassName(), s.getMethodName(), s.getFileName(), s.getLineNumber());
         }
+    }
+
+    @NonNull
+    public static String getHexString(@NonNull byte[] buf) {
+        StringBuilder ret = new StringBuilder();
+        for (int i = 0; i < buf.length; i++) {
+            byte b = buf[i];
+            ret.append(CANDIDATE_CHARSET_HEX_NUMBERS.charAt((b >> 4) & 0xF));
+            ret.append(CANDIDATE_CHARSET_HEX_NUMBERS.charAt(b & 0xF));
+        }
+        return ret.toString();
     }
 
     @NonNull

@@ -15,19 +15,13 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import java.nio.charset.StandardCharsets;
-
-
-import java.util.Arrays;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
-import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
-import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl;
 
@@ -35,6 +29,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl;
  * A simple {@link Fragment} subclass.
  */
 public class NeighborsFragment extends Fragment {
+    private static final String TAG = "NeighborsFragment";
 
     private NeighborsFragmentViewModel viewModel;
 
@@ -52,20 +47,22 @@ public class NeighborsFragment extends Fragment {
     @NonNull
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        if(Device.getName()=="M1") {
-            String message = "M1abcdefgh446ew4d6e4a6jfkdsjmclksdmlkcmwdlkmv  oierj oigj54oh4u h g54joi tjeroijhoirtoijo o4wjroi hjoi jhorij oirejhoihoi hoih oirhtoirehtoerhoi";
-            byte [] messageBytes = message.getBytes();
-            Log.e(NetLayer_Impl.TAG, "message 1 created by "+Device.getName()+ " --- in bytes: "+messageBytes);
-            String messageHash = NetLayer_Impl.getSHA(messageBytes);
-            NetLayer_Impl.addBufferEntry(messageHash, messageBytes);
+        if ("M1".equals(Device.getName())) {
+            String message;
+            byte[] messageBytes;
 
-            String message2 = "M1i";
-            byte [] messageBytes2 = message2.getBytes();
-            Log.e(NetLayer_Impl.TAG, "message 2 created by "+Device.getName()+ " --- in bytes: "+messageBytes2);
-            String messageHash2 = NetLayer_Impl.getSHA(messageBytes2);
-            NetLayer_Impl.addBufferEntry(messageHash2, messageBytes2);
+            message = "M1abcdefgh446ew4d6e4a6jfkdsjmclksdmlkcmwdlkmv  oierj oigj54oh4u h g54joi tjeroijhoirtoijo o4wjroi hjoi jhorij oirejhoihoi hoih oirhtoirehtoerhoi";
+            messageBytes = message.getBytes();
+            Log.d(TAG, "message 1 created by %s --- in bytes: %s", Device.getName(), Helper.getHexString(messageBytes));
+            NetLayer.getDefaultInstance().getGossipModule().addMessage(messageBytes);
 
-            Log.e(NetLayer_Impl.TAG, "buffer at "+Device.getName()+" : "+NetLayer_Impl.getMessageBuffer());
+
+            message = "M1i";
+            messageBytes = message.getBytes();
+            Log.d(TAG, "message 1 created by %s --- in bytes: %s", Device.getName(), Helper.getHexString(messageBytes));
+            NetLayer.getDefaultInstance().getGossipModule().addMessage(messageBytes);
+
+            NetLayer.getDefaultInstance().getGossipModule().printBuffer();
         }
         View view = inflater.inflate(R.layout.fragment_naming_neighbors, container, false);
 
@@ -126,34 +123,34 @@ public class NeighborsFragment extends Fragment {
         }
 
         private void onSendClick(View view) {
-            String txt = inputSize.getText().toString();
-            try {
-                int size = Integer.parseInt(txt);
-                if (size < 0) {
-                    Helper.notifyUser(LogType.Info, "Size should be in range [0, %d]", NetLayer_Impl.MAX_SEND_SIZE);
-                    inputSize.setText("0");
-                    return;
-                }
-                if (size > NetLayer_Impl.MAX_SEND_SIZE) {
-                    Helper.notifyUser(LogType.Info, "Max size: ");
-                    Helper.notifyUser(LogType.Info, "Size should be in range [0, %d]", NetLayer_Impl.MAX_SEND_SIZE);
-                    inputSize.setText(NetLayer_Impl.MAX_SEND_SIZE + "");
-                    return;
-                }
-                String str = size == 0 ? "" : Helper.getRandomString(size, size, Helper.CANDIDATE_CHARSET_LETTERS_NUMBERS);
-                byte[] buf = str.getBytes();
-                boolean succeed = LinkLayer.sendData(currentNeighborID, buf, 0, buf.length);
-                String result = succeed ? "succeeded" : "failed";
-                if (str.length() <= NetLayer_Impl.MAX_SHOW_SIZE) {
-                    Log.d(NetLayer_Impl.TAG, "Send to %s, buf_len=%d, %s! text=%n%s", currentNeighborID.getName(), buf.length, result, str);
-                    Helper.notifyUser(LogType.Info, "Send to %s, buf_len=%d, %s! text=%n%s", currentNeighborID.getName(), buf.length, result, str);
-                } else {
-                    Log.d(NetLayer_Impl.TAG, "Send to %s, buf_len=%d, %s! text_len=%d", currentNeighborID.getName(), buf.length, result, str.length());
-                    Helper.notifyUser(LogType.Info, "Send to %s, buf_len=%d, %s! text_len=%d", currentNeighborID.getName(), buf.length, result, str.length());
-                }
-            } catch (Exception e) {
-                Helper.notifyUser(LogType.Info, "Size should be a number!");
-            }
+//            String txt = inputSize.getText().toString();
+//            try {
+//                int size = Integer.parseInt(txt);
+//                if (size < 0) {
+//                    Helper.notifyUser(LogType.Info, "Size should be in range [0, %d]", NetLayer_Impl.MAX_SEND_SIZE);
+//                    inputSize.setText("0");
+//                    return;
+//                }
+//                if (size > NetLayer_Impl.MAX_SEND_SIZE) {
+//                    Helper.notifyUser(LogType.Info, "Max size: ");
+//                    Helper.notifyUser(LogType.Info, "Size should be in range [0, %d]", NetLayer_Impl.MAX_SEND_SIZE);
+//                    inputSize.setText(NetLayer_Impl.MAX_SEND_SIZE + "");
+//                    return;
+//                }
+//                String str = size == 0 ? "" : Helper.getRandomString(size, size, Helper.CANDIDATE_CHARSET_LETTERS_NUMBERS);
+//                byte[] buf = str.getBytes();
+//                boolean succeed = LinkLayer.sendData(currentNeighborID, buf, 0, buf.length);
+//                String result = succeed ? "succeeded" : "failed";
+//                if (str.length() <= NetLayer_Impl.MAX_SHOW_SIZE) {
+//                    Log.d(NetLayer_Impl.TAG, "Send to %s, buf_len=%d, %s! text=%n%s", currentNeighborID.getName(), buf.length, result, str);
+//                    Helper.notifyUser(LogType.Info, "Send to %s, buf_len=%d, %s! text=%n%s", currentNeighborID.getName(), buf.length, result, str);
+//                } else {
+//                    Log.d(NetLayer_Impl.TAG, "Send to %s, buf_len=%d, %s! text_len=%d", currentNeighborID.getName(), buf.length, result, str.length());
+//                    Helper.notifyUser(LogType.Info, "Send to %s, buf_len=%d, %s! text_len=%d", currentNeighborID.getName(), buf.length, result, str.length());
+//                }
+//            } catch (Exception e) {
+//                Helper.notifyUser(LogType.Info, "Size should be a number!");
+//            }
         }
 
         private void bind(NeighborID neighborID) {

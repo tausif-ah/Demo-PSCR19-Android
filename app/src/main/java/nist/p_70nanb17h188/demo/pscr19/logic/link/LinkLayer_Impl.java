@@ -3,14 +3,12 @@ package nist.p_70nanb17h188.demo.pscr19.logic.link;
 import android.support.annotation.NonNull;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
-import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl;
 
 public final class LinkLayer_Impl {
+    private static final String TAG = "LinkLayer_Impl";
     @NonNull
     private final TCPConnectionManager tcpConnectionManager;
     @NonNull
@@ -33,7 +31,7 @@ public final class LinkLayer_Impl {
 
     boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
         // prefer Wifi over Bluetooth
-        Log.e(NetLayer_Impl.TAG, "send ["+ data +"] with "+ len +" bytes to "+id.getName());
+        Log.d(TAG, "send %d bytes to %s", len, id);
         return wifiTCPConnectionManager.sendData(id, data, start, len);
 
         // do bluetooth send

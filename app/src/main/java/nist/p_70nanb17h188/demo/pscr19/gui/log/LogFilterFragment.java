@@ -73,7 +73,10 @@ public class LogFilterFragment extends Fragment {
 
         logTagArrayAdapter = new ArrayAdapter<>(view.getContext(), android.R.layout.simple_spinner_dropdown_item, viewModel.getShowingTags());
         spinnerTag.setAdapter(logTagArrayAdapter);
-        viewModel.setShowingTagUpdated(l -> logTagArrayAdapter.notifyDataSetChanged());
+        viewModel.setShowingTagUpdated((l, idx) -> {
+            logTagArrayAdapter.notifyDataSetChanged();
+            spinnerTag.setSelection(idx);
+        });
         spinnerTag.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {

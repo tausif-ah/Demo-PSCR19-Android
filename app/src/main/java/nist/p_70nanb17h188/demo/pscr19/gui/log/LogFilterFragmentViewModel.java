@@ -3,7 +3,6 @@ package nist.p_70nanb17h188.demo.pscr19.gui.log;
 import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.util.Consumer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,6 +19,9 @@ import nist.p_70nanb17h188.demo.pscr19.logic.log.LogItem;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 
 public class LogFilterFragmentViewModel extends ViewModel {
+    interface ShowingTagUpdatedHandler {
+        void accept(List<String> tags, int newPosition);
+    }
 
 
     private static final String TAG_ALL = "__ALL__";
@@ -27,7 +29,7 @@ public class LogFilterFragmentViewModel extends ViewModel {
     private final BroadcastReceiver logUpdatedReceiver = this::onLogUpdated;
     private final HashMap<String, AtomicInteger> tagCounts = new HashMap<>();
     private final List<String> showingTags = new ArrayList<>();
-    private Consumer<List<String>> showingTagUpdated;
+    private ShowingTagUpdatedHandler showingTagUpdated;
 
     public LogFilterFragmentViewModel() {
         filter = new LogFilterLevelTag(LogType.Verbose, LogType.Error, null);
@@ -41,7 +43,7 @@ public class LogFilterFragmentViewModel extends ViewModel {
         return filter;
     }
 
-    void setShowingTagUpdated(Consumer<List<String>> showingTagUpdated) {
+    void setShowingTagUpdated(ShowingTagUpdatedHandler showingTagUpdated) {
         this.showingTagUpdated = showingTagUpdated;
         if (showingTagUpdated != null)
             updateTags();
@@ -106,12 +108,20 @@ public class LogFilterFragmentViewModel extends ViewModel {
         showingTags.add(0, TAG_ALL);
 
         String selectedTag = filter.getSelectedTag();
+        int idx;
         if (selectedTag != null) {
-            int idx = Arrays.binarySearch(tmp, selectedTag);
-            if (idx < 0) showingTags.add(-idx, selectedTag);
+            idx = Arrays.binarySearch(tmp, selectedTag);
+            if (idx < 0) {
+                idx = -idx;
+                showingTags.add(idx, selectedTag);
+            } else {
+                idx++;
+            }
+        } else {
+            idx = 0;
         }
         if (showingTagUpdated != null) {
-            showingTagUpdated.accept(showingTags);
+            showingTagUpdated.accept(showingTags, idx);
         }
     }
 

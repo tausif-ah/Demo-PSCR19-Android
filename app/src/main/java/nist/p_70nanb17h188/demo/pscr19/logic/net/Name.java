@@ -17,10 +17,6 @@ public class Name {
         this.value = value;
     }
 
-    public Name (String value){
-        this.value = Long.parseLong(value);
-    }
-
     public boolean isMulticast() {
         return value < 0;
     }
