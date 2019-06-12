@@ -26,6 +26,7 @@ import nist.p_70nanb17h188.demo.pscr19.gui.work_offload.WorkOffloadFragment;
 import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.Constants;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 
@@ -148,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void makeBluetoothDeviceDiscoverable() {
         android.content.Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
+        intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, Constants.BLUETOOTH_dISCOVERABLE_LENGTH);
         startActivity(intent);
     }
 

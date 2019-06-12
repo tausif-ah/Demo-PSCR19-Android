@@ -15,6 +15,8 @@ public class Constants {
     static final int WIFI_DIRECT_SERVER_LISTEN_PORT = 10305;
     static final int BLUETOOTH_SERVER_LISTEN_PORT = 10307;
     static final InetAddress WIFI_DIRECT_SERVER_ADDRESS;
+    public static final int BLUETOOTH_dISCOVERABLE_LENGTH = 0;     //in seconds, value can be 0 seconds to 3600 seconds, setting to 0 means device will be visible always
+    static final int BLUETOOTH_DISCOVERY_CYCLE_LENGTH = 5;  //in seconds
 
     private static final HashSet<String> WIFI_DIRECT_GROUP_OWNERS = new HashSet<>(Arrays.asList(Device.NAME_M1, Device.NAME_ROUTER));
 
