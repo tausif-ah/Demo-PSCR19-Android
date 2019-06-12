@@ -1,5 +1,7 @@
 package nist.p_70nanb17h188.demo.pscr19.gui;
 
+import android.bluetooth.BluetoothAdapter;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -63,8 +65,7 @@ public class MainActivity extends AppCompatActivity {
         drawer = findViewById(R.id.main_drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         Log.d("LAUNCHER", "Main ONCREATE");
-
-
+        makeBluetoothDeviceDiscoverable();
         if (savedInstanceState == null) {
             pastFragments = new ArrayList<>();
             currentFragment = DEFAULT_FRAGMENT;
@@ -145,6 +146,11 @@ public class MainActivity extends AppCompatActivity {
         drawer.closeDrawer(GravityCompat.START);
     }
 
+    private void makeBluetoothDeviceDiscoverable() {
+        android.content.Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
+        startActivity(intent);
+    }
 
     @Override
     protected void onDestroy() {
