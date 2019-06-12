@@ -14,6 +14,7 @@ public final class LinkLayer_Impl {
     private final WifiTCPConnectionManager wifiTCPConnectionManager;
     @NonNull
     private final WifiLinkManager wifiLinkManager;
+    private final BluetoothLinkManager bluetoothLinkManager;
 
     /**
      * Singleton pattern, prevent the class to be instantiated by the others.
@@ -23,6 +24,7 @@ public final class LinkLayer_Impl {
         tcpConnectionManager.start();
         wifiLinkManager = new WifiLinkManager();
         wifiTCPConnectionManager = WifiTCPConnectionManager.createWifiTCPConnectionManager(tcpConnectionManager);
+        bluetoothLinkManager = new BluetoothLinkManager();
 
         //        WifiTCPConnectionManager.init(context);
         Log.d("LinkLayer_Impl", "%s initialized", Device.getName());
