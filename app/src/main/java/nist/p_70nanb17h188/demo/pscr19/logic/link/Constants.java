@@ -17,6 +17,8 @@ public class Constants {
     static final InetAddress WIFI_DIRECT_SERVER_ADDRESS;
     public static final int BLUETOOTH_dISCOVERABLE_LENGTH = 0;     //in seconds, value can be 0 seconds to 3600 seconds, setting to 0 means device will be visible always
     static final int BLUETOOTH_DISCOVERY_CYCLE_LENGTH = 5;  //in seconds
+    static final String RF_COMM_LISTENER = "RF COMM LISTENER";
+    static final String MY_UUID = "e439084f-b7f1-460c-8a3f-d4cc883413e2";
 
     private static final HashSet<String> WIFI_DIRECT_GROUP_OWNERS = new HashSet<>(Arrays.asList(Device.NAME_M1, Device.NAME_ROUTER));
 

@@ -5,11 +5,14 @@ import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.Transformations;
 import android.arch.lifecycle.ViewModel;
+import android.bluetooth.BluetoothDevice;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pGroup;
+import android.util.Log;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,6 +22,7 @@ import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.BluetoothLinkManager;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
@@ -52,6 +56,7 @@ public class LinkFragmentViewModel extends ViewModel {
                 new IntentFilter()
                         .addAction(LinkLayer.ACTION_LINK_CHANGED)
         );
+        Context.getContext(BluetoothLinkManager.CONTEXT_BLUETOOTH_LINK_MANAGER).registerReceiver(receiver, new IntentFilter().addAction(BluetoothLinkManager.ACTION_BLUETOOTH_LIST_CHANGED));
         synchronizeData();
     }
 
@@ -81,6 +86,9 @@ public class LinkFragmentViewModel extends ViewModel {
                         l.setTCPConnected(connected);
                     }
                 }
+                break;
+            case BluetoothLinkManager.ACTION_BLUETOOTH_LIST_CHANGED:
+                updateBluetoothDeviceList(intent.getExtra(BluetoothLinkManager.EXTRA_DEVICE_LIST));
                 break;
         }
     }
@@ -137,6 +145,13 @@ public class LinkFragmentViewModel extends ViewModel {
         }
         for (LinkWifiDirect l : remaining.values()) {
             l.setDeviceInDiscovery(null);
+        }
+    }
+
+    private void updateBluetoothDeviceList(ArrayList<BluetoothDevice> bluetoothDevices) {
+        for (BluetoothDevice device: bluetoothDevices
+             ) {
+            Log.d("bluetooth device name", device.getName());
         }
     }
 }

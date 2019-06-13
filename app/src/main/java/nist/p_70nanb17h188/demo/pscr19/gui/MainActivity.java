@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
         drawer = findViewById(R.id.main_drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         Log.d("LAUNCHER", "Main ONCREATE");
-        makeBluetoothDeviceDiscoverable();
+//        makeBluetoothDeviceDiscoverable();
         if (savedInstanceState == null) {
             pastFragments = new ArrayList<>();
             currentFragment = DEFAULT_FRAGMENT;
