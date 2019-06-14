@@ -302,7 +302,11 @@ public class NetLayer_Impl {
             Log.v(NetLayer_Impl.TAG, "no OTHER neighbors to send %s to now!", key);
         }
         else {
-            Log.v(NetLayer_Impl.TAG, "need to send to these neighbors now! "+connectedNeighbors+ "except "+src.getName());
+            if(src!=null)
+                Log.v(NetLayer_Impl.TAG, "need to send to these neighbors now! "+connectedNeighbors+ "except "+src.getName());
+            else
+                Log.v(NetLayer_Impl.TAG, "need to send to these neighbors now! "+connectedNeighbors);
+
             for (NeighborID neighbor : connectedNeighbors) {
                 if(!neighbor.equals(src)) {
                     byte[] V1_to_send = V1_toBytes(key);
