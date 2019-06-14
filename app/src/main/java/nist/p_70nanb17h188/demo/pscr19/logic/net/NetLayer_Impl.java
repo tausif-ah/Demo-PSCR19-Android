@@ -7,7 +7,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.io.*;
+import java.util.Queue;
+import java.util.LinkedList;
 import java.nio.charset.StandardCharsets;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -44,21 +45,22 @@ public class NetLayer_Impl {
     public static final String ACTION_NEIGHBOR_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl.neighborChanged";
     public static final String EXTRA_NEIGHBORS = "neighbors";
     public static final String TAG = "NetLayer_Impl";
-    public static final int DIGEST_SIZE = 40;
+    private static final int DIGEST_SIZE = 40;
     private static final byte TYPE_DATA = 1;
     private static final byte TYPE_SV1 = -128; // SV of what I have
     private static final byte TYPE_SV2 = -127; // SV of what I want
-    private static final byte TYPE_M = -126; // Message
+    private static final byte TYPE_M = -126; // Message Content
+    private static final int BUFFER_CAPACITY = 6; // # of items
 
-
-    private final HashSet<NeighborID> connectedNeighbors = new HashSet<>();
+    private static final HashSet<NeighborID> connectedNeighbors = new HashSet<>();
     private final HashMap<Name, HashSet<DataReceivedHandler>> dataHandlers = new HashMap<>();
 
     private final static HashMap<String, byte []> messageBuffer = new HashMap<>();
+    private final static Queue<String> messageBufferQueue = new LinkedList<>();
     private static HashSet<String> request = new HashSet<>();
 
 
-    public static byte[] V1_toBytes() {
+    private static byte[] V1_toBytes() {
         int num_of_items = messageBuffer.size();
         ByteBuffer buffer = ByteBuffer.allocate(Helper.INTEGER_SIZE * 2 + 1 + num_of_items*DIGEST_SIZE);// MAGIC (int) - TYPE ()byte - #of items (int) - content
         buffer.putInt(MAGIC);
@@ -71,12 +73,24 @@ public class NetLayer_Impl {
         return buffer.array();
     }
 
+    @NonNull
+    private static byte[] V1_toBytes(@NonNull String key) {//single item sumamry vector
+        int num_of_items = 1;
+        ByteBuffer buffer = ByteBuffer.allocate(Helper.INTEGER_SIZE * 2 + 1 + DIGEST_SIZE);// MAGIC (int) - TYPE ()byte - #of items (int) - content
+        buffer.putInt(MAGIC);
+        buffer.put(TYPE_SV1);
+        buffer.putInt(num_of_items);
+        byte [] thisKey = key.getBytes();
+        buffer.put(thisKey);
+        return buffer.array();
+    }
+
     @Nullable
-    public static byte [] V_fromBytes(@NonNull byte[] data) {
+    private static byte [] V_fromBytes(@NonNull byte[] data) {
         if (data.length < Helper.INTEGER_SIZE * 2 + 1) return null;
         ByteBuffer buffer = ByteBuffer.wrap(data);
-        int magic_read =0;
-        int type_read = 0;
+        int magic_read;
+        int type_read;
         if ((magic_read = buffer.getInt()) != MAGIC) return null;
         type_read = buffer.get();
         if ((type_read) != TYPE_SV1 && (type_read) != TYPE_SV2) return null;
@@ -85,11 +99,15 @@ public class NetLayer_Impl {
         if (length != buffer.remaining()) return null;
         byte[] content = new byte[length];
         buffer.get(content);
-        Log.e(NetLayer_Impl.TAG, "Read magic: "+magic_read+" type: "+type_read+" num: "+numElements+" content "+content);
+        if(type_read== TYPE_SV1)
+            Log.v(NetLayer_Impl.TAG, "Read SV (what other has) --- magic: "+magic_read+" type: "+type_read+" num: "+numElements);
+        if(type_read== TYPE_SV2)
+            Log.v(NetLayer_Impl.TAG, "Read SV (what other wants) --- magic: "+magic_read+" type: "+type_read+" num: "+numElements);
         return content;
     }
 
-    public static byte[] V2_toBytes() {
+    @NonNull
+    private static byte[] V2_toBytes() {
         int num_of_items = request.size();
         ByteBuffer buffer = ByteBuffer.allocate(Helper.INTEGER_SIZE * 2 + 1 + num_of_items*DIGEST_SIZE);// MAGIC (int) - TYPE ()byte - #of items (int) - content
         buffer.putInt(MAGIC);
@@ -102,26 +120,28 @@ public class NetLayer_Impl {
         return buffer.array();
     }
 
-    public static byte[] M_toBytes(String key) {
+    @Nullable
+    private static byte[] M_toBytes(@NonNull String key) {
         byte [] msg = messageBuffer.get(key);
-        int msgLentgh = msg.length;
+        if(msg==null)
+            return null;
+        int msgLength = msg.length;
         ByteBuffer buffer = ByteBuffer.allocate(Helper.INTEGER_SIZE * 2 + 1 + DIGEST_SIZE+ msg.length);// MAGIC (int) - TYPE ()byte - digest + ConLength - msgContent
         buffer.putInt(MAGIC);
         buffer.put(TYPE_M);
         byte [] digest = key.getBytes();
         buffer.put(digest);
-        buffer.putInt(msgLentgh);
+        buffer.putInt(msgLength);
         buffer.put(msg);
 
         return buffer.array();
     }
 
-    @Nullable
-    public static void M_fromBytes(@NonNull byte[] data) {
+    private static void M_fromBytes(@NonNull byte[] data, NeighborID neighbor) {
         if (data.length < Helper.INTEGER_SIZE * 2 + 1) return;
         ByteBuffer buffer = ByteBuffer.wrap(data);
-        int magic_read =0;
-        int type_read = 0;
+        int magic_read;
+        int type_read;
         if ((magic_read = buffer.getInt()) != MAGIC) return;
         if ((type_read = buffer.get()) != TYPE_M) return;
         byte [] digest = new byte[DIGEST_SIZE];
@@ -131,11 +151,16 @@ public class NetLayer_Impl {
         if (length != buffer.remaining()) return;
         byte[] content = new byte[length];
         buffer.get(content);
+        String calculatedDigest = getSHA(content);
         String content_str = (new String(content, StandardCharsets.US_ASCII));
-        Log.e(NetLayer_Impl.TAG, "Read magic: "+magic_read+" type: "+type_read+ "digest_str:"+digest_str+" len: "+length+
-                " content "+content+ " content str"+ content_str);
+        Log.v(NetLayer_Impl.TAG, "Read Content --- magic: "+magic_read+" type: "+type_read+ " \ndigest: "+digest_str+
+                " \ncontent: "+ content_str+ " \ncalculated digest: "+calculatedDigest + " \ncompare digests: "+(digest_str.equals(calculatedDigest)));
+        if(!digest_str.equals(calculatedDigest)){
+            Log.v(NetLayer_Impl.TAG, "Calculated digest different from provided digest. Discarding!");
+            return;
+        }
         //add to buffer
-        addBufferEntry(digest_str, content);
+        addBufferEntry(digest_str, content, neighbor);
     }
 
     NetLayer_Impl() {
@@ -167,27 +192,13 @@ public class NetLayer_Impl {
             Context.getContext(CONTEXT_NET_LAYER_IMPL).sendBroadcast(new Intent(ACTION_NEIGHBOR_CHANGED).putExtra(EXTRA_NEIGHBORS, connectedNeighbors.toArray(new NeighborID[0])));
 
         if(connected){
-            //exchange summary vectors
-            String thisName = Device.getName();
-            String theirName = neighborID.getName();
-            //if(!messageBuffer.isEmpty()){
+        //exchange summary vectors
 
-                Log.e(NetLayer_Impl.TAG, "I have ["+messageBuffer+"] to exchange with "+ neighborID.getName());
-                byte [] Data = V1_toBytes();
-                //String summaryvector = TYPE_SV1+" ";
-                //for(String messageKey: messageBuffer.keySet()) {
-                //summaryvector = summaryvector + messageKey + " ";
-                //}
-                //Log.e(NetLayer_Impl.TAG, "I have summary vector ["+summaryvector+"] to exchange with "+ neighborID.getName());
-                //byte [] Data = summaryvector.getBytes();
-                Log.e(NetLayer_Impl.TAG, "SV to send: "+ Data);
+            Log.v(NetLayer_Impl.TAG, "I have this message buffer to exchange with "+ neighborID.getName()+":\n"+printMessageBuffer());
+            byte [] Data = V1_toBytes();
 
-                LinkLayer.sendData(neighborID, Data, 0, Data.length);
+            LinkLayer.sendData(neighborID, Data, 0, Data.length);
 
-                //Log.e(NetLayer_Impl.TAG, "check: "+V_fromBytes(Data));
-
-
-            //}
         }
     }
 
@@ -198,7 +209,7 @@ public class NetLayer_Impl {
 
 
         ByteBuffer buffer = ByteBuffer.wrap(data);
-        Log.e(NetLayer_Impl.TAG, "received ["+ data+ "] with "+ data.length +" bytes from "+neighborID.getName());
+        Log.v(NetLayer_Impl.TAG, "received data with "+ data.length +" bytes from "+neighborID.getName());
         // read magic
         if (buffer.remaining() < Helper.INTEGER_SIZE) {
             return;
@@ -214,10 +225,11 @@ public class NetLayer_Impl {
                 break;
             case TYPE_SV1:
                 buffer.rewind();
-                Log.e(NetLayer_Impl.TAG, "rcvd content "+V_fromBytes(data)+ " str:"+ Arrays.toString(V_fromBytes(data)));
+                //Log.v(NetLayer_Impl.TAG, "rcvd content "+V_fromBytes(data)+ " str:"+ Arrays.toString(V_fromBytes(data)));
 
                 byte [] content_rcvd = V_fromBytes(data);
-
+                if(content_rcvd==null)
+                    return;
                 request = new HashSet<>();
                 int rcv_num = content_rcvd.length/DIGEST_SIZE;
                 for(int i=0; i<rcv_num; i++){
@@ -226,21 +238,21 @@ public class NetLayer_Impl {
                         thisContent[j] = content_rcvd[i*DIGEST_SIZE + j];
                     }
                     String thisContentString = new String(thisContent, StandardCharsets.US_ASCII);
-                    // Arrays.toString(thisContent);
                     if(!messageBuffer.containsKey(thisContentString)) {
                         request.add(thisContentString);
                     }
                 }
                 byte [] wish = V2_toBytes();
-                Log.e(NetLayer_Impl.TAG, "I need "+request + "to send: "+wish);
+                Log.v(NetLayer_Impl.TAG, "I need "+request+" ... send this request to "+neighborID.getName());
                 LinkLayer.sendData(neighborID, wish, 0, wish.length);
                 break;
             case TYPE_SV2:
                 buffer.rewind();
-                Log.e(NetLayer_Impl.TAG, "rcvd content "+V_fromBytes(data)+ " str:"+ Arrays.toString(V_fromBytes(data)));
-
+                //Log.v(NetLayer_Impl.TAG, "rcvd content "+V_fromBytes(data)+ " str:"+ Arrays.toString(V_fromBytes(data)));
                 byte [] content_rcvd2 = V_fromBytes(data);
-
+                if(content_rcvd2==null)
+                    return;
+                HashSet <String> otherWants = new HashSet<>();
                 int rcv_num2 = content_rcvd2.length/DIGEST_SIZE;
                 for(int i=0; i<rcv_num2; i++){
                     byte [] thisContent = new byte[DIGEST_SIZE];
@@ -248,40 +260,84 @@ public class NetLayer_Impl {
                         thisContent[j] = content_rcvd2[i*DIGEST_SIZE + j];
                     }
                     String thisContentString = new String(thisContent, StandardCharsets.US_ASCII);
-                    Log.e(NetLayer_Impl.TAG, neighborID.getName()+" wants "+thisContentString+" from me!");
-                    byte [] msg_to_send = M_toBytes(thisContentString);
-                    LinkLayer.sendData(neighborID, msg_to_send, 0, msg_to_send.length);
+                    otherWants.add(thisContentString);
+                }
+                Log.v(NetLayer_Impl.TAG, neighborID.getName()+" wants these from me!:\n"+otherWants);
+                //iterate through the Queue; on any match with otherWants -> send to content other
+                for(String element: messageBufferQueue){
+                    if(otherWants.contains(element)){
+                        byte [] msg_to_send = M_toBytes(element);
+                        if(msg_to_send==null)
+                            return;
+                        Log.v(NetLayer_Impl.TAG, "send this content: "+(new String(messageBuffer.get(element), StandardCharsets.US_ASCII)));
+                        LinkLayer.sendData(neighborID, msg_to_send, 0, msg_to_send.length);
+                    }
                 }
                 break;
             case TYPE_M:
-                Log.e(NetLayer_Impl.TAG, "Data msg recvd");
-                M_fromBytes(data);
-                Log.e(NetLayer_Impl.TAG, " buffer : "+getMessageBuffer());
+                //Log.v(NetLayer_Impl.TAG, "Data msg recvd");
+                M_fromBytes(data, neighborID);
+                //Log.v(NetLayer_Impl.TAG, " buffer : "+getMessageBuffer());
                 break;
             default:
                 return;
         }
+    }
 
-        // Dummy implementation, send it to all neighbors except the "from" interface
-        // but forward only valid net layer packets
-        for (NeighborID neighbor : connectedNeighbors) {
-            if (!neighbor.equals(neighborID))
-                LinkLayer.sendData(neighbor, data, 0, data.length);
+
+    public static void addBufferEntry(String key, byte [] value, @Nullable NeighborID src){
+        if(messageBuffer.size()>=BUFFER_CAPACITY){
+            String toRemove = messageBufferQueue.remove();
+            messageBuffer.remove(toRemove);
+            Log.v(NetLayer_Impl.TAG, "Buffer capacity exceeded! Item %s removed!", toRemove);
         }
-
-    }
-
-
-
-
-    public static void addBufferEntry(String key, byte [] value){
         messageBuffer.put(key, value);
+        if(!messageBufferQueue.contains(key))
+            messageBufferQueue.add(key);
+        //check if any neighbors
+        if(connectedNeighbors.isEmpty()){
+            Log.v(NetLayer_Impl.TAG, "no neighbors to send %s to now!", key);
+        }
+        else if(connectedNeighbors.size()==1 && connectedNeighbors.contains(src)){
+            Log.v(NetLayer_Impl.TAG, "no OTHER neighbors to send %s to now!", key);
+        }
+        else {
+            Log.v(NetLayer_Impl.TAG, "need to send to these neighbors now! "+connectedNeighbors+ "except "+src.getName());
+            for (NeighborID neighbor : connectedNeighbors) {
+                if(!neighbor.equals(src)) {
+                    byte[] V1_to_send = V1_toBytes(key);
+                    LinkLayer.sendData(neighbor, V1_to_send, 0, V1_to_send.length);
+                }
+            }
+        }
+        Log.v(NetLayer_Impl.TAG, "buffer at "+Device.getName()+" : "+printMessageBuffer());
     }
 
-    public static HashMap<String, byte []> getMessageBuffer(){
+    @NonNull
+    private static HashMap<String, byte []> getMessageBufferHashTable(){
         return messageBuffer;
     }
 
+    @NonNull
+    private static Queue<String> getMessageBufferQueu(){
+        return messageBufferQueue;
+    }
+
+    @NonNull
+    private static String printMessageBuffer(){
+        StringBuilder resultString = new StringBuilder();
+        resultString.append("Hash Table:\n");
+        for(String key: messageBuffer.keySet()){
+            resultString.append(key).append("\t").append(new String(messageBuffer.get(key), StandardCharsets.US_ASCII)).append("\n");
+        }
+        resultString.append("\nQueue:\n");
+        for(String element: messageBufferQueue){
+            resultString.append(element).append("\t").append(new String(messageBuffer.get(element), StandardCharsets.US_ASCII)).append("\n");
+        }
+        return resultString.toString();
+    }
+
+    @Nullable
     public static String getSHA(byte [] input)
     {
 
@@ -300,12 +356,17 @@ public class NetLayer_Impl {
 
             // Convert message digest into hex value
             String hashtext = no.toString(16);
-
             while (hashtext.length() < 32) {
                 hashtext = "0" + hashtext;
             }
-
-            Log.e(NetLayer_Impl.TAG , "Digest of "+input+" is "+hashtext+ " numBytes: "+hashtext.getBytes().length+ " (md:)"+ messageDigest.length);
+            byte [] hashtext_bytes = hashtext.getBytes();
+            int hashtext_bytes_length = hashtext_bytes.length;
+            if(hashtext_bytes_length<DIGEST_SIZE){
+                for(int i=hashtext_bytes_length; i<DIGEST_SIZE; i++){
+                    hashtext= hashtext+ "0";
+                }
+            }
+            Log.v(NetLayer_Impl.TAG , "Digest is: "+hashtext+ " numBytes: "+hashtext.getBytes().length);
             return hashtext;
         }
 

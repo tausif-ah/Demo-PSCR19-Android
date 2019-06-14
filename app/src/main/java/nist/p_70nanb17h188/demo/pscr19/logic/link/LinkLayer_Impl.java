@@ -33,7 +33,7 @@ public final class LinkLayer_Impl {
 
     boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
         // prefer Wifi over Bluetooth
-        Log.e(NetLayer_Impl.TAG, "send ["+ data +"] with "+ len +" bytes to "+id.getName());
+        //Log.v(NetLayer_Impl.TAG, "send data with "+ len +" bytes to "+id.getName());
         return wifiTCPConnectionManager.sendData(id, data, start, len);
 
         // do bluetooth send

@@ -52,20 +52,23 @@ public class NeighborsFragment extends Fragment {
     @NonNull
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        if(Device.getName()=="M1") {
-            String message = "M1abcdefgh446ew4d6e4a6jfkdsjmclksdmlkcmwdlkmv  oierj oigj54oh4u h g54joi tjeroijhoirtoijo o4wjroi hjoi jhorij oirejhoihoi hoih oirhtoirehtoerhoi";
-            byte [] messageBytes = message.getBytes();
-            Log.e(NetLayer_Impl.TAG, "message 1 created by "+Device.getName()+ " --- in bytes: "+messageBytes);
-            String messageHash = NetLayer_Impl.getSHA(messageBytes);
-            NetLayer_Impl.addBufferEntry(messageHash, messageBytes);
-
-            String message2 = "M1i";
-            byte [] messageBytes2 = message2.getBytes();
-            Log.e(NetLayer_Impl.TAG, "message 2 created by "+Device.getName()+ " --- in bytes: "+messageBytes2);
-            String messageHash2 = NetLayer_Impl.getSHA(messageBytes2);
-            NetLayer_Impl.addBufferEntry(messageHash2, messageBytes2);
-
-            Log.e(NetLayer_Impl.TAG, "buffer at "+Device.getName()+" : "+NetLayer_Impl.getMessageBuffer());
+        if(Device.getName().equals("M2")) {
+            String [] msgs = {"M21_someText", "M22_someText", "M23_someText", "M24_someText", "M25_someText"};
+            for(String m: msgs){
+                byte[] messageBytes = m.getBytes();
+                Log.v(NetLayer_Impl.TAG, "message created by " + Device.getName() + " : " + m);
+                String messageHash = NetLayer_Impl.getSHA(messageBytes);
+                NetLayer_Impl.addBufferEntry(messageHash, messageBytes, null);
+            }
+        }
+        if(Device.getName().equals("Router")){
+            String [] msgs = {"Router1_someText", "Router2_someText"};
+            for(String m: msgs){
+                byte[] messageBytes = m.getBytes();
+                Log.v(NetLayer_Impl.TAG, "message created by " + Device.getName() + " : " + m);
+                String messageHash = NetLayer_Impl.getSHA(messageBytes);
+                NetLayer_Impl.addBufferEntry(messageHash, messageBytes, null);
+            }
         }
         View view = inflater.inflate(R.layout.fragment_naming_neighbors, container, false);
 
