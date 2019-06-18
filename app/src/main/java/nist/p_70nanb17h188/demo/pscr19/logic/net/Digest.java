@@ -6,39 +6,40 @@ import android.support.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Locale;
 
 import nist.p_70nanb17h188.demo.pscr19.Helper;
-import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 /**
  * Create a digest class instead of byte[], so that we can use hashCode ({@link Arrays#hashCode(byte[])}) and equals ({@link Arrays#equals(byte[], byte[])}).
  */
-class Digest {
+public class Digest {
     private static final String TAG = "Digest";
     private static final String DEFAULT_DIGEST_ALGORITHM = "SHA-1";
-    private static final int DIGEST_SIZE;
+    static final int DIGEST_SIZE;
 
     static {
         try {
             MessageDigest tmpDigest = MessageDigest.getInstance(DEFAULT_DIGEST_ALGORITHM);
             DIGEST_SIZE = tmpDigest.getDigestLength();
         } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace(System.err);
             throw new AssertionError("Cannot find digest " + DEFAULT_DIGEST_ALGORITHM);
         }
     }
 
     // we can happily keep it a byte array
-    private static byte[] getMessageDigest(byte[] message) {
+    private static byte[] getMessageDigest(Message message) {
         try {
+            // generate a new object as it is not thread-safe.
             MessageDigest tmpDigest = MessageDigest.getInstance(DEFAULT_DIGEST_ALGORITHM);
-            return tmpDigest.digest(message);
+            tmpDigest.update(message.getData());
+            ByteBuffer buf = ByteBuffer.allocate(Helper.LONG_SIZE);
+            buf.putLong(message.getNonce());
+            return tmpDigest.digest(buf.array());
         } catch (NoSuchAlgorithmException e) {
             // should never reach here
-            e.printStackTrace();
+            e.printStackTrace(System.err);
             throw new AssertionError(DEFAULT_DIGEST_ALGORITHM);
         }
     }
@@ -50,17 +51,16 @@ class Digest {
     /**
      * Get a digest from a piece of data.
      *
-     * @param data The digest of the data.
+     * @param message The message to be digested.
      */
-    Digest(@NonNull byte[] data) {
-        this(getMessageDigest(data), true);
+    Digest(@NonNull Message message) {
+        this(getMessageDigest(message));
     }
 
     /**
      * Internal set of digest, should never be used from outside
-     * Added parameter unused to distinguish from {@link #Digest(byte[])}
      */
-    private Digest(@NonNull byte[] digest, boolean unused) {
+    private Digest(@NonNull byte[] digest) {
         this.digest = digest;
         this.hashCode = Arrays.hashCode(digest);
     }
@@ -81,10 +81,10 @@ class Digest {
     @NonNull
     @Override
     public String toString() {
-        return String.format(Locale.US, "Digest{%s}", Helper.getHexString(digest));
+        return Helper.getHexString(digest);
     }
 
-    void writeTo(@NonNull ByteBuffer buffer) {
+    void write(@NonNull ByteBuffer buffer) {
         buffer.put(digest);
     }
 
@@ -93,43 +93,7 @@ class Digest {
         if (buffer.remaining() < DIGEST_SIZE) return null;
         byte[] buf = new byte[DIGEST_SIZE];
         buffer.get(buf);
-        return new Digest(buf, true);
+        return new Digest(buf);
     }
-
-    static int getDigestsWriteSize(int count) {
-        return Helper.INTEGER_SIZE + DIGEST_SIZE * count; // count + digests
-    }
-
-    static void writeDigests(@NonNull ByteBuffer buffer, @NonNull Collection<Digest> digests) {
-        buffer.putInt(digests.size());
-        for (Digest digest : digests) {
-            digest.writeTo(buffer);
-        }
-    }
-
-    @Nullable
-    static ArrayList<Digest> readDigests(@NonNull ByteBuffer buffer) {
-        if (buffer.remaining() < Helper.INTEGER_SIZE) {
-            Log.e(TAG, "Buffer size (%d) < int size (%d)", buffer.remaining(), Helper.INTEGER_SIZE);
-            return null;
-        }
-        int itemCount = buffer.getInt();
-        Log.d(TAG, "itemCount = %d", itemCount);
-        if (buffer.remaining() != itemCount * DIGEST_SIZE) {
-            Log.e(TAG, "itemCount=%d, digestSize=%d, should have=%d, buf remaining=%d", itemCount, DIGEST_SIZE, itemCount * DIGEST_SIZE, buffer.remaining());
-            return null;
-        }
-        ArrayList<Digest> ret = new ArrayList<>(itemCount);
-        for (int i = 0; i < itemCount; i++) {
-            Digest next = read(buffer);
-            if (next == null) {
-                Log.e(TAG, "Cannot read next, i=%d", i);
-                return null;
-            }
-            ret.add(next);
-        }
-        return ret;
-    }
-
 
 }

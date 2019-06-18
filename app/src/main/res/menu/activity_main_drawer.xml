@@ -30,6 +30,10 @@
             android:icon="@drawable/ic_menu_link"
             android:title="@string/nav_link" />
         <item
+            android:id="@+id/main_nav_gossip"
+            android:icon="@drawable/ic_menu_gossip"
+            android:title="@string/nav_gossip" />
+        <item
             android:id="@+id/main_nav_naming"
             android:icon="@drawable/ic_menu_naming"
             android:title="@string/nav_naming" />

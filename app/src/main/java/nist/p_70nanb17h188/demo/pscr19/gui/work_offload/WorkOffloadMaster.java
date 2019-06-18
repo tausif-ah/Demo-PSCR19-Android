@@ -76,7 +76,7 @@ public class WorkOffloadMaster extends ViewModel {
         synchronized void setSlaveTask(DataWorkContent content) {
             if (workContent != null || workResult != null) return;
             workContent = content;
-            NetLayer.sendData(masterName, slaveName, content.toBytes());
+            NetLayer.sendData(masterName, slaveName, content.toBytes(), false);
             slaveState.postValue(SlaveState.WORKING);
         }
 
@@ -209,7 +209,7 @@ public class WorkOffloadMaster extends ViewModel {
             showNoSlaveText.setValue(false);
             if (offload) {
                 currState.setValue(MasterState.WAIT_FOR_RESPONSE);
-                NetLayer.sendData(myName, Constants.getMulticastName(), new DataWorkRequest(workId).toBytes());
+                NetLayer.sendData(myName, Constants.getMulticastName(), new DataWorkRequest(workId).toBytes(), false);
                 workerHandler.postDelayed(() -> onWaitSlaveTimeout(workId), WAIT_RESPONSE_DELAY_MS);
             } else {
                 taskStart.postValue(System.currentTimeMillis());

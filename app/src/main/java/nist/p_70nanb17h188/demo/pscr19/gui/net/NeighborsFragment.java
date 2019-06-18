@@ -16,14 +16,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import nist.p_70nanb17h188.demo.pscr19.Device;
-import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
-import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
-import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
-import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -47,23 +42,7 @@ public class NeighborsFragment extends Fragment {
     @NonNull
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        if ("M1".equals(Device.getName())) {
-            String message;
-            byte[] messageBytes;
 
-            message = "M1abcdefgh446ew4d6e4a6jfkdsjmclksdmlkcmwdlkmv  oierj oigj54oh4u h g54joi tjeroijhoirtoijo o4wjroi hjoi jhorij oirejhoihoi hoih oirhtoirehtoerhoi";
-            messageBytes = message.getBytes();
-            Log.d(TAG, "message 1 created by %s --- in bytes: %s", Device.getName(), Helper.getHexString(messageBytes));
-            NetLayer.getDefaultInstance().getGossipModule().addMessage(messageBytes);
-
-
-            message = "M1i";
-            messageBytes = message.getBytes();
-            Log.d(TAG, "message 1 created by %s --- in bytes: %s", Device.getName(), Helper.getHexString(messageBytes));
-            NetLayer.getDefaultInstance().getGossipModule().addMessage(messageBytes);
-
-            NetLayer.getDefaultInstance().getGossipModule().printBuffer();
-        }
         View view = inflater.inflate(R.layout.fragment_naming_neighbors, container, false);
 
         RecyclerView list = view.findViewById(R.id.name_routing_list);
@@ -117,7 +96,7 @@ public class NeighborsFragment extends Fragment {
             super(itemView);
             txNeighbor = itemView.findViewById(R.id.name_neighbor_id);
             inputSize = itemView.findViewById(R.id.name_input_size);
-            inputSize.setHint("[0," + NetLayer_Impl.MAX_SEND_SIZE + "]");
+            inputSize.setHint("[0," + 20000 + "]");
             btnSend = itemView.findViewById(R.id.name_send);
             btnSend.setOnClickListener(this::onSendClick);
         }

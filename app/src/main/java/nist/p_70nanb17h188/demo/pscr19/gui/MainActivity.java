@@ -19,6 +19,7 @@ import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.link.LinkFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.log.LogFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.messaging.MessagingFragment;
+import nist.p_70nanb17h188.demo.pscr19.gui.net.GossipFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.net.NamingFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.work_offload.WorkOffloadFragment;
 import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
@@ -29,7 +30,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 
 
 public class MainActivity extends AppCompatActivity {
-    private static final int DEFAULT_FRAGMENT = R.id.main_nav_messaging;
+    private static final int DEFAULT_FRAGMENT = R.id.main_nav_link;
 
     private DrawerLayout drawer;
     private NavigationView navigationView;
@@ -42,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         if (msg == null) return;
         LogType type = intent.getExtra(Helper.EXTRA_NOTIFICATION_TYPE);
         if (type == null) type = LogType.Info;
-//        int duration = (type.val >= LogType.Warn.val) ? Snackbar.LENGTH_LONG : Snackbar.LENGTH_SHORT;
+//        int duration = (type.getVal() >= LogType.Warn.getVal()) ? Snackbar.LENGTH_LONG : Snackbar.LENGTH_SHORT;
 //        Snackbar.make(this.get, msg, duration).show();
         int duration = (type.getVal() >= LogType.Warn.getVal()) ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
         Toast.makeText(this, msg, duration).show();
@@ -106,6 +107,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.main_nav_link:
                 setTitle(Device.getName() + " - " + getString(R.string.nav_link));
                 break;
+            case R.id.main_nav_gossip:
+                setTitle(Device.getName() + " - " + getString(R.string.nav_gossip));
+                break;
             case R.id.main_nav_naming:
                 setTitle(Device.getName() + " - " + getString(R.string.nav_naming));
                 break;
@@ -128,6 +132,9 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.main_nav_link:
                 fragment = new LinkFragment();
+                break;
+            case R.id.main_nav_gossip:
+                fragment = new GossipFragment();
                 break;
             case R.id.main_nav_naming:
                 fragment = new NamingFragment();

@@ -68,13 +68,19 @@ public class Helper {
 
     @NonNull
     public static String getHexString(@NonNull byte[] buf) {
+        return getHexString(buf, 0, buf.length);
+    }
+
+    @NonNull
+    public static String getHexString(@NonNull byte[] buf, int start, int len) {
         StringBuilder ret = new StringBuilder();
-        for (int i = 0; i < buf.length; i++) {
-            byte b = buf[i];
+        for (int i = 0; i < len; i++) {
+            byte b = buf[start + i];
             ret.append(CANDIDATE_CHARSET_HEX_NUMBERS.charAt((b >> 4) & 0xF));
             ret.append(CANDIDATE_CHARSET_HEX_NUMBERS.charAt(b & 0xF));
         }
         return ret.toString();
+
     }
 
     @NonNull

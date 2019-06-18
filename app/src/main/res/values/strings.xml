@@ -10,6 +10,7 @@
     <string name="nav_messaging">Messaging</string>
     <string name="nav_work_offload">Work Offloading</string>
     <string name="nav_link">Link Layer</string>
+    <string name="nav_gossip">Store &amp; Forward</string>
     <string name="nav_naming">Naming Layer</string>
     <string name="nav_log">Log</string>
 
@@ -68,7 +69,15 @@
     <string name="work_offload_slave_enabled">Enabled</string>
     <string name="work_offload_slave_disabled">Disabled</string>
 
+    <string name="gossip_fixed">Fixed</string>
+    <string name="gossip_random">Random</string>
+    <string name="gossip_store">Store</string>
+    <string name="gossip_non_store">No Store</string>
+    <string name="gossip_add_msg">Add</string>
+    <string name="gossip_digest">Digest</string>
+    <string name="gossip_nonce">Nonce</string>
+    <string name="gossip_msg">Message</string>
+
+
     <string name="millisecond">ms</string>
-    <string name="to_anyone">To anyone</string>
-    <string name="propagate">Propagate</string>
 </resources>

@@ -45,6 +45,6 @@ public class NeighborID {
     @NonNull
     @Override
     public String toString() {
-        return String.format("Neighbor{%s}", name);
+        return String.format("<%s>", name);
     }
 }

@@ -7,72 +7,160 @@ import android.support.annotation.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.HashSet;
 
 import nist.p_70nanb17h188.demo.pscr19.Helper;
+import nist.p_70nanb17h188.demo.pscr19.imc.Context;
+import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
+import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
+import nist.p_70nanb17h188.demo.pscr19.logic.FIFOMap;
+import nist.p_70nanb17h188.demo.pscr19.logic.FIFOSet;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 public class GossipModule {
+
+    /**
+     * The context for wifi CONTEXT_GOSSIP_MODULE events.
+     */
+    public static final String CONTEXT_GOSSIP_MODULE = "nist.p_70nanb17h188.demo.pscr19.logic.net.GossipModule";
+
+    /**
+     * Broadcast intent action indicating that a neighbor list has changed.
+     * One extra {@link #EXTRA_NEIGHBORS} ({@link NeighborID}[]) indicates the neighbors that are connected.
+     * <p>
+     * The values are also available with function {@link #getConnectNeighbors()} .
+     */
+    public static final String ACTION_NEIGHBOR_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.GossipModule.neighborChanged";
+    public static final String EXTRA_NEIGHBORS = "neighbors";
+
+    /**
+     * Broadcast intent action indicating that a data has been added to/removed from the message pool.
+     * One extra {@link #EXTRA_MESSAGE} ({@link Message) indicates the data,
+     * Another extra {@link #EXTRA_ADDED} ({@link Boolean}) indicates if the data is added (true) or removed (false).
+     * A third extra {@link #EXTRA_DIGEST} ({@link Digest}) indicates the digest of the data.
+     * <p>
+     * The values can be retrieved by checking {@link #getMessage(Digest)}. The digests can be retrieved by {@link #getBlacklist()}.
+     */
+    public static final String ACTION_BUFFER_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.GossipModule.bufferChanged";
+    public static final String EXTRA_MESSAGE = "message";
+    public static final String EXTRA_ADDED = "added";
+    public static final String EXTRA_DIGEST = "digest";
+
+    /**
+     * Broadcast intent action indicating that a digest has been added to/removed from the black list.
+     * An extra {@link #EXTRA_ADDED} ({@link Boolean}) indicates if the digest is added (true) or removed (false).
+     * A third extra {@link #EXTRA_DIGEST} ({@link Digest}) indicates the digest.
+     * <p>
+     * The values are also available with function {@link #getBlacklist()}.
+     */
+    public static final String ACTION_BLACKLIST_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.GossipModule.blackListChanged";
+
+    /**
+     * Broadcast intent action indicating that a data has received.
+     * An extra {@link #EXTRA_DATA} ({@link byte[]}) indicates the data.
+     */
+    public static final String ACTION_DATA_RECEIVED = "nist.p_70nanb17h188.demo.pscr19.logic.net.GossipModule.dataReceived";
+    public static final String EXTRA_DATA = "data";
+
     private static final String TAG = "GossipModule";
-    static final byte TYPE_SV_POSSESS = -128; // SV of what I have
-    static final byte TYPE_SV_REQUEST = -127; // SV of what I want
-    static final byte TYPE_MESSAGE = -126; // Message
+    private static final int MAGIC = 0x12345678;
+    private static final int CAPACITY_MESSAGE_BUFFER = 1000;
+    private static final int CAPACITY_BLACK_LIST = 2000;
 
-    @NonNull
-    private static byte[] writeSV(byte type, @NonNull Collection<Digest> digests) {
-        int size = NetLayer_Impl.getWritePrefixSize() + Digest.getDigestsWriteSize(digests.size());
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        NetLayer_Impl.writePrefix(buffer, type);
-        Digest.writeDigests(buffer, digests);
-        return buffer.array();
-    }
+    private static final byte TYPE_SV_POSSESS = 1;  // SV of what I have
+    private static final byte TYPE_SV_REQUEST = 2;  // SV of what I want
+    private static final byte TYPE_MESSAGE = 3;     // Message
 
-    @NonNull
-    private static byte[] writeMessage(@NonNull Digest digest, @NonNull byte[] content) {
-        // why add digest? the other side can compute it with the message itself.
-        int size = NetLayer_Impl.getWritePrefixSize()   // prefix
-//                + Digest.DIGEST_SIZE                    // digest
-                + Helper.INTEGER_SIZE                   // content length
-                + content.length;                       // content
-        ByteBuffer buffer = ByteBuffer.allocate(size);
-        NetLayer_Impl.writePrefix(buffer, TYPE_MESSAGE);
-//        digest.writeTo(buffer);
-        buffer.putInt(content.length);
-        buffer.put(content);
-        return buffer.array();
-    }
+    private final HashSet<NeighborID> connectedNeighbors = new HashSet<>();
 
-    @Nullable
-    private static byte[] readMessage(ByteBuffer buf) {
-        // why add digest? the other side can compute it with the message itself.
-//        Digest digest = Digest.read(buf);
-//        if (digest == null) {
-//            Log.e(TAG, "Cannot read digest from buf");
-//            return null;
-//        }
-        if (buf.remaining() < Helper.INTEGER_SIZE) {
-            Log.e(TAG, "Cannot read size from buf");
-            return null;
-        }
-        int size = buf.getInt();
-        if (buf.remaining() != size) {
-            Log.e(TAG, "size does not match, size=%d, remaining=%d", size, buf.remaining());
-            return null;
-        }
-        byte[] ret = new byte[size];
-        buf.get(ret);
-        return ret;
-    }
-
-    private final HashMap<Digest, byte[]> messageBuffer = new HashMap<>();
+    private final FIFOMap<Digest, Message> messageBuffer = new FIFOMap<>(CAPACITY_MESSAGE_BUFFER);
+    private final FIFOSet<Digest> blacklist = new FIFOSet<>(CAPACITY_BLACK_LIST);
     private Handler workThreadHandler;
 
     GossipModule() {
+        startWorkThread();
+        // listen to message buffer and blacklist events, send broadcast once event got
+        messageBuffer.addItemChangedEventHandler((k, v, added) -> Context.getContext(CONTEXT_GOSSIP_MODULE).sendBroadcast(new Intent(ACTION_BUFFER_CHANGED).putExtra(EXTRA_DIGEST, k).putExtra(EXTRA_MESSAGE, v).putExtra(EXTRA_ADDED, added)));
+        blacklist.addItemChangedEventHandler((k, added) -> Context.getContext(CONTEXT_GOSSIP_MODULE).sendBroadcast(new Intent(ACTION_BLACKLIST_CHANGED).putExtra(EXTRA_DIGEST, k).putExtra(EXTRA_ADDED, added)));
+
+        // listen to link layer events
+        Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).registerReceiver((context, intent) -> {
+                    switch (intent.getAction()) {
+                        case LinkLayer.ACTION_LINK_CHANGED:
+                            onLinkChanged(intent);
+                            break;
+                        case LinkLayer.ACTION_DATA_RECEIVED:
+                            onDataReceived(intent);
+                            break;
+                    }
+                },
+                new IntentFilter()
+                        .addAction(LinkLayer.ACTION_LINK_CHANGED)
+                        .addAction(LinkLayer.ACTION_DATA_RECEIVED)
+        );
+        Log.i(TAG, "GossipModule ready!");
+    }
+
+    @NonNull
+    public NeighborID[] getConnectNeighbors() {
+        return connectedNeighbors.toArray(new NeighborID[0]);
+    }
+
+    @Nullable
+    public Message getMessage(@NonNull Digest digest) {
+        return messageBuffer.get(digest);
+    }
+
+    @NonNull
+    public Digest[] getBlacklist() {
+        return blacklist.toArray(new Digest[0]);
+    }
+
+    public void addMessage(@NonNull byte[] value, boolean toStore) {
+        // run it on the work thread, so that we don't have to synchronize messageBuffer.
+        workThreadHandler.post(() -> {
+            Message msg;
+            Digest d;
+            // create nonce using message until the digest does not match anything in the blacklist
+            do {
+                msg = new Message(value, toStore);
+                d = new Digest(msg);
+            } while (blacklist.contains(d));
+            if (msg.isStore()) messageBuffer.add(d, msg);
+            blacklist.add(d);
+            Log.d(TAG, "Added digest: %s, msg: %s", d, msg);
+
+            // No need to notify the applications that a message has been received
+            // Context.getContext(CONTEXT_GOSSIP_MODULE).sendBroadcast(new Intent(ACTION_DATA_RECEIVED).putExtra(EXTRA_DATA, msg.getData()));
+
+            // send MSG around
+            byte[] toSend = messageToByteArray(msg);
+            for (NeighborID neighbor : connectedNeighbors) {
+                Log.d(TAG, "Send to %s, MSG, len=%d, %s", neighbor, toSend.length, msg);
+                LinkLayer.sendData(neighbor, toSend);
+            }
+        });
+    }
+
+    @NonNull
+    private byte[] messageToByteArray(@NonNull Message msg) {
+        int size = getWritePrefixSize() + msg.getWriteSize();
+        ByteBuffer buf = ByteBuffer.allocate(size);
+        writePrefix(buf, TYPE_MESSAGE);
+        msg.write(buf);
+        return buf.array();
+
+    }
+
+    private void startWorkThread() {
         // start a work thread for heavy-load jobs.
-        Thread t = new Thread(this::workerThread, "GossipModule");
+        Thread t = new Thread(() -> {
+            Looper.prepare();
+            workThreadHandler = new android.os.Handler();
+            Looper.loop();
+        }, TAG);
         t.setDaemon(true);
         t.start();
         while (workThreadHandler == null) {
@@ -84,31 +172,83 @@ public class GossipModule {
         }
     }
 
-    private void innerAddMessage(@NonNull byte[] value) {
-        Digest d = new Digest(value);
-        messageBuffer.put(d, value);
-        Log.d(TAG, "Added message: %s->%s", d, Helper.getHexString(value));
+
+    private void onLinkChanged(@NonNull Intent intent) {
+        NeighborID neighborID = intent.getExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
+        Boolean connected = intent.getExtra(LinkLayer.EXTRA_CONNECTED);
+        assert neighborID != null && connected != null;
+        boolean changed;
+        if (connected) changed = connectedNeighbors.add(neighborID);
+        else changed = connectedNeighbors.remove(neighborID);
+
+        if (changed) {
+            Context.getContext(CONTEXT_GOSSIP_MODULE).sendBroadcast(new Intent(ACTION_NEIGHBOR_CHANGED).putExtra(EXTRA_NEIGHBORS, connectedNeighbors.toArray(new NeighborID[0])));
+            if (connected) {
+                onNeighborConnected(neighborID);
+            } else {
+                onNeighborDisconnected(neighborID);
+            }
+        }
     }
 
-    public void addMessage(@NonNull byte[] value) {
-        // run it on the work thread, so that we don't have to synchronize messageBuffer.
-        workThreadHandler.post(() -> innerAddMessage(value));
-    }
-
-    void onNeighborConnected(NeighborID n) {
+    private void onNeighborConnected(NeighborID n) {
         // run it on the work thread, it is heavy
         workThreadHandler.post(() -> {
-            //exchange summary vectors
+            // send SV_POSESS
             int itemCount = messageBuffer.size();
-            Log.d(TAG, "I have %d msgs in buffer to %s", itemCount, n);
-            byte[] buf = writeSV(TYPE_SV_POSSESS, messageBuffer.keySet());
-            Log.d(TAG, "SV to send: %d", buf.length);
-            LinkLayer.sendData(n, buf, 0, buf.length);
+            int size = getWritePrefixSize()
+                    + Helper.INTEGER_SIZE               // count
+                    + Digest.DIGEST_SIZE * itemCount;   // digests
+            ByteBuffer buf = ByteBuffer.allocate(size);
+            writePrefix(buf, TYPE_SV_POSSESS);
+            buf.putInt(itemCount);
+            for (FIFOMap.Entry<Digest, Message> e : messageBuffer)
+                e.getKey().write(buf);
+            Log.d(TAG, "Send to %s, SV_POSSESS, count=%d, buf_len:%d", n, itemCount, buf.position());
+            LinkLayer.sendData(n, buf.array());
         });
     }
 
-    void onNeighborDisconnected(NeighborID n) {
+    private void onNeighborDisconnected(NeighborID n) {
 
+    }
+
+    private void onDataReceived(@NonNull Intent intent) {
+        // run it on the work thread
+        workThreadHandler.post(() -> {
+            NeighborID neighborID = intent.getExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
+            byte[] data = intent.getExtra(LinkLayer.EXTRA_DATA);
+            assert data != null;
+            Log.d(TAG, "Received from %s, %d bytes", neighborID, data.length);
+
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            // read magic
+            if (buffer.remaining() < Helper.INTEGER_SIZE) {
+                Log.e(TAG, "Receive size (%d) < INTEGER_SIZE (%d)", buffer.remaining(), Helper.INTEGER_SIZE);
+                return;
+            }
+            int magic = buffer.getInt();
+            if (magic != MAGIC) {
+                Log.e(TAG, "MAGIC (0x%08x) != required (0x%08x)", magic, MAGIC);
+                return;
+            }
+            // read type
+            byte type = buffer.get();
+            switch (type) {
+                case TYPE_SV_POSSESS:
+                    onSVPossessReceived(neighborID, buffer);
+                    break;
+                case TYPE_SV_REQUEST:
+                    onSVRequestReceived(neighborID, buffer);
+                    break;
+                case TYPE_MESSAGE:
+                    onMessageReceived(neighborID, buffer);
+                    break;
+                default:
+                    Log.e(TAG, "Unknown type: 0x%02X", type & 0xFF);
+                    break;
+            }
+        });
     }
 
     /**
@@ -117,25 +257,37 @@ public class GossipModule {
      * @param from   The neighbor ID of the incoming packet.
      * @param buffer The content buffer.
      */
-    void readSVPossess(NeighborID from, ByteBuffer buffer) {
-        // run it on the work thread
-        workThreadHandler.post(() -> {
-            ArrayList<Digest> svPossess = Digest.readDigests(buffer);
-            if (svPossess == null) {
-                Log.e(TAG, "Failed in reading SV from %s, ignore.", from);
-                return;
-            }
-            // are you sure you need such a long string?
-            Log.d(TAG, "received from %s (POSESS): %s", from, svPossess);
-            ArrayList<Digest> svRequest = new ArrayList<>();
-            for (Digest digest : svPossess) {
-                if (!messageBuffer.containsKey(digest))
-                    svRequest.add(digest);
-            }
-            byte[] wish = writeSV(TYPE_SV_REQUEST, svRequest);
-            Log.d(TAG, "Send requests to %s (REQ): %s", from, svRequest);
-            LinkLayer.sendData(from, wish, 0, wish.length);
-        });
+    private void onSVPossessReceived(NeighborID from, ByteBuffer buffer) {
+        // buffer does not contain the size of an integer
+        if (buffer.remaining() < Helper.INTEGER_SIZE) {
+            Log.e(TAG, "Received from %s, SV_POSSESS, buffer size (%d) < INTEGER_SIZE (%d)", from, buffer.remaining(), Helper.INTEGER_SIZE);
+            return;
+        }
+        int count = buffer.getInt();
+        // buffer size not correct
+        if (buffer.remaining() != Digest.DIGEST_SIZE * count) {
+            Log.e(TAG, "Received from %s, SV_POSSESS, buffer size (%d) != count (%d) * digestSize (%d)", from, buffer.remaining(), count, Digest.DIGEST_SIZE);
+            return;
+        }
+        Log.d(TAG, "Received from %s, SV_POSSESS, count=%d", from, count);
+        ArrayList<Digest> toRequests = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            Digest d = Digest.read(buffer);
+            assert d != null;
+            if (!blacklist.contains(d))
+                toRequests.add(d);
+        }
+        int size = getWritePrefixSize()
+                + Helper.INTEGER_SIZE                       // count
+                + Digest.DIGEST_SIZE * toRequests.size();   // digests
+        ByteBuffer buf = ByteBuffer.allocate(size);
+        writePrefix(buf, TYPE_SV_REQUEST);
+        buf.putInt(toRequests.size());
+        for (Digest d : toRequests) {
+            d.write(buf);
+        }
+        Log.d(TAG, "Send to %s, SV_REQUEST (count=%d, buf_len=%d)", from, toRequests.size(), buf.position());
+        LinkLayer.sendData(from, buf.array());
     }
 
     /**
@@ -144,50 +296,64 @@ public class GossipModule {
      * @param from   The neighbor ID of the incoming packet.
      * @param buffer The content buffer.
      */
-    void readSVRequest(NeighborID from, ByteBuffer buffer) {
-        // run it on the work thread
-        workThreadHandler.post(() -> {
-            ArrayList<Digest> svRequest = Digest.readDigests(buffer);
-            if (svRequest == null) {
-                Log.e(TAG, "Failed in reading request from %s, ignore.", from);
-                return;
+    private void onSVRequestReceived(NeighborID from, ByteBuffer buffer) {
+        if (buffer.remaining() < Helper.INTEGER_SIZE) {
+            Log.e(TAG, "Received from %s, SV_REQUEST, buffer size (%d) < INTEGER_SIZE (%d)", from, buffer.remaining(), Helper.INTEGER_SIZE);
+            return;
+        }
+        int count = buffer.getInt();
+        // buffer size not correct
+        if (buffer.remaining() != Digest.DIGEST_SIZE * count) {
+            Log.e(TAG, "Received from %s, SV_REQUEST, buffer size (%d) != count (%d) * digestSize (%d)", from, buffer.remaining(), count, Digest.DIGEST_SIZE);
+            return;
+        }
+        Log.d(TAG, "Received from %s, SV_REQUEST, count=%d", from, count);
+        for (int i = 0; i < count; i++) {
+            Digest d = Digest.read(buffer);
+            assert d != null;
+            Message msg = messageBuffer.get(d);
+            if (msg != null) {
+                Log.d(TAG, "Send to %s, MSG d=%s, msg=%s", from, d, msg);
+                LinkLayer.sendData(from, messageToByteArray(msg));
             }
-            for (Digest digest : svRequest) {
-                Log.d(TAG, "%s requests %s", from, digest);
-                byte[] msg = messageBuffer.get(digest);
-                if (msg == null) {
-                    Log.e(TAG, "Cannot send %s to %s, digest not exist!", digest, from);
-                    continue;
-                }
-                byte[] toSend = writeMessage(digest, msg);
-                LinkLayer.sendData(from, toSend, 0, toSend.length);
-            }
-        });
+        }
     }
 
-    void readMessage(NeighborID from, ByteBuffer buffer) {
-        // run it on the work thread
-        workThreadHandler.post(() -> {
-            byte[] buf = readMessage(buffer);
-            if (buf == null) {
-                Log.e(TAG, "Failed in reading msg from %s", from);
-                return;
-            }
-            // use innerAddMessage since we are already on the work thread.
-            innerAddMessage(buf);
-            Log.d(TAG, "Added message from %s: %s", from, Helper.getHexString(buf));
-        });
+    private void onMessageReceived(NeighborID from, ByteBuffer buffer) {
+        Message msg = Message.read(buffer);
+        if (msg == null) {
+            Log.e(TAG, "Received from %s, MSG, failed in reading message from buffer!", from);
+            return;
+        }
+        Digest d = new Digest(msg);
+        Log.d(TAG, "Received from %s, MSG, d=%s, msg=%s", from, d, msg);
+        if (blacklist.contains(d)) {
+            Log.d(TAG, "Black list contains digest: %s", d);
+            return;
+        }
+        if (msg.isStore()) messageBuffer.add(d, msg);
+        blacklist.add(d);
+
+        // build toWrite buffer
+        byte[] toWrite = messageToByteArray(msg);
+
+        // notify applications that a data has received
+        Context.getContext(CONTEXT_GOSSIP_MODULE).sendBroadcast(new Intent(ACTION_DATA_RECEIVED).putExtra(EXTRA_DATA, msg.getData()));
+
+        for (NeighborID neighbor : connectedNeighbors) {
+            if (neighbor.equals(from)) continue;
+            LinkLayer.sendData(neighbor, toWrite);
+        }
     }
 
-    public void printBuffer() {
-        // run it on the work thread, so that we don't have to synchronize
-        workThreadHandler.post(() -> Log.d(TAG, "buffer at: %s", messageBuffer));
+    private static int getWritePrefixSize() {
+        return Helper.INTEGER_SIZE +    // magic
+                1;                      // type
     }
 
-
-    private void workerThread() {
-        Looper.prepare();
-        workThreadHandler = new android.os.Handler();
-        Looper.loop();
+    private static void writePrefix(@NonNull ByteBuffer buf, byte type) {
+        buf.putInt(MAGIC);
+        buf.put(type);
     }
+
 }

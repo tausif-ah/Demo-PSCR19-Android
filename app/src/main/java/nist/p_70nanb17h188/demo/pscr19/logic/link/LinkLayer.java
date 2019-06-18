@@ -69,6 +69,11 @@ public class LinkLayer {
         return defaultImplementation.sendData(id, data, start, len);
     }
 
+    public static boolean sendData(@NonNull NeighborID id, @NonNull byte[] data) {
+        return sendData(id, data, 0, data.length);
+    }
+
+
     public static LinkLayer_Impl getDefaultImplementation() {
         return defaultImplementation;
     }
