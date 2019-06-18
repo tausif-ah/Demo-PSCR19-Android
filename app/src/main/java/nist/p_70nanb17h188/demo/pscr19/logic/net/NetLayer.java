@@ -19,10 +19,10 @@ public class NetLayer {
      * @param data  the data.
      * @param start the beginning of the data.
      * @param len   the size of the data.
-     * @return true if successfully sent.
+     * @param store if the message should be in a store-and-forward manner
      */
-    public static boolean sendData(Name src, Name dst, byte[] data, int start, int len) {
-        return defaultInstance.sendData(src, dst, data, start, len);
+    public static void sendData(Name src, Name dst, byte[] data, int start, int len, boolean store) {
+        defaultInstance.sendData(src, dst, data, start, len);
     }
 
     /**
@@ -31,10 +31,10 @@ public class NetLayer {
      * @param src  the source name.
      * @param dst  the destination name.
      * @param data the data.
-     * @return true if successfully sent.
+     * @param store if the message should be in a store-and-forward manner
      */
-    public static boolean sendData(Name src, Name dst, byte[] data) {
-        return sendData(src, dst, data, 0, data.length);
+    public static void sendData(Name src, Name dst, byte[] data, boolean store) {
+        sendData(src, dst, data, 0, data.length, store);
     }
 
     /**
