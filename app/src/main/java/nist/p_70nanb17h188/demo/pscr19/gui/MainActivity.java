@@ -66,7 +66,6 @@ public class MainActivity extends AppCompatActivity {
         drawer = findViewById(R.id.main_drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         Log.d("LAUNCHER", "Main ONCREATE");
-//        makeBluetoothDeviceDiscoverable();
         if (savedInstanceState == null) {
             pastFragments = new ArrayList<>();
             currentFragment = DEFAULT_FRAGMENT;
@@ -145,12 +144,6 @@ public class MainActivity extends AppCompatActivity {
         ft.commit();
         DrawerLayout drawer = findViewById(R.id.main_drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
-    }
-
-    private void makeBluetoothDeviceDiscoverable() {
-        android.content.Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, Constants.BLUETOOTH_dISCOVERABLE_LENGTH);
-        startActivity(intent);
     }
 
     @Override

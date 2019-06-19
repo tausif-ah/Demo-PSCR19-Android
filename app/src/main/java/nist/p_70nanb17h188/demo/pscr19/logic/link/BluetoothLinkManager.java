@@ -34,11 +34,11 @@ public class BluetoothLinkManager extends Thread{
         bluetoothDevices = new ArrayList<>();
         setBluetoothName();
         makeBluetoothDeviceDiscoverable();
-        try {
-            bluetoothServerSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(Constants.RF_COMM_LISTENER, UUID.fromString(Constants.MY_UUID));
-        }catch (IOException ex) {
-
-        }
+//        try {
+//            bluetoothServerSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(Constants.RF_COMM_LISTENER, UUID.fromString(Constants.MY_UUID));
+//        }catch (IOException ex) {
+//
+//        }
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BluetoothDevice.ACTION_FOUND);
         Context context = MyApplication.getDefaultInstance().getApplicationContext();
@@ -68,6 +68,7 @@ public class BluetoothLinkManager extends Thread{
     private void makeBluetoothDeviceDiscoverable() {
         android.content.Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, Constants.BLUETOOTH_dISCOVERABLE_LENGTH);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         MyApplication.getDefaultInstance().getApplicationContext().startActivity(intent);
     }
 
