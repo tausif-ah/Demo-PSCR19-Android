@@ -19,6 +19,7 @@ import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
+import nist.p_70nanb17h188.demo.pscr19.logic.app.LoadClassifier;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
@@ -35,6 +36,7 @@ public class LauncherActivity extends AppCompatActivity {
             Manifest.permission.CHANGE_NETWORK_STATE,
             Manifest.permission.CHANGE_WIFI_STATE,
             Manifest.permission.INTERNET,
+            Manifest.permission.READ_EXTERNAL_STORAGE
     };
 
     private BroadcastReceiver notificationHandler = (context, intent) -> {
@@ -59,8 +61,7 @@ public class LauncherActivity extends AppCompatActivity {
         }
         setContentView(R.layout.activity_launcher);
         Log.init(Log.DEFAULT_CAPACITY);
-
-
+        new Thread(new LoadClassifier()).start();
         ListView nameList = findViewById(R.id.launcher_names);
         String[] names = Device.getExistingNames();
         Arrays.sort(names);

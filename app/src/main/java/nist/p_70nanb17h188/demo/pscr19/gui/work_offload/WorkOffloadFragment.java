@@ -91,6 +91,7 @@ public class WorkOffloadFragment extends Fragment {
         TextView txtShowNoSlave = view.findViewById(R.id.work_offload_master_no_slave_text);
         Button btnStart = view.findViewById(R.id.work_offload_master_btn_start);
         Button btnOffload = view.findViewById(R.id.work_offload_master_btn_offload);
+        Button btnApp = view.findViewById(R.id.application_type);
         RecyclerView list = view.findViewById(R.id.work_offload_master_list);
         list.setLayoutManager(new WrapLinearLayoutManager(view.getContext()));
         RecyclerView.Adapter<SlaveViewHolder> adapter = new RecyclerView.Adapter<SlaveViewHolder>() {
@@ -134,6 +135,12 @@ public class WorkOffloadFragment extends Fragment {
             assert offload != null;
             btnOffload.setText(offload ? R.string.work_offload_master_offload_offload : R.string.work_offload_master_offload_local);
         });
+
+        masterViewModel.face.observe(this, face ->{
+            assert face != null;
+            btnApp.setText(face ? R.string.work_offload_application_facial : R.string.work_offload_application_matrix);
+        });
+
         masterViewModel.currentTaskId.observe(this, taskId -> {
             assert taskId != null;
             txtTaskId.setText(String.format(Locale.US, "0x%08x", taskId));
@@ -157,6 +164,7 @@ public class WorkOffloadFragment extends Fragment {
         });
         btnOffload.setOnClickListener(v -> masterViewModel.flipOffload());
         btnStart.setOnClickListener(v -> masterViewModel.flipState());
+        btnApp.setOnClickListener(v -> masterViewModel.flipApp());
         return view;
     }
 

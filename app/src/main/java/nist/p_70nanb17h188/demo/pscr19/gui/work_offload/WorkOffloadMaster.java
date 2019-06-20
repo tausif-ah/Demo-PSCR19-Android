@@ -2,15 +2,23 @@ package nist.p_70nanb17h188.demo.pscr19.gui.work_offload;
 
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.util.Consumer;
 
+import org.bytedeco.javacpp.DoublePointer;
+import org.bytedeco.javacpp.IntPointer;
+import org.bytedeco.javacpp.opencv_core;
+
+import java.io.File;
+import java.io.FilenameFilter;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Objects;
 
+import nist.p_70nanb17h188.demo.pscr19.FaceUtil;
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
@@ -18,6 +26,10 @@ import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.DataReceivedHandler;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
+
+import static org.bytedeco.javacpp.opencv_imgcodecs.CV_LOAD_IMAGE_GRAYSCALE;
+import static org.bytedeco.javacpp.opencv_imgcodecs.imread;
+import static org.bytedeco.javacpp.opencv_imgproc.resize;
 
 public class WorkOffloadMaster extends ViewModel {
     private static final String TAG = "WorkOffloadMaster";
@@ -117,6 +129,7 @@ public class WorkOffloadMaster extends ViewModel {
     final MutableLiveData<MasterState> currState = new MutableLiveData<>();
     final MutableLiveData<Integer> currentTaskId = new MutableLiveData<>();
     final MutableLiveData<Boolean> offload = new MutableLiveData<>();
+    final MutableLiveData<Boolean> face = new MutableLiveData<>();
     final MutableLiveData<Long> taskStart = new MutableLiveData<>();
     final MutableLiveData<Long> taskEnd = new MutableLiveData<>();
     final MutableLiveData<Boolean> showNoSlaveText = new MutableLiveData<>();
@@ -132,6 +145,7 @@ public class WorkOffloadMaster extends ViewModel {
         currState.setValue(MasterState.IDLE);
         currentTaskId.setValue(0);
         offload.setValue(true);
+        face.setValue(true);
         showNoSlaveText.setValue(false);
         myName = Constants.getName();
         boolean succeed = NetLayer.subscribe(myName, dataReceivedHandler);
@@ -185,7 +199,6 @@ public class WorkOffloadMaster extends ViewModel {
                     currState.postValue(MasterState.COMPUTE_RESULT);
                     workerHandler.post(() -> completeTask(currentTaskId));
                 }
-
                 break;
             }
         }
@@ -198,7 +211,7 @@ public class WorkOffloadMaster extends ViewModel {
         Log.d(TAG, "Unsubscribe from name %s, succeed=%b", myName, succeed);
     }
 
-    synchronized void flipState() {
+    synchronized void flipState() {//code actual doing work
         if (currState.getValue() == MasterState.IDLE) {
             Boolean offload = this.offload.getValue();
             assert offload != null;
@@ -254,6 +267,12 @@ public class WorkOffloadMaster extends ViewModel {
         offload.setValue(!origValue);
     }
 
+    synchronized void flipApp(){
+        Boolean origValue = face.getValue();
+        assert origValue != null;
+        face.setValue(!origValue);
+    }
+
     private void workerThread() {
         Looper.prepare();
 
@@ -278,23 +297,73 @@ public class WorkOffloadMaster extends ViewModel {
     }
 
     private void performTaskLocally(int taskId) {
-        try {
-            // TODO: replace it with real workload
-            Thread.sleep(PERFORM_TASK_DURATION);
-
-            synchronized (this) {
-                Integer currentTaskId = this.currentTaskId.getValue();
-                assert currentTaskId != null;
-                if (currState.getValue() == MasterState.COMPUTE_RESULT && taskId == currentTaskId) {
-                    currState.postValue(MasterState.IDLE);
-                    taskEnd.postValue(System.currentTimeMillis());
+        Boolean face = this.face.getValue();
+        assert face != null;
+        if(face){
+            synchronized (FaceUtil.faceRecognizer){
+                String trainDir = Environment.getExternalStorageDirectory().getPath()+"/faces/test";
+                File root = new File(trainDir);
+                FilenameFilter imgFilter = (dir, name)-> {
+                    name = name.toLowerCase();
+                    return name.endsWith(".jpg") || name.endsWith(".pgm") || name.endsWith(".png");
+                };
+                File[] imageFiles = root.listFiles(imgFilter);
+                double maxAcceptLevel = 20000;
+                String maxPath = "";
+                int total = imageFiles.length;
+                int n = 1;
+                for (File image : imageFiles) {
+                    int progress = (int) (n*100.0/total);
+                    //activity.setDisplayProgress(progress);
+                    opencv_core.Mat testImage = detectFaces(image.getAbsolutePath());
+                    if(testImage==null){
+                        continue;
+                    }
+                    IntPointer label = new IntPointer(1);
+                    DoublePointer reliability = new DoublePointer(1);
+                    FaceUtil.faceRecognizer.predict(testImage, label, reliability);
+                    int prediction = label.get(0);
+                    double acceptanceLevel = reliability.get(0);
+                    if(prediction==1&&acceptanceLevel<maxAcceptLevel){
+                        maxAcceptLevel = acceptanceLevel;
+                        maxPath = image.getAbsolutePath();
+                    }
+                    n++;
+                    //activity.display4(""+n);
                 }
+                android.util.Log.d(TAG,maxPath);
+                //activity.display4(""+200);
+                //activity.displayImage(maxPath);
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        }else {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        synchronized (this) {
+            Integer currentTaskId = this.currentTaskId.getValue();
+            assert currentTaskId != null;
+            if (currState.getValue() == MasterState.COMPUTE_RESULT && taskId == currentTaskId) {
+                currState.postValue(MasterState.IDLE);
+                taskEnd.postValue(System.currentTimeMillis());
+            }
         }
     }
 
+    opencv_core.Mat detectFaces(String filePath){
+        opencv_core.Mat grey = imread(filePath,CV_LOAD_IMAGE_GRAYSCALE);
+        opencv_core.RectVector detectedFaces = new opencv_core.RectVector();
+        FaceUtil.faceDetector.detectMultiScale(grey, detectedFaces, 1.1, 1, 0, new opencv_core.Size(150,150), new opencv_core.Size(500,500));
+        opencv_core.Rect rectFace = detectedFaces.get(0);
+        if(rectFace==null){
+            return null;
+        }
+        opencv_core.Mat capturedFace = new opencv_core.Mat(grey, rectFace);
+        resize(capturedFace, capturedFace, new opencv_core.Size(160,160));
+        return capturedFace;
+    }
 
     private void distributeTask(int taskId) {
         // TODO: divide the task into multiple sub-tasks and give them to slaves
