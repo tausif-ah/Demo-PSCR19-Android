@@ -96,7 +96,7 @@ public class WorkOffloadSlave extends ViewModel {
         taskStart.postValue(null);
         taskEnd.postValue(null);
         workerHandler.postDelayed(() -> waitWorkTimeout(workId, src), WAIT_WORK_DELAY_MS);
-        NetLayer.sendData(myName, src, new DataWorkResponse(workId).toBytes());
+        NetLayer.sendData(myName, src, new DataWorkResponse(workId).toBytes(), true);
     }
 
     private synchronized void onUnicastDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data) {
@@ -141,7 +141,7 @@ public class WorkOffloadSlave extends ViewModel {
         assert currMasterName != null;
         ByteBuffer buffer = ByteBuffer.allocate(Helper.INTEGER_SIZE);
         buffer.putInt(content.getData().length);
-        NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer.array()).toBytes());
+        NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer.array()).toBytes(), true);
         currState.postValue(SlaveState.IDLE);
     }
 
