@@ -13,9 +13,12 @@ import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 public class NetLayer_Impl {
     private static final String TAG = "NetLayer_Impl";
+    // initiator of namespace change when a net-based change happens
+    private static final String INITIATOR_NET = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl.net";
 
     private final HashMap<Name, HashSet<DataReceivedHandler>> dataHandlers = new HashMap<>();
     private final GossipModule gossipModule;
+    private final Namespace namespace;
 
     private static final byte TYPE_DATA = 1;
     private static final byte TYPE_NAME_CHANGE = 2;
@@ -24,16 +27,30 @@ public class NetLayer_Impl {
 
     NetLayer_Impl() {
         gossipModule = new GossipModule();
+        namespace = new Namespace();
         Context.getContext(GossipModule.CONTEXT_GOSSIP_MODULE).registerReceiver((context, intent) -> {
             if (!intent.getAction().equals(GossipModule.ACTION_DATA_RECEIVED)) return;
             onDataReceivedFromGossip(intent.getExtra(GossipModule.EXTRA_DATA));
         }, new IntentFilter().addAction(GossipModule.ACTION_DATA_RECEIVED));
+        Context.getContext(Namespace.CONTEXT_NAMESPACE).registerReceiver((context, intent) -> {
+            switch (intent.getAction()) {
+                case Namespace.ACTION_NAME_CHANGED:
+                    break;
+                case Namespace.ACTION_RELATIONSHIP_CHANGED:
+                    break;
+                default:
+                    break;
+            }
+        }, new IntentFilter().addAction(Namespace.ACTION_NAME_CHANGED).addAction(Namespace.ACTION_RELATIONSHIP_CHANGED));
     }
 
     public GossipModule getGossipModule() {
         return gossipModule;
     }
 
+    public Namespace getNamespace() {
+        return namespace;
+    }
 
     void sendData(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, int start, int len, boolean store) {
         byte[] tmp = new byte[len];
@@ -54,12 +71,38 @@ public class NetLayer_Impl {
         gossipModule.addMessage(buf.array(), store);
     }
 
-    boolean registerName(Name n, boolean add) {
-        return false;
+    void registerName(Name n, boolean add, String initiator) {
+        if (add) namespace.addName(n, initiator);
+        else namespace.removeName(n, initiator);
     }
 
-    boolean registerRelationship(Name parent, Name child, boolean add) {
-        return false;
+    void registerRelationship(Name parent, Name child, boolean add, String initiator) {
+        if (add) namespace.addRelationship(parent, child, initiator);
+        else namespace.removeRelationship(parent, child, initiator);
+    }
+
+    boolean subscribe(Name n, DataReceivedHandler h) {
+        synchronized (dataHandlers) {
+            HashSet<DataReceivedHandler> handlers = dataHandlers.get(n);
+            if (handlers == null) {
+                dataHandlers.put(n, handlers = new HashSet<>());
+            }
+            return handlers.add(h);
+        }
+    }
+
+    boolean unSubscribe(Name n, DataReceivedHandler h) {
+        synchronized (dataHandlers) {
+            HashSet<DataReceivedHandler> handlers = dataHandlers.get(n);
+            if (handlers == null) return false;
+            if (handlers.remove(h)) {
+                if (handlers.isEmpty()) {
+                    dataHandlers.remove(n);
+                }
+                return true;
+            }
+            return false;
+        }
     }
 
     private void onDataReceivedFromGossip(byte[] data) {
@@ -85,7 +128,7 @@ public class NetLayer_Impl {
                 }
                 Name dst = Name.read(buffer);
                 if (dst == null) {
-                    Log.e(TAG, "TYPE_DATA, Failed in reading src");
+                    Log.e(TAG, "TYPE_DATA, Failed in reading dst");
                     break;
                 }
                 if (buffer.remaining() < Helper.INTEGER_SIZE) {
@@ -102,10 +145,39 @@ public class NetLayer_Impl {
                 onDataReceived(src, dst, data);
                 break;
             }
-            case TYPE_NAME_CHANGE:
+            case TYPE_NAME_CHANGE: {
+                Name n = Name.read(buffer);
+                if (n == null) {
+                    Log.e(TAG, "TYPE_NAME_CHANGE, Failed in reading n");
+                    break;
+                }
+                if (buffer.remaining() != 1) {
+                    Log.e(TAG, "TYPE_NAME_CHANGE, remaing size %d != 1", buffer.remaining());
+                    break;
+                }
+                boolean added = buffer.get() != 0;
+                registerName(n, added, INITIATOR_NET);
                 break;
-            case TYPE_LINK_CHANGE:
+            }
+            case TYPE_LINK_CHANGE: {
+                Name parent = Name.read(buffer);
+                if (parent == null) {
+                    Log.e(TAG, "TYPE_LINK_CHANGE, Failed in reading parent");
+                    break;
+                }
+                Name child = Name.read(buffer);
+                if (child == null) {
+                    Log.e(TAG, "TYPE_LINK_CHANGE, Failed in reading child");
+                    break;
+                }
+                if (buffer.remaining() != 1) {
+                    Log.e(TAG, "TYPE_LINK_CHANGE, remaing size %d != 1", buffer.remaining());
+                    break;
+                }
+                boolean added = buffer.get() != 0;
+                registerRelationship(parent, child, added, INITIATOR_NET);
                 break;
+            }
             default:
                 Log.e(TAG, "Unknown type: 0x%02X", type & 0xFF);
                 break;
@@ -113,32 +185,37 @@ public class NetLayer_Impl {
     }
 
     private void onDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data) {
+//        namespace.forEachDescendant();
         // TODO: expand and send to subscribers
     }
 
-
-    boolean subscribe(Name n, DataReceivedHandler h) {
-        synchronized (dataHandlers) {
-            HashSet<DataReceivedHandler> handlers = dataHandlers.get(n);
-            if (handlers == null) {
-                dataHandlers.put(n, handlers = new HashSet<>());
-            }
-            return handlers.add(h);
-        }
+    private void onNameChanged(Name n, boolean added, String initiator) {
+        // ignore the events from the net layer
+        if (INITIATOR_NET.equals(initiator)) return;
+        // send msg to the net
+        int size = getWritePrefixSize() +
+                Name.WRITE_SIZE +           // n
+                1;                          // added
+        ByteBuffer buffer = ByteBuffer.allocate(size);
+        writePrefix(buffer, TYPE_NAME_CHANGE);
+        n.write(buffer);
+        buffer.put(added ? (byte) 1 : (byte) 0);
+        gossipModule.addMessage(buffer.array(), true);
     }
 
-    boolean unSubscribe(Name n, DataReceivedHandler h) {
-        synchronized (dataHandlers) {
-            HashSet<DataReceivedHandler> handlers = dataHandlers.get(n);
-            if (handlers == null) return false;
-            if (handlers.remove(h)) {
-                if (handlers.isEmpty()) {
-                    dataHandlers.remove(n);
-                }
-                return true;
-            }
-            return false;
-        }
+    private void onLinkChanged(Name parent, Name child, boolean added, String initiator) {
+        // ignore the events from the net layer
+        if (INITIATOR_NET.equals(initiator)) return;
+        // send msg to the net
+        int size = getWritePrefixSize() +
+                Name.WRITE_SIZE * 2 +       // parent, child
+                1;                          // added
+        ByteBuffer buffer = ByteBuffer.allocate(size);
+        writePrefix(buffer, TYPE_NAME_CHANGE);
+        parent.write(buffer);
+        child.write(buffer);
+        buffer.put(added ? (byte) 1 : (byte) 0);
+        gossipModule.addMessage(buffer.array(), true);
     }
 
     private static int getWritePrefixSize() {

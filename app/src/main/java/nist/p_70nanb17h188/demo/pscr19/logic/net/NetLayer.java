@@ -28,9 +28,9 @@ public class NetLayer {
     /**
      * Send a piece of data to a dst (either unicast or multicast).
      *
-     * @param src  the source name.
-     * @param dst  the destination name.
-     * @param data the data.
+     * @param src   the source name.
+     * @param dst   the destination name.
+     * @param data  the data.
      * @param store if the message should be in a store-and-forward manner
      */
     public static void sendData(Name src, Name dst, byte[] data, boolean store) {
@@ -59,6 +59,13 @@ public class NetLayer {
         return defaultInstance.unSubscribe(n, h);
     }
 
+    public static void registerName(Name n, boolean add, String initiator) {
+        defaultInstance.registerName(n, add, initiator);
+    }
+
+    public static void registerRelationship(Name parent, Name child, boolean add, String initiator) {
+        defaultInstance.registerRelationship(parent, child, add, initiator);
+    }
 
     private NetLayer() {
     }
