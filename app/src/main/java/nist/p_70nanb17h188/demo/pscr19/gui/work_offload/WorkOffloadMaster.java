@@ -13,9 +13,14 @@ import org.bytedeco.javacpp.IntPointer;
 import org.bytedeco.javacpp.opencv_core;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import nist.p_70nanb17h188.demo.pscr19.FaceUtil;
@@ -109,6 +114,10 @@ public class WorkOffloadMaster extends ViewModel {
         @NonNull
         Name getSlaveName() {
             return slaveName;
+        }
+
+        SlaveState getSlaveState(){
+            return slaveState.getValue();
         }
 
         @Override
@@ -365,16 +374,38 @@ public class WorkOffloadMaster extends ViewModel {
         return capturedFace;
     }
 
+    private byte[] getOneImage(int seq){
+        String fileName = Environment.getExternalStorageDirectory().getPath()+"/faces/test/img ("+seq+").jpg";
+        File image = new File(fileName);
+        int fileLength = (int) image.length();
+        try {
+            InputStream in = new FileInputStream(image);
+            byte[] fileBytes = new byte[fileLength];
+            in.read(fileBytes);
+            return fileBytes;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new byte[20];
+    }
+
+    Map<Slave, Integer> taskIdMap = new HashMap<>();
+
     private void distributeTask(int taskId) {
         // TODO: divide the task into multiple sub-tasks and give them to slaves
-        for (Slave s : slaves) {
-            int wait = Helper.DEFAULT_RANDOM.nextInt((int) PERFORM_TASK_DURATION / 2) + 1000;
-            byte[] data = new byte[wait];
-            DataWorkContent content = new DataWorkContent(taskId, data);
-            s.setSlaveTask(content);
+        int jobNum = 200;
+        while(jobNum>0){
+            for (Slave s : slaves) {
+                if(s.getSlaveState()==SlaveState.FINISHED||s.getSlaveState()==SlaveState.AVAILABLE){
+                    taskIdMap.put(s, jobNum);
+                    byte[] data = getOneImage(jobNum);
+                    DataWorkContent content = new DataWorkContent(taskId, data);
+                    s.setSlaveTask(content);
+                    jobNum--;
+                }
+            }
+            currState.postValue(MasterState.WAIT_FOR_RESULT);
         }
-        currState.postValue(MasterState.WAIT_FOR_RESULT);
-
     }
 
     private void completeTask(int taskId) {
@@ -382,16 +413,20 @@ public class WorkOffloadMaster extends ViewModel {
         assert currentTaskId != null;
         if (currentTaskId != taskId) return;
         // TODO: compute results based on the slave return value
-        for (Slave s : slaves) {
-            int sentLength = s.getWorkContent().getData().length;
-            byte[] result = s.getWorkResult().getData();
-            if (result.length != Helper.INTEGER_SIZE) {
-                Helper.notifyUser(LogType.Error, "The result from slave %s is not correct!", s.getSlaveName());
-                continue;
+        int jobNum = 200;
+        while(jobNum>0){
+            for (Slave s : slaves) {
+                int sentLength = s.getWorkContent().getData().length;
+                byte[] result = s.getWorkResult().getData();
+                if (result.length != Helper.INTEGER_SIZE) {
+                    Helper.notifyUser(LogType.Error, "The result from slave %s is not correct!", s.getSlaveName());
+                    continue;
+                }
+                ByteBuffer buffer = ByteBuffer.wrap(result);
+                jobNum--;
+                if (buffer.getInt() != sentLength)
+                    Helper.notifyUser(LogType.Error, "The result from slave %s is not correct!", s.getSlaveName());
             }
-            ByteBuffer buffer = ByteBuffer.wrap(result);
-            if (buffer.getInt() != sentLength)
-                Helper.notifyUser(LogType.Error, "The result from slave %s is not correct!", s.getSlaveName());
         }
         taskEnd.postValue(System.currentTimeMillis());
         currState.postValue(MasterState.IDLE);
