@@ -42,15 +42,17 @@ public class Helper {
     public static final String CANDIDATE_CHARSET_LETTERS = CANDIDATE_CHARSET_LETTERS_UNCAPITALIZED + CANDIDATE_CHARSET_LETTERS_CAPITALIZED;
     public static final String CANDIDATE_CHARSET_LETTERS_NUMBERS = CANDIDATE_CHARSET_LETTERS + CANDIDATE_CHARSET_NUMBERS;
     public static final String CANDIDATE_CHARSET_LETTERS_NUMBERS_SPACES = CANDIDATE_CHARSET_LETTERS_NUMBERS + " \t\n";
-    public static final int INTEGER_SIZE, LONG_SIZE;
+    public static final int INTEGER_SIZE, LONG_SIZE, DOUBLE_SIZE;
 
     static {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             INTEGER_SIZE = Integer.BYTES;
             LONG_SIZE = Long.BYTES;
+            DOUBLE_SIZE = Double.BYTES;
         } else {
             INTEGER_SIZE = 4;
             LONG_SIZE = 8;
+            DOUBLE_SIZE = 8;
         }
     }
 

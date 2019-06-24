@@ -22,10 +22,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import nist.p_70nanb17h188.demo.pscr19.FaceUtil;
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
+import nist.p_70nanb17h188.demo.pscr19.logic.app.EachHelper;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.DataReceivedHandler;
@@ -103,10 +109,6 @@ public class WorkOffloadMaster extends ViewModel {
             slaveState.postValue(SlaveState.FINISHED);
         }
 
-        DataWorkContent getWorkContent() {
-            return workContent;
-        }
-
         DataWorkResult getWorkResult() {
             return workResult;
         }
@@ -149,6 +151,9 @@ public class WorkOffloadMaster extends ViewModel {
     private Handler workerHandler;
     private Consumer<WorkOffloadMaster> slaveChangedHandler = null;
     private final Thread workerThread;
+
+    ExecutorService pool = Executors.newFixedThreadPool(1);
+    CompletionService<double[]> ecs = new ExecutorCompletionService<>(pool);
 
     public WorkOffloadMaster() {
         currState.setValue(MasterState.IDLE);
@@ -196,7 +201,6 @@ public class WorkOffloadMaster extends ViewModel {
                 DataWorkResult result = DataWorkResult.fromBytes(data);
                 if (result == null) return;
                 if (result.getWorkId() != currentTaskId) return;
-
                 boolean allSlaveResultGot = true;
                 for (Slave s : slaves) {
                     if (s.getSlaveName().equals(src))
@@ -319,11 +323,7 @@ public class WorkOffloadMaster extends ViewModel {
                 File[] imageFiles = root.listFiles(imgFilter);
                 double maxAcceptLevel = 20000;
                 String maxPath = "";
-                int total = imageFiles.length;
-                int n = 1;
                 for (File image : imageFiles) {
-                    int progress = (int) (n*100.0/total);
-                    //activity.setDisplayProgress(progress);
                     opencv_core.Mat testImage = detectFaces(image.getAbsolutePath());
                     if(testImage==null){
                         continue;
@@ -337,12 +337,8 @@ public class WorkOffloadMaster extends ViewModel {
                         maxAcceptLevel = acceptanceLevel;
                         maxPath = image.getAbsolutePath();
                     }
-                    n++;
-                    //activity.display4(""+n);
                 }
                 android.util.Log.d(TAG,maxPath);
-                //activity.display4(""+200);
-                //activity.displayImage(maxPath);
             }
         }else {
             try {
@@ -361,7 +357,7 @@ public class WorkOffloadMaster extends ViewModel {
         }
     }
 
-    opencv_core.Mat detectFaces(String filePath){
+    private opencv_core.Mat detectFaces(String filePath){
         opencv_core.Mat grey = imread(filePath,CV_LOAD_IMAGE_GRAYSCALE);
         opencv_core.RectVector detectedFaces = new opencv_core.RectVector();
         FaceUtil.faceDetector.detectMultiScale(grey, detectedFaces, 1.1, 1, 0, new opencv_core.Size(150,150), new opencv_core.Size(500,500));
@@ -374,13 +370,10 @@ public class WorkOffloadMaster extends ViewModel {
         return capturedFace;
     }
 
-    private byte[] getOneImage(int seq){
-        String fileName = Environment.getExternalStorageDirectory().getPath()+"/faces/test/img ("+seq+").jpg";
-        File image = new File(fileName);
-        int fileLength = (int) image.length();
+    private byte[] getOneImage(File file,int size){
         try {
-            InputStream in = new FileInputStream(image);
-            byte[] fileBytes = new byte[fileLength];
+            InputStream in = new FileInputStream(file);
+            byte[] fileBytes = new byte[size];
             in.read(fileBytes);
             return fileBytes;
         } catch (IOException e) {
@@ -389,22 +382,44 @@ public class WorkOffloadMaster extends ViewModel {
         return new byte[20];
     }
 
-    Map<Slave, Integer> taskIdMap = new HashMap<>();
+    private byte[] getGroupImage(int start, int num){
+        int[] sizes = new int[num];
+        File[] files = new File[num];
+        int totalSize = 2*Helper.INTEGER_SIZE*num+Helper.INTEGER_SIZE;
+        for(int i = start; i<start+num; i++){
+            String fileName = Environment.getExternalStorageDirectory().getPath()+"/faces/test/img ("+i+").jpg";
+            files[i-start] = new File(fileName);
+            sizes[i-start] = (int) files[i-start].length();
+            totalSize += sizes[i-start];
+        }
+        ByteBuffer buffer = ByteBuffer.allocate(totalSize);
+        buffer.putInt(num);
+        for(int i = start; i<start+num; i++){
+            buffer.putInt(i);
+            buffer.putInt(sizes[i-start]);
+            buffer.put(getOneImage(files[i-start],sizes[i-start]));
+        }
+        return buffer.array();
+    }
 
     private void distributeTask(int taskId) {
-        // TODO: divide the task into multiple sub-tasks and give them to slaves
-        int jobNum = 200;
-        while(jobNum>0){
+        Boolean face = this.face.getValue();
+        assert face != null;
+        if(face){
+            int jobNum = 200/(slaves.size()+1);
+            int localStart = 200-200/(slaves.size()+1)*slaves.size()+1;
+            ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, localStart));
+            int start = 1;
             for (Slave s : slaves) {
-                if(s.getSlaveState()==SlaveState.FINISHED||s.getSlaveState()==SlaveState.AVAILABLE){
-                    taskIdMap.put(s, jobNum);
-                    byte[] data = getOneImage(jobNum);
-                    DataWorkContent content = new DataWorkContent(taskId, data);
-                    s.setSlaveTask(content);
-                    jobNum--;
-                }
+                byte[] data = getGroupImage(start,jobNum);
+                byte type = 5;
+                DataWorkContent content = new DataWorkContent(taskId, type, data);
+                s.setSlaveTask(content);
+                start += jobNum;
             }
             currState.postValue(MasterState.WAIT_FOR_RESULT);
+        }else{
+            //TODO: Matrix Multiplication
         }
     }
 
@@ -412,25 +427,41 @@ public class WorkOffloadMaster extends ViewModel {
         Integer currentTaskId = this.currentTaskId.getValue();
         assert currentTaskId != null;
         if (currentTaskId != taskId) return;
-        // TODO: compute results based on the slave return value
-        int jobNum = 200;
-        while(jobNum>0){
-            for (Slave s : slaves) {
-                int sentLength = s.getWorkContent().getData().length;
-                byte[] result = s.getWorkResult().getData();
-                if (result.length != Helper.INTEGER_SIZE) {
-                    Helper.notifyUser(LogType.Error, "The result from slave %s is not correct!", s.getSlaveName());
-                    continue;
+        double maxLevel = 50000;
+        int seq = 0;
+        Boolean face = this.face.getValue();
+        assert face != null;
+        if(face){
+            try {
+                double[] localResult = ecs.take().get();
+                if((int) localResult[0]==1){
+                    seq = (int) localResult[0];
+                    maxLevel = localResult[1];
                 }
-                ByteBuffer buffer = ByteBuffer.wrap(result);
-                jobNum--;
-                if (buffer.getInt() != sentLength)
-                    Helper.notifyUser(LogType.Error, "The result from slave %s is not correct!", s.getSlaveName());
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        for (Slave s : slaves) {
+            byte[] result = s.getWorkResult().getData();
+            ByteBuffer buffer = ByteBuffer.wrap(result);
+            if(face){
+                int id = buffer.getInt();
+                double acc = buffer.getDouble();
+                if(id!=0){
+                    if(maxLevel>acc){
+                        seq = id;
+                        maxLevel = acc;
+                    }
+                }
+            }else{
+
             }
         }
         taskEnd.postValue(System.currentTimeMillis());
         currState.postValue(MasterState.IDLE);
-
     }
 
 }
