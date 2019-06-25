@@ -6,16 +6,26 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 
+import org.bytedeco.javacpp.DoublePointer;
+import org.bytedeco.javacpp.IntPointer;
+import org.bytedeco.javacpp.opencv_core;
+
 import java.nio.ByteBuffer;
 
+import nist.p_70nanb17h188.demo.pscr19.FaceUtil;
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.DataReceivedHandler;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 
+import static org.bytedeco.javacpp.opencv_imgcodecs.CV_LOAD_IMAGE_GRAYSCALE;
+import static org.bytedeco.javacpp.opencv_imgcodecs.imdecode;
+import static org.bytedeco.javacpp.opencv_imgproc.resize;
+
 public class WorkOffloadSlave extends ViewModel {
-    private static final long WAIT_WORK_DELAY_MS = 4000;
+    private static final long WAIT_WORK_DELAY_MS = 30000;
 
     enum SlaveState {
         IDLE(R.string.work_offload_slave_state_idle),
@@ -96,7 +106,7 @@ public class WorkOffloadSlave extends ViewModel {
         taskStart.postValue(null);
         taskEnd.postValue(null);
         workerHandler.postDelayed(() -> waitWorkTimeout(workId, src), WAIT_WORK_DELAY_MS);
-        NetLayer.sendData(myName, src, new DataWorkResponse(workId).toBytes(), false);
+        NetLayer.sendData(myName, src, new DataWorkResponse(workId).toBytes(), true);
     }
 
     private synchronized void onUnicastDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data) {
@@ -130,19 +140,62 @@ public class WorkOffloadSlave extends ViewModel {
         taskEnd.postValue(null);
         taskStart.postValue(System.currentTimeMillis());
         // TODO: perform the task
-        try {
-            Thread.sleep(content.getData().length);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        ByteBuffer buffer = ByteBuffer.wrap(content.getData());
+        if(content.getWorkType()==5){
+            synchronized (FaceUtil.faceRecognizer){
+                int resultId = 0;
+                double resultLevel = 50000;
+                int target = buffer.getInt();
+                int num = buffer.getInt();
+                while(num>0){
+                    int seq = buffer.getInt();
+                    int size = buffer.getInt();
+                    Log.d("Slave is To",seq+" "+size);
+                    byte[] bytes = new byte[size];
+                    buffer.get(bytes);
+                    opencv_core.Mat testImage = imdecode(new opencv_core.Mat(bytes),CV_LOAD_IMAGE_GRAYSCALE);
+                    opencv_core.Mat testFace = detectFaces(testImage);
+                    int prediction;
+                    double acceptanceLevel;
+                    if(testFace!=null){
+                        IntPointer label = new IntPointer(1);
+                        DoublePointer reliability = new DoublePointer(1);
+                        FaceUtil.faceRecognizer.predict(testFace, label, reliability);
+                        prediction = label.get(0);
+                        acceptanceLevel = reliability.get(0);
+                    }else{
+                        prediction = 0;
+                        acceptanceLevel = 0;
+                    }
+                    if(prediction==target&&acceptanceLevel<resultLevel){
+                        resultId = seq;
+                        resultLevel = acceptanceLevel;
+                    }
+                    num--;
+                }
+                taskEnd.postValue(System.currentTimeMillis());
+                // send the result back
+                Name currMasterName = this.currMasterName.getValue();
+                assert currMasterName != null;
+                ByteBuffer buffer1 = ByteBuffer.allocate(2*Helper.INTEGER_SIZE+Helper.DOUBLE_SIZE);
+                buffer1.putInt(resultId);
+                buffer1.putDouble(resultLevel);
+                NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), true);
+                currState.postValue(SlaveState.IDLE);
+            }
         }
-        taskEnd.postValue(System.currentTimeMillis());
-        // send the result back
-        Name currMasterName = this.currMasterName.getValue();
-        assert currMasterName != null;
-        ByteBuffer buffer = ByteBuffer.allocate(Helper.INTEGER_SIZE);
-        buffer.putInt(content.getData().length);
-        NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer.array()).toBytes(), false);
-        currState.postValue(SlaveState.IDLE);
+    }
+
+    opencv_core.Mat detectFaces(opencv_core.Mat grey){
+        opencv_core.RectVector detectedFaces = new opencv_core.RectVector();
+        FaceUtil.faceDetector.detectMultiScale(grey, detectedFaces, 1.1, 1, 0, new opencv_core.Size(150,150), new opencv_core.Size(500,500));
+        opencv_core.Rect rectFace = detectedFaces.get(0);
+        if(rectFace==null){
+            return null;
+        }
+        opencv_core.Mat capturedFace = new opencv_core.Mat(grey, rectFace);
+        resize(capturedFace, capturedFace, new opencv_core.Size(160,160));
+        return capturedFace;
     }
 
     private void workerThread() {

@@ -2,26 +2,47 @@ package nist.p_70nanb17h188.demo.pscr19.gui.work_offload;
 
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.ViewModel;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.util.Consumer;
 
+import org.bytedeco.javacpp.DoublePointer;
+import org.bytedeco.javacpp.IntPointer;
+import org.bytedeco.javacpp.opencv_core;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import nist.p_70nanb17h188.demo.pscr19.FaceUtil;
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
+import nist.p_70nanb17h188.demo.pscr19.logic.app.EachHelper;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
-import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.DataReceivedHandler;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 
+import static org.bytedeco.javacpp.opencv_imgcodecs.CV_LOAD_IMAGE_GRAYSCALE;
+import static org.bytedeco.javacpp.opencv_imgcodecs.imread;
+import static org.bytedeco.javacpp.opencv_imgproc.resize;
+
 public class WorkOffloadMaster extends ViewModel {
     private static final String TAG = "WorkOffloadMaster";
-    private static final long WAIT_RESPONSE_DELAY_MS = 1000;
+    private static final long WAIT_RESPONSE_DELAY_MS = 2000;
     private static final long PERFORM_TASK_DURATION = 5000;
 
     enum MasterState {
@@ -76,7 +97,7 @@ public class WorkOffloadMaster extends ViewModel {
         synchronized void setSlaveTask(DataWorkContent content) {
             if (workContent != null || workResult != null) return;
             workContent = content;
-            NetLayer.sendData(masterName, slaveName, content.toBytes(), false);
+            NetLayer.sendData(masterName, slaveName, content.toBytes(), true);
             slaveState.postValue(SlaveState.WORKING);
         }
 
@@ -86,10 +107,6 @@ public class WorkOffloadMaster extends ViewModel {
             slaveState.postValue(SlaveState.FINISHED);
         }
 
-        DataWorkContent getWorkContent() {
-            return workContent;
-        }
-
         DataWorkResult getWorkResult() {
             return workResult;
         }
@@ -97,6 +114,10 @@ public class WorkOffloadMaster extends ViewModel {
         @NonNull
         Name getSlaveName() {
             return slaveName;
+        }
+
+        SlaveState getSlaveState(){
+            return slaveState.getValue();
         }
 
         @Override
@@ -116,7 +137,10 @@ public class WorkOffloadMaster extends ViewModel {
 
     final MutableLiveData<MasterState> currState = new MutableLiveData<>();
     final MutableLiveData<Integer> currentTaskId = new MutableLiveData<>();
+    final MutableLiveData<Integer> faceResult = new MutableLiveData<>();
+    final MutableLiveData<String> faceResultPath = new MutableLiveData<>();
     final MutableLiveData<Boolean> offload = new MutableLiveData<>();
+    final MutableLiveData<Boolean> face = new MutableLiveData<>();
     final MutableLiveData<Long> taskStart = new MutableLiveData<>();
     final MutableLiveData<Long> taskEnd = new MutableLiveData<>();
     final MutableLiveData<Boolean> showNoSlaveText = new MutableLiveData<>();
@@ -127,11 +151,22 @@ public class WorkOffloadMaster extends ViewModel {
     private Handler workerHandler;
     private Consumer<WorkOffloadMaster> slaveChangedHandler = null;
     private final Thread workerThread;
+    int target = 1;
+
+    HashMap<String,Integer> address = new HashMap<>();
+
+    ExecutorService pool = Executors.newFixedThreadPool(1);
+    CompletionService<double[]> ecs = new ExecutorCompletionService<>(pool);
 
     public WorkOffloadMaster() {
+        address.put("Adam",1);
+        address.put("Jack",2);
+        address.put("Mary",5);
+        address.put("Jane",6);
         currState.setValue(MasterState.IDLE);
         currentTaskId.setValue(0);
         offload.setValue(true);
+        face.setValue(true);
         showNoSlaveText.setValue(false);
         myName = Constants.getName();
         boolean succeed = NetLayer.subscribe(myName, dataReceivedHandler);
@@ -146,6 +181,10 @@ public class WorkOffloadMaster extends ViewModel {
                 e.printStackTrace();
             }
         }
+    }
+
+    void setTargetName(String s){
+        target = address.get(s);
     }
 
     void setSlaveChangedHandler(Consumer<WorkOffloadMaster> slaveChangedHandler) {
@@ -173,7 +212,6 @@ public class WorkOffloadMaster extends ViewModel {
                 DataWorkResult result = DataWorkResult.fromBytes(data);
                 if (result == null) return;
                 if (result.getWorkId() != currentTaskId) return;
-
                 boolean allSlaveResultGot = true;
                 for (Slave s : slaves) {
                     if (s.getSlaveName().equals(src))
@@ -185,7 +223,6 @@ public class WorkOffloadMaster extends ViewModel {
                     currState.postValue(MasterState.COMPUTE_RESULT);
                     workerHandler.post(() -> completeTask(currentTaskId));
                 }
-
                 break;
             }
         }
@@ -198,7 +235,7 @@ public class WorkOffloadMaster extends ViewModel {
         Log.d(TAG, "Unsubscribe from name %s, succeed=%b", myName, succeed);
     }
 
-    synchronized void flipState() {
+    synchronized void flipState() {//code actual doing work
         if (currState.getValue() == MasterState.IDLE) {
             Boolean offload = this.offload.getValue();
             assert offload != null;
@@ -254,6 +291,12 @@ public class WorkOffloadMaster extends ViewModel {
         offload.setValue(!origValue);
     }
 
+    synchronized void flipApp(){
+        Boolean origValue = face.getValue();
+        assert origValue != null;
+        face.setValue(!origValue);
+    }
+
     private void workerThread() {
         Looper.prepare();
 
@@ -278,55 +321,162 @@ public class WorkOffloadMaster extends ViewModel {
     }
 
     private void performTaskLocally(int taskId) {
-        try {
-            // TODO: replace it with real workload
-            Thread.sleep(PERFORM_TASK_DURATION);
-
-            synchronized (this) {
-                Integer currentTaskId = this.currentTaskId.getValue();
-                assert currentTaskId != null;
-                if (currState.getValue() == MasterState.COMPUTE_RESULT && taskId == currentTaskId) {
-                    currState.postValue(MasterState.IDLE);
-                    taskEnd.postValue(System.currentTimeMillis());
+        Boolean face = this.face.getValue();
+        assert face != null;
+        if(face){
+            synchronized (FaceUtil.faceRecognizer){
+                String trainDir = Environment.getExternalStorageDirectory().getPath()+"/faces/test";
+                File root = new File(trainDir);
+                FilenameFilter imgFilter = (dir, name)-> {
+                    name = name.toLowerCase();
+                    return name.endsWith(".jpg") || name.endsWith(".pgm") || name.endsWith(".png");
+                };
+                File[] imageFiles = root.listFiles(imgFilter);
+                double maxAcceptLevel = 20000;
+                String maxPath = "";
+                for (File image : imageFiles) {
+                    opencv_core.Mat testImage = detectFaces(image.getAbsolutePath());
+                    if(testImage==null){
+                        continue;
+                    }
+                    IntPointer label = new IntPointer(1);
+                    DoublePointer reliability = new DoublePointer(1);
+                    FaceUtil.faceRecognizer.predict(testImage, label, reliability);
+                    int prediction = label.get(0);
+                    double acceptanceLevel = reliability.get(0);
+                    if(prediction==target&&acceptanceLevel<maxAcceptLevel){
+                        maxAcceptLevel = acceptanceLevel;
+                        maxPath = image.getAbsolutePath();
+                    }
                 }
+                faceResultPath.postValue(maxPath);
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        }else {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        synchronized (this) {
+            Integer currentTaskId = this.currentTaskId.getValue();
+            assert currentTaskId != null;
+            if (currState.getValue() == MasterState.COMPUTE_RESULT && taskId == currentTaskId) {
+                currState.postValue(MasterState.IDLE);
+                taskEnd.postValue(System.currentTimeMillis());
+            }
         }
     }
 
+    private opencv_core.Mat detectFaces(String filePath){
+        opencv_core.Mat grey = imread(filePath,CV_LOAD_IMAGE_GRAYSCALE);
+        opencv_core.RectVector detectedFaces = new opencv_core.RectVector();
+        FaceUtil.faceDetector.detectMultiScale(grey, detectedFaces, 1.1, 1, 0, new opencv_core.Size(150,150), new opencv_core.Size(500,500));
+        opencv_core.Rect rectFace = detectedFaces.get(0);
+        if(rectFace==null){
+            return null;
+        }
+        opencv_core.Mat capturedFace = new opencv_core.Mat(grey, rectFace);
+        resize(capturedFace, capturedFace, new opencv_core.Size(160,160));
+        return capturedFace;
+    }
+
+    private byte[] getOneImage(File file,int size){
+        try {
+            InputStream in = new FileInputStream(file);
+            byte[] fileBytes = new byte[size];
+            in.read(fileBytes);
+            return fileBytes;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new byte[20];
+    }
+
+    private byte[] getGroupImage(int start, int num){
+        int[] sizes = new int[num];
+        File[] files = new File[num];
+        int totalSize = 2*Helper.INTEGER_SIZE*num+2*Helper.INTEGER_SIZE;
+        for(int i = start; i<start+num; i++){
+            String fileName = Environment.getExternalStorageDirectory().getPath()+"/faces/test/img ("+i+").jpg";
+            files[i-start] = new File(fileName);
+            sizes[i-start] = (int) files[i-start].length();
+            totalSize += sizes[i-start];
+        }
+        ByteBuffer buffer = ByteBuffer.allocate(totalSize);
+        buffer.putInt(target);
+        buffer.putInt(num);
+        for(int i = start; i<start+num; i++){
+            buffer.putInt(i);
+            buffer.putInt(sizes[i-start]);
+            buffer.put(getOneImage(files[i-start],sizes[i-start]));
+        }
+        return buffer.array();
+    }
 
     private void distributeTask(int taskId) {
-        // TODO: divide the task into multiple sub-tasks and give them to slaves
-        for (Slave s : slaves) {
-            int wait = Helper.DEFAULT_RANDOM.nextInt((int) PERFORM_TASK_DURATION / 2) + 1000;
-            byte[] data = new byte[wait];
-            DataWorkContent content = new DataWorkContent(taskId, data);
-            s.setSlaveTask(content);
+        Boolean face = this.face.getValue();
+        assert face != null;
+        if(face){
+            int jobNum = 200/(slaves.size()+1);
+            int localStart = 200-200/(slaves.size()+1)*slaves.size()+1;
+            ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, localStart));
+            int start = 1;
+            for (Slave s : slaves) {
+                byte[] data = getGroupImage(start,jobNum);
+                byte type = 5;
+                DataWorkContent content = new DataWorkContent(taskId, type, data);
+                s.setSlaveTask(content);
+                start += jobNum;
+            }
+            currState.postValue(MasterState.WAIT_FOR_RESULT);
+        }else{
+            //TODO: Matrix Multiplication
         }
-        currState.postValue(MasterState.WAIT_FOR_RESULT);
-
     }
 
     private void completeTask(int taskId) {
         Integer currentTaskId = this.currentTaskId.getValue();
         assert currentTaskId != null;
         if (currentTaskId != taskId) return;
-        // TODO: compute results based on the slave return value
-        for (Slave s : slaves) {
-            int sentLength = s.getWorkContent().getData().length;
-            byte[] result = s.getWorkResult().getData();
-            if (result.length != Helper.INTEGER_SIZE) {
-                Helper.notifyUser(LogType.Error, "The result from slave %s is not correct!", s.getSlaveName());
-                continue;
+        double maxLevel = 50000;
+        int seq = 0;
+        Boolean face = this.face.getValue();
+        assert face != null;
+        if(face){
+            try {
+                double[] localResult = ecs.take().get();
+                if((int) localResult[0]==target){
+                    seq = (int) localResult[0];
+                    maxLevel = localResult[1];
+                }
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+        }
+        for (Slave s : slaves) {
+            byte[] result = s.getWorkResult().getData();
             ByteBuffer buffer = ByteBuffer.wrap(result);
-            if (buffer.getInt() != sentLength)
-                Helper.notifyUser(LogType.Error, "The result from slave %s is not correct!", s.getSlaveName());
+            if(face){
+                int id = buffer.getInt();
+                double acc = buffer.getDouble();
+                if(id!=0){
+                    if(maxLevel>acc){
+                        seq = id;
+                        maxLevel = acc;
+                    }
+                }
+            }else{
+
+            }
+        }
+        if(face){
+            faceResult.postValue(seq);
         }
         taskEnd.postValue(System.currentTimeMillis());
         currState.postValue(MasterState.IDLE);
-
     }
 
 }

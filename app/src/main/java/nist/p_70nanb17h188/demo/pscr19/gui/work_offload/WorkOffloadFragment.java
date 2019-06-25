@@ -3,18 +3,30 @@ package nist.p_70nanb17h188.demo.pscr19.gui.work_offload;
 
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
@@ -35,6 +47,9 @@ public class WorkOffloadFragment extends Fragment {
 
     private WorkOffloadMaster masterViewModel;
     private WorkOffloadSlave slaveViewModel;
+
+    private ImageView imageView1;
+    private ImageView imageView2;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -76,7 +91,52 @@ public class WorkOffloadFragment extends Fragment {
                 this.slave.slaveState.removeObserver(slaveStateObserver);
             this.slave = null;
         }
+    }
 
+    class NameViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        public TextView item;
+        public NameViewHolder(View itemView) {
+            super(itemView);
+            itemView.setOnClickListener(this);
+            item = itemView.findViewById(android.R.id.text1);
+        }
+        @Override
+        public void onClick(View view) {
+            masterViewModel.setTargetName(item.getText().toString());
+            displayImage(item.getText().toString());
+            imageView2.setVisibility(View.GONE);
+        }
+    }
+
+    class ItemArrayAdapter extends RecyclerView.Adapter<NameViewHolder> {
+
+        //All methods in this adapter are required for a bare minimum recyclerview adapter
+        private int listItemLayout;
+        private List<String> itemList;
+        // Constructor of the class
+        public ItemArrayAdapter(int layoutId, List<String> itemList) {
+            listItemLayout = layoutId;
+            this.itemList = itemList;
+        }
+        // get the size of the list
+        @Override
+        public int getItemCount() {
+            return itemList == null ? 0 : itemList.size();
+        }
+        // specify the row layout file and click for each row
+        @Override
+        public NameViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(listItemLayout, parent, false);
+            NameViewHolder myViewHolder = new NameViewHolder(view);
+            return myViewHolder;
+        }
+
+        // load data in each row element
+        @Override
+        public void onBindViewHolder(final NameViewHolder holder, final int listPosition) {
+            TextView item = holder.item;
+            item.setText(itemList.get(listPosition));
+        }
 
     }
 
@@ -91,8 +151,21 @@ public class WorkOffloadFragment extends Fragment {
         TextView txtShowNoSlave = view.findViewById(R.id.work_offload_master_no_slave_text);
         Button btnStart = view.findViewById(R.id.work_offload_master_btn_start);
         Button btnOffload = view.findViewById(R.id.work_offload_master_btn_offload);
+        Button btnApp = view.findViewById(R.id.application_type);
         RecyclerView list = view.findViewById(R.id.work_offload_master_list);
+        RecyclerView nameList = view.findViewById(R.id.name_list);
+        List<String> names = new ArrayList<>();
+        names.add("Adam");
+        names.add("Jack");
+        names.add("Mary");
+        names.add("Jane");
+        ItemArrayAdapter itemArrayAdapter = new ItemArrayAdapter(android.R.layout.simple_list_item_1, names);
         list.setLayoutManager(new WrapLinearLayoutManager(view.getContext()));
+        nameList.setLayoutManager(new LinearLayoutManager(view.getContext()));
+        nameList.setItemAnimator(new DefaultItemAnimator());
+        nameList.setAdapter(itemArrayAdapter);
+        imageView1 = view.findViewById(R.id.imageView);
+        imageView2 = view.findViewById(R.id.imageView2);
         RecyclerView.Adapter<SlaveViewHolder> adapter = new RecyclerView.Adapter<SlaveViewHolder>() {
             @NonNull
             @Override
@@ -134,6 +207,32 @@ public class WorkOffloadFragment extends Fragment {
             assert offload != null;
             btnOffload.setText(offload ? R.string.work_offload_master_offload_offload : R.string.work_offload_master_offload_local);
         });
+
+        masterViewModel.face.observe(this, face ->{
+            assert face != null;
+            btnApp.setText(face ? R.string.work_offload_application_facial : R.string.work_offload_application_matrix);
+            if(face){
+                nameList.setVisibility(View.VISIBLE);
+                //imageView1.setVisibility(View.VISIBLE);
+                //imageView2.setVisibility(View.VISIBLE);
+            } else{
+                nameList.setVisibility(View.GONE);
+                imageView1.setVisibility(View.GONE);
+                imageView2.setVisibility(View.GONE);
+            }
+        });
+
+        masterViewModel.faceResult.observe(this, seq ->{
+            assert seq != null;
+            imageView2.setVisibility(View.VISIBLE);
+            displayFaceResult(seq);
+        });
+        masterViewModel.faceResultPath.observe(this, path ->{
+            assert path != null;
+            imageView2.setVisibility(View.VISIBLE);
+            displayFaceResult(path);
+        });
+
         masterViewModel.currentTaskId.observe(this, taskId -> {
             assert taskId != null;
             txtTaskId.setText(String.format(Locale.US, "0x%08x", taskId));
@@ -156,8 +255,50 @@ public class WorkOffloadFragment extends Fragment {
             txtShowNoSlave.setVisibility(show ? View.VISIBLE : View.GONE);
         });
         btnOffload.setOnClickListener(v -> masterViewModel.flipOffload());
-        btnStart.setOnClickListener(v -> masterViewModel.flipState());
+        btnStart.setOnClickListener(v -> {
+            nameList.setVisibility(View.GONE);
+            masterViewModel.flipState();
+        });
+        btnApp.setOnClickListener(v -> masterViewModel.flipApp());
         return view;
+    }
+
+    private void displayImage(String name){
+        String prefix = Environment.getExternalStorageDirectory().getPath()+"/faces/train/";
+        String file;
+        switch (name){
+            case "Adam":
+                file = "1-1.jpg";
+                break;
+            case "Jack":
+                file = "2-6.jpg";
+                break;
+            case "Mary":
+                file = "5-2.jpg";
+                break;
+            case "Jane":
+                file = "6-2.jpg";
+                break;
+            default:
+                file = "1-1.jpg";
+        }
+        Bitmap b1 = BitmapFactory.decodeFile(prefix+file);
+        Bitmap rb1 = Bitmap.createScaledBitmap(b1,210,210,false);
+        imageView1.setImageBitmap(rb1);
+    }
+
+    private void displayFaceResult(int seq){
+        String prefix = Environment.getExternalStorageDirectory().getPath()+"/faces/test/img (";
+        String postfix = ").jpg";
+        Bitmap b1 = BitmapFactory.decodeFile(prefix+seq+postfix);
+        Bitmap rb1 = Bitmap.createScaledBitmap(b1,210,210,false);
+        imageView2.setImageBitmap(rb1);
+    }
+
+    private void displayFaceResult(String path){
+        Bitmap b1 = BitmapFactory.decodeFile(path);
+        Bitmap rb1 = Bitmap.createScaledBitmap(b1,210,210,false);
+        imageView2.setImageBitmap(rb1);
     }
 
     private void destroyMasterView() {
