@@ -8,13 +8,21 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
@@ -76,7 +84,50 @@ public class WorkOffloadFragment extends Fragment {
                 this.slave.slaveState.removeObserver(slaveStateObserver);
             this.slave = null;
         }
+    }
 
+    class NameViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        public TextView item;
+        public NameViewHolder(View itemView) {
+            super(itemView);
+            itemView.setOnClickListener(this);
+            item = itemView.findViewById(android.R.id.text1);
+        }
+        @Override
+        public void onClick(View view) {
+            masterViewModel.setTargetName(item.getText());
+        }
+    }
+
+    class ItemArrayAdapter extends RecyclerView.Adapter<NameViewHolder> {
+
+        //All methods in this adapter are required for a bare minimum recyclerview adapter
+        private int listItemLayout;
+        private List<String> itemList;
+        // Constructor of the class
+        public ItemArrayAdapter(int layoutId, List<String> itemList) {
+            listItemLayout = layoutId;
+            this.itemList = itemList;
+        }
+        // get the size of the list
+        @Override
+        public int getItemCount() {
+            return itemList == null ? 0 : itemList.size();
+        }
+        // specify the row layout file and click for each row
+        @Override
+        public NameViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(listItemLayout, parent, false);
+            NameViewHolder myViewHolder = new NameViewHolder(view);
+            return myViewHolder;
+        }
+
+        // load data in each row element
+        @Override
+        public void onBindViewHolder(final NameViewHolder holder, final int listPosition) {
+            TextView item = holder.item;
+            item.setText(itemList.get(listPosition));
+        }
 
     }
 
@@ -93,7 +144,17 @@ public class WorkOffloadFragment extends Fragment {
         Button btnOffload = view.findViewById(R.id.work_offload_master_btn_offload);
         Button btnApp = view.findViewById(R.id.application_type);
         RecyclerView list = view.findViewById(R.id.work_offload_master_list);
+        RecyclerView nameList = view.findViewById(R.id.name_list);
+        List<String> names = new ArrayList<>();
+        names.add("Adam");
+        names.add("Jack");
+        names.add("Mary");
+        names.add("Jane");
+        ItemArrayAdapter itemArrayAdapter = new ItemArrayAdapter(android.R.layout.simple_list_item_1, names);
         list.setLayoutManager(new WrapLinearLayoutManager(view.getContext()));
+        nameList.setLayoutManager(new LinearLayoutManager(view.getContext()));
+        nameList.setItemAnimator(new DefaultItemAnimator());
+        nameList.setAdapter(itemArrayAdapter);
         RecyclerView.Adapter<SlaveViewHolder> adapter = new RecyclerView.Adapter<SlaveViewHolder>() {
             @NonNull
             @Override

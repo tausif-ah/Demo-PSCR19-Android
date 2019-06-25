@@ -117,6 +117,14 @@
             android:gravity="center_horizontal"
             android:text="@string/work_offload_master_no_slave_text" />
 
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/name_list"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"/>
+
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
