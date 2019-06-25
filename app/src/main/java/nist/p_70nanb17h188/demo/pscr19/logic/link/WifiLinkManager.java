@@ -202,9 +202,11 @@ public class WifiLinkManager {
 
                 @Override
                 public void onFailure(int reason) {
-                    Helper.notifyUser(LogType.Info, "Failed in creating Wifi Direct group! reason=%d, retry in %dms", reason, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
-                    Log.e(TAG, "Failed in creating Wifi Direct group! reason=%d, retry in %dms", reason, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
-                    DelayRunner.getDefaultInstance().postDelayed(DEFAULT_CREATE_GROUP_RETRY_DELAY_MS, WifiLinkManager.this::createGroup);
+                    if(reason!=2){
+                        Helper.notifyUser(LogType.Info, "Failed in creating Wifi Direct group! reason=%d, retry in %dms", reason, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
+                        Log.e(TAG, "Failed in creating Wifi Direct group! reason=%d, retry in %dms", reason, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
+                        DelayRunner.getDefaultInstance().postDelayed(DEFAULT_CREATE_GROUP_RETRY_DELAY_MS, WifiLinkManager.this::createGroup);
+                    }
                 }
             });
 

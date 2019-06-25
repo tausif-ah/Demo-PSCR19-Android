@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
@@ -136,6 +137,8 @@ public class WorkOffloadMaster extends ViewModel {
 
     final MutableLiveData<MasterState> currState = new MutableLiveData<>();
     final MutableLiveData<Integer> currentTaskId = new MutableLiveData<>();
+    final MutableLiveData<Integer> faceResult = new MutableLiveData<>();
+    final MutableLiveData<String> faceResultPath = new MutableLiveData<>();
     final MutableLiveData<Boolean> offload = new MutableLiveData<>();
     final MutableLiveData<Boolean> face = new MutableLiveData<>();
     final MutableLiveData<Long> taskStart = new MutableLiveData<>();
@@ -148,11 +151,18 @@ public class WorkOffloadMaster extends ViewModel {
     private Handler workerHandler;
     private Consumer<WorkOffloadMaster> slaveChangedHandler = null;
     private final Thread workerThread;
+    int target = 1;
+
+    HashMap<String,Integer> address = new HashMap<>();
 
     ExecutorService pool = Executors.newFixedThreadPool(1);
     CompletionService<double[]> ecs = new ExecutorCompletionService<>(pool);
 
     public WorkOffloadMaster() {
+        address.put("Adam",1);
+        address.put("Jack",2);
+        address.put("Mary",5);
+        address.put("Jane",6);
         currState.setValue(MasterState.IDLE);
         currentTaskId.setValue(0);
         offload.setValue(true);
@@ -171,6 +181,10 @@ public class WorkOffloadMaster extends ViewModel {
                 e.printStackTrace();
             }
         }
+    }
+
+    void setTargetName(String s){
+        target = address.get(s);
     }
 
     void setSlaveChangedHandler(Consumer<WorkOffloadMaster> slaveChangedHandler) {
@@ -330,12 +344,12 @@ public class WorkOffloadMaster extends ViewModel {
                     FaceUtil.faceRecognizer.predict(testImage, label, reliability);
                     int prediction = label.get(0);
                     double acceptanceLevel = reliability.get(0);
-                    if(prediction==1&&acceptanceLevel<maxAcceptLevel){
+                    if(prediction==target&&acceptanceLevel<maxAcceptLevel){
                         maxAcceptLevel = acceptanceLevel;
                         maxPath = image.getAbsolutePath();
                     }
                 }
-                android.util.Log.d(TAG,maxPath);
+                faceResultPath.postValue(maxPath);
             }
         }else {
             try {
@@ -382,7 +396,7 @@ public class WorkOffloadMaster extends ViewModel {
     private byte[] getGroupImage(int start, int num){
         int[] sizes = new int[num];
         File[] files = new File[num];
-        int totalSize = 2*Helper.INTEGER_SIZE*num+Helper.INTEGER_SIZE;
+        int totalSize = 2*Helper.INTEGER_SIZE*num+2*Helper.INTEGER_SIZE;
         for(int i = start; i<start+num; i++){
             String fileName = Environment.getExternalStorageDirectory().getPath()+"/faces/test/img ("+i+").jpg";
             files[i-start] = new File(fileName);
@@ -390,6 +404,7 @@ public class WorkOffloadMaster extends ViewModel {
             totalSize += sizes[i-start];
         }
         ByteBuffer buffer = ByteBuffer.allocate(totalSize);
+        buffer.putInt(target);
         buffer.putInt(num);
         for(int i = start; i<start+num; i++){
             buffer.putInt(i);
@@ -431,7 +446,7 @@ public class WorkOffloadMaster extends ViewModel {
         if(face){
             try {
                 double[] localResult = ecs.take().get();
-                if((int) localResult[0]==1){
+                if((int) localResult[0]==target){
                     seq = (int) localResult[0];
                     maxLevel = localResult[1];
                 }
@@ -456,6 +471,9 @@ public class WorkOffloadMaster extends ViewModel {
             }else{
 
             }
+        }
+        if(face){
+            faceResult.postValue(seq);
         }
         taskEnd.postValue(System.currentTimeMillis());
         currState.postValue(MasterState.IDLE);

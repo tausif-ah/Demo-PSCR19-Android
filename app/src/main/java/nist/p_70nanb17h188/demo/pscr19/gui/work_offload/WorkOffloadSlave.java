@@ -145,6 +145,7 @@ public class WorkOffloadSlave extends ViewModel {
             synchronized (FaceUtil.faceRecognizer){
                 int resultId = 0;
                 double resultLevel = 50000;
+                int target = buffer.getInt();
                 int num = buffer.getInt();
                 while(num>0){
                     int seq = buffer.getInt();
@@ -166,7 +167,7 @@ public class WorkOffloadSlave extends ViewModel {
                         prediction = 0;
                         acceptanceLevel = 0;
                     }
-                    if(prediction==1&&acceptanceLevel<resultLevel){
+                    if(prediction==target&&acceptanceLevel<resultLevel){
                         resultId = seq;
                         resultLevel = acceptanceLevel;
                     }

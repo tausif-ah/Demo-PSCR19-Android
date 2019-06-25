@@ -3,8 +3,11 @@ package nist.p_70nanb17h188.demo.pscr19.gui.work_offload;
 
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -17,6 +20,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -43,6 +47,9 @@ public class WorkOffloadFragment extends Fragment {
 
     private WorkOffloadMaster masterViewModel;
     private WorkOffloadSlave slaveViewModel;
+
+    private ImageView imageView1;
+    private ImageView imageView2;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -95,7 +102,9 @@ public class WorkOffloadFragment extends Fragment {
         }
         @Override
         public void onClick(View view) {
-            masterViewModel.setTargetName(item.getText());
+            masterViewModel.setTargetName(item.getText().toString());
+            displayImage(item.getText().toString());
+            imageView2.setVisibility(View.GONE);
         }
     }
 
@@ -155,6 +164,8 @@ public class WorkOffloadFragment extends Fragment {
         nameList.setLayoutManager(new LinearLayoutManager(view.getContext()));
         nameList.setItemAnimator(new DefaultItemAnimator());
         nameList.setAdapter(itemArrayAdapter);
+        imageView1 = view.findViewById(R.id.imageView);
+        imageView2 = view.findViewById(R.id.imageView2);
         RecyclerView.Adapter<SlaveViewHolder> adapter = new RecyclerView.Adapter<SlaveViewHolder>() {
             @NonNull
             @Override
@@ -200,6 +211,26 @@ public class WorkOffloadFragment extends Fragment {
         masterViewModel.face.observe(this, face ->{
             assert face != null;
             btnApp.setText(face ? R.string.work_offload_application_facial : R.string.work_offload_application_matrix);
+            if(face){
+                nameList.setVisibility(View.VISIBLE);
+                //imageView1.setVisibility(View.VISIBLE);
+                //imageView2.setVisibility(View.VISIBLE);
+            } else{
+                nameList.setVisibility(View.GONE);
+                imageView1.setVisibility(View.GONE);
+                imageView2.setVisibility(View.GONE);
+            }
+        });
+
+        masterViewModel.faceResult.observe(this, seq ->{
+            assert seq != null;
+            imageView2.setVisibility(View.VISIBLE);
+            displayFaceResult(seq);
+        });
+        masterViewModel.faceResultPath.observe(this, path ->{
+            assert path != null;
+            imageView2.setVisibility(View.VISIBLE);
+            displayFaceResult(path);
         });
 
         masterViewModel.currentTaskId.observe(this, taskId -> {
@@ -224,9 +255,50 @@ public class WorkOffloadFragment extends Fragment {
             txtShowNoSlave.setVisibility(show ? View.VISIBLE : View.GONE);
         });
         btnOffload.setOnClickListener(v -> masterViewModel.flipOffload());
-        btnStart.setOnClickListener(v -> masterViewModel.flipState());
+        btnStart.setOnClickListener(v -> {
+            nameList.setVisibility(View.GONE);
+            masterViewModel.flipState();
+        });
         btnApp.setOnClickListener(v -> masterViewModel.flipApp());
         return view;
+    }
+
+    private void displayImage(String name){
+        String prefix = Environment.getExternalStorageDirectory().getPath()+"/faces/train/";
+        String file;
+        switch (name){
+            case "Adam":
+                file = "1-1.jpg";
+                break;
+            case "Jack":
+                file = "2-6.jpg";
+                break;
+            case "Mary":
+                file = "5-2.jpg";
+                break;
+            case "Jane":
+                file = "6-2.jpg";
+                break;
+            default:
+                file = "1-1.jpg";
+        }
+        Bitmap b1 = BitmapFactory.decodeFile(prefix+file);
+        Bitmap rb1 = Bitmap.createScaledBitmap(b1,210,210,false);
+        imageView1.setImageBitmap(rb1);
+    }
+
+    private void displayFaceResult(int seq){
+        String prefix = Environment.getExternalStorageDirectory().getPath()+"/faces/test/img (";
+        String postfix = ").jpg";
+        Bitmap b1 = BitmapFactory.decodeFile(prefix+seq+postfix);
+        Bitmap rb1 = Bitmap.createScaledBitmap(b1,210,210,false);
+        imageView2.setImageBitmap(rb1);
+    }
+
+    private void displayFaceResult(String path){
+        Bitmap b1 = BitmapFactory.decodeFile(path);
+        Bitmap rb1 = Bitmap.createScaledBitmap(b1,210,210,false);
+        imageView2.setImageBitmap(rb1);
     }
 
     private void destroyMasterView() {
