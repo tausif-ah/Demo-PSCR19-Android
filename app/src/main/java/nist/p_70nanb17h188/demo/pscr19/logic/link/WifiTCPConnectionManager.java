@@ -155,18 +155,20 @@ class WifiTCPConnectionManagerGroupOwner extends WifiTCPConnectionManager implem
 
     @Override
     public void onSocketChannelNameReceived(@NonNull SocketChannel socketChannel, @NonNull String name) {
-        // If it is my neighbor, connect
-//        int i;
-//        for (i = 0; i < wifiDirectNeighbors.length; i++) {
-//            if (name.equals(wifiDirectNeighbors[i])) {
-//                break;
-//            }
-//        }
-//        if (i == wifiDirectNeighbors.length) {
-//            Log.i(TAG, "Connected device (%s) is not my neighbor, colse connection!", name);
-//            TCPConnectionManager.getDefaultInstance().closeSocketChannel(socketChannel);
-//            return;
-//        }
+        // Connect only if the other side is my neighbor
+        int i;
+        String[] wifiDirectNeighbors = Constants.getWifiDirectNeighbors();
+        for (i = 0; i < wifiDirectNeighbors.length; i++) {
+            if (name.equals(wifiDirectNeighbors[i])) {
+                break;
+            }
+        }
+        if (i == wifiDirectNeighbors.length) {
+            Log.i(TAG, "Connected device (%s) is not my neighbor, close connection!", name);
+            getTcpConnectionManager().closeSocketChannel(socketChannel);
+            return;
+        }
+
         SocketChannel originalSocketChannel;
         synchronized (connectedNeighbors) {
             originalSocketChannel = connectedNeighbors.put(name, socketChannel);
@@ -342,18 +344,19 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
 
     @Override
     public void onSocketChannelNameReceived(@NonNull SocketChannel socketChannel, @NonNull String name) {
-//        // if that is not my neighbor, disconnect.
-//        int i;
-//        for (i = 0; i < wifiDirectNeighbors.length; i++) {
-//            if (name.equals(wifiDirectNeighbors[i])) {
-//                break;
-//            }
-//        }
-//        if (i == wifiDirectNeighbors.length) {
-//            Log.i(TAG, "Connected device (%s) is not my neighbor, colse connection!", name);
-//            TCPConnectionManager.getDefaultInstance().closeSocketChannel(socketChannel);
-//            return;
-//        }
+        // if that is not my neighbor, disconnect.
+        int i;
+        String[] wifiDirectNeighbors = Constants.getWifiDirectNeighbors();
+        for (i = 0; i < wifiDirectNeighbors.length; i++)
+            if (name.equals(wifiDirectNeighbors[i]))
+                break;
+
+        if (i == wifiDirectNeighbors.length) {
+            Log.i(TAG, "Connected device (%s) is not my neighbor, colse connection!", name);
+            getTcpConnectionManager().closeSocketChannel(socketChannel);
+            return;
+        }
+
         synchronized (this) {
             if (socketChannel != currentSocket) return;
             connectedName = name;
