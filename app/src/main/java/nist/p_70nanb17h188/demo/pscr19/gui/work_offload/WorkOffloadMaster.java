@@ -420,7 +420,7 @@ public class WorkOffloadMaster extends ViewModel {
         if (face) {
             int jobNum = 200 / (slaves.size() + 1);
             int localStart = 200 - 200 / (slaves.size() + 1) * slaves.size() + 1;
-            ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, localStart));
+            ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, target, localStart));
             int start = 1;
             for (Slave s : slaves) {
                 byte[] data = getGroupImage(start, jobNum);
