@@ -276,13 +276,15 @@ class WifiTCPConnectionManagerClient extends WifiTCPConnectionManager implements
         synchronized (this) {
             // If there is already a connection, do nothing. If it is a staled one, we can wait for it to timeout.
             // If we somehow decided to disconnect (reconnect == false) we also don't connect.
-            Log.v(TAG, "establishConnection, currentSocket=%s, reconnect = %b", currentSocket, reconnect);
+            Log.v(TAG, "establishConnection, currentSocket=%s, address=%s, reconnect = %b", currentSocket, address, reconnect);
 
             if (currentSocket != null || !reconnect) return;
             SocketChannel channel = getTcpConnectionManager().addSocketChannel(address, this);
             if (channel == null) {
                 Log.i(TAG, "Failed in creating socketChannel, retry in %dms", SOCKET_RCONNECT_DURATION_MS);
                 DelayRunner.getDefaultInstance().postDelayed(SOCKET_RCONNECT_DURATION_MS, this::establishConnection);
+            } else {
+                Log.i(TAG, "Succeeded in creating socketChannel: %s", channel);
             }
             currentSocket = channel;
         }
