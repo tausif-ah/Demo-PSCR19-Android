@@ -194,6 +194,7 @@ public class WifiLinkManager {
 
     private void createGroup() {
         if (Constants.isWifiDirectGroupOwner()) {
+//            wifiP2pManager.removeGroup();
             wifiP2pManager.createGroup(channel, new WifiP2pManager.ActionListener() {
                 @Override
                 public void onSuccess() {
@@ -202,7 +203,7 @@ public class WifiLinkManager {
 
                 @Override
                 public void onFailure(int reason) {
-                    if(reason!=2){
+                    if (reason != 2) {
                         Helper.notifyUser(LogType.Info, "Failed in creating Wifi Direct group! reason=%d, retry in %dms", reason, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
                         Log.e(TAG, "Failed in creating Wifi Direct group! reason=%d, retry in %dms", reason, DEFAULT_CREATE_GROUP_RETRY_DELAY_MS);
                         DelayRunner.getDefaultInstance().postDelayed(DEFAULT_CREATE_GROUP_RETRY_DELAY_MS, WifiLinkManager.this::createGroup);

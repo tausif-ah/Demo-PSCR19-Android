@@ -4,10 +4,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.nio.ByteBuffer;
+import java.util.Locale;
 
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 
 public class Message {
+    private static final int MAX_MSG_SHOW_LEN = 20;
     @NonNull
     private final byte[] data;
     private final long nonce;
@@ -66,5 +68,15 @@ public class Message {
         byte[] data = new byte[len];
         byteBuffer.get(data);
         return new Message(data, store, nonce);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        if (data.length > MAX_MSG_SHOW_LEN) {
+            return String.format(Locale.US, "MSG{len=%d,nonce=0x%16x,data=%s...}", data.length, nonce, Helper.getHexString(data, 0, MAX_MSG_SHOW_LEN));
+        } else {
+            return String.format(Locale.US, "MSG{len=%d,nonce=0x%16x,data=%s}", data.length, nonce, Helper.getHexString(data));
+        }
     }
 }

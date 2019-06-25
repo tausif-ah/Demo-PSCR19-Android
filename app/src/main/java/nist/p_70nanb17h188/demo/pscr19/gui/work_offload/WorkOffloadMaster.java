@@ -97,7 +97,7 @@ public class WorkOffloadMaster extends ViewModel {
         synchronized void setSlaveTask(DataWorkContent content) {
             if (workContent != null || workResult != null) return;
             workContent = content;
-            NetLayer.sendData(masterName, slaveName, content.toBytes(), true);
+            NetLayer.sendData(masterName, slaveName, content.toBytes(), false);
             slaveState.postValue(SlaveState.WORKING);
         }
 
@@ -116,7 +116,7 @@ public class WorkOffloadMaster extends ViewModel {
             return slaveName;
         }
 
-        SlaveState getSlaveState(){
+        SlaveState getSlaveState() {
             return slaveState.getValue();
         }
 
@@ -151,18 +151,18 @@ public class WorkOffloadMaster extends ViewModel {
     private Handler workerHandler;
     private Consumer<WorkOffloadMaster> slaveChangedHandler = null;
     private final Thread workerThread;
-    int target = 1;
+    private int target = 1;
 
-    HashMap<String,Integer> address = new HashMap<>();
+    private final HashMap<String, Integer> address = new HashMap<>();
 
-    ExecutorService pool = Executors.newFixedThreadPool(1);
-    CompletionService<double[]> ecs = new ExecutorCompletionService<>(pool);
+    private final ExecutorService pool = Executors.newFixedThreadPool(1);
+    private final CompletionService<double[]> ecs = new ExecutorCompletionService<>(pool);
 
     public WorkOffloadMaster() {
-        address.put("Adam",1);
-        address.put("Jack",2);
-        address.put("Mary",5);
-        address.put("Jane",6);
+        address.put("Adam", 1);
+        address.put("Jack", 2);
+        address.put("Mary", 5);
+        address.put("Jane", 6);
         currState.setValue(MasterState.IDLE);
         currentTaskId.setValue(0);
         offload.setValue(true);
@@ -183,7 +183,7 @@ public class WorkOffloadMaster extends ViewModel {
         }
     }
 
-    void setTargetName(String s){
+    void setTargetName(String s) {
         target = address.get(s);
     }
 
@@ -291,7 +291,7 @@ public class WorkOffloadMaster extends ViewModel {
         offload.setValue(!origValue);
     }
 
-    synchronized void flipApp(){
+    synchronized void flipApp() {
         Boolean origValue = face.getValue();
         assert origValue != null;
         face.setValue(!origValue);
@@ -323,11 +323,11 @@ public class WorkOffloadMaster extends ViewModel {
     private void performTaskLocally(int taskId) {
         Boolean face = this.face.getValue();
         assert face != null;
-        if(face){
-            synchronized (FaceUtil.faceRecognizer){
-                String trainDir = Environment.getExternalStorageDirectory().getPath()+"/faces/test";
+        if (face) {
+            synchronized (FaceUtil.faceRecognizer) {
+                String trainDir = Environment.getExternalStorageDirectory().getPath() + "/faces/test";
                 File root = new File(trainDir);
-                FilenameFilter imgFilter = (dir, name)-> {
+                FilenameFilter imgFilter = (dir, name) -> {
                     name = name.toLowerCase();
                     return name.endsWith(".jpg") || name.endsWith(".pgm") || name.endsWith(".png");
                 };
@@ -336,7 +336,7 @@ public class WorkOffloadMaster extends ViewModel {
                 String maxPath = "";
                 for (File image : imageFiles) {
                     opencv_core.Mat testImage = detectFaces(image.getAbsolutePath());
-                    if(testImage==null){
+                    if (testImage == null) {
                         continue;
                     }
                     IntPointer label = new IntPointer(1);
@@ -344,14 +344,14 @@ public class WorkOffloadMaster extends ViewModel {
                     FaceUtil.faceRecognizer.predict(testImage, label, reliability);
                     int prediction = label.get(0);
                     double acceptanceLevel = reliability.get(0);
-                    if(prediction==target&&acceptanceLevel<maxAcceptLevel){
+                    if (prediction == target && acceptanceLevel < maxAcceptLevel) {
                         maxAcceptLevel = acceptanceLevel;
                         maxPath = image.getAbsolutePath();
                     }
                 }
                 faceResultPath.postValue(maxPath);
             }
-        }else {
+        } else {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -368,20 +368,20 @@ public class WorkOffloadMaster extends ViewModel {
         }
     }
 
-    private opencv_core.Mat detectFaces(String filePath){
-        opencv_core.Mat grey = imread(filePath,CV_LOAD_IMAGE_GRAYSCALE);
+    private opencv_core.Mat detectFaces(String filePath) {
+        opencv_core.Mat grey = imread(filePath, CV_LOAD_IMAGE_GRAYSCALE);
         opencv_core.RectVector detectedFaces = new opencv_core.RectVector();
-        FaceUtil.faceDetector.detectMultiScale(grey, detectedFaces, 1.1, 1, 0, new opencv_core.Size(150,150), new opencv_core.Size(500,500));
+        FaceUtil.faceDetector.detectMultiScale(grey, detectedFaces, 1.1, 1, 0, new opencv_core.Size(150, 150), new opencv_core.Size(500, 500));
         opencv_core.Rect rectFace = detectedFaces.get(0);
-        if(rectFace==null){
+        if (rectFace == null) {
             return null;
         }
         opencv_core.Mat capturedFace = new opencv_core.Mat(grey, rectFace);
-        resize(capturedFace, capturedFace, new opencv_core.Size(160,160));
+        resize(capturedFace, capturedFace, new opencv_core.Size(160, 160));
         return capturedFace;
     }
 
-    private byte[] getOneImage(File file,int size){
+    private byte[] getOneImage(File file, int size) {
         try {
             InputStream in = new FileInputStream(file);
             byte[] fileBytes = new byte[size];
@@ -393,23 +393,23 @@ public class WorkOffloadMaster extends ViewModel {
         return new byte[20];
     }
 
-    private byte[] getGroupImage(int start, int num){
+    private byte[] getGroupImage(int start, int num) {
         int[] sizes = new int[num];
         File[] files = new File[num];
-        int totalSize = 2*Helper.INTEGER_SIZE*num+2*Helper.INTEGER_SIZE;
-        for(int i = start; i<start+num; i++){
-            String fileName = Environment.getExternalStorageDirectory().getPath()+"/faces/test/img ("+i+").jpg";
-            files[i-start] = new File(fileName);
-            sizes[i-start] = (int) files[i-start].length();
-            totalSize += sizes[i-start];
+        int totalSize = 2 * Helper.INTEGER_SIZE * num + 2 * Helper.INTEGER_SIZE;
+        for (int i = start; i < start + num; i++) {
+            String fileName = Environment.getExternalStorageDirectory().getPath() + "/faces/test/img (" + i + ").jpg";
+            files[i - start] = new File(fileName);
+            sizes[i - start] = (int) files[i - start].length();
+            totalSize += sizes[i - start];
         }
         ByteBuffer buffer = ByteBuffer.allocate(totalSize);
         buffer.putInt(target);
         buffer.putInt(num);
-        for(int i = start; i<start+num; i++){
+        for (int i = start; i < start + num; i++) {
             buffer.putInt(i);
-            buffer.putInt(sizes[i-start]);
-            buffer.put(getOneImage(files[i-start],sizes[i-start]));
+            buffer.putInt(sizes[i - start]);
+            buffer.put(getOneImage(files[i - start], sizes[i - start]));
         }
         return buffer.array();
     }
@@ -417,20 +417,20 @@ public class WorkOffloadMaster extends ViewModel {
     private void distributeTask(int taskId) {
         Boolean face = this.face.getValue();
         assert face != null;
-        if(face){
-            int jobNum = 200/(slaves.size()+1);
-            int localStart = 200-200/(slaves.size()+1)*slaves.size()+1;
+        if (face) {
+            int jobNum = 200 / (slaves.size() + 1);
+            int localStart = 200 - 200 / (slaves.size() + 1) * slaves.size() + 1;
             ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, localStart));
             int start = 1;
             for (Slave s : slaves) {
-                byte[] data = getGroupImage(start,jobNum);
+                byte[] data = getGroupImage(start, jobNum);
                 byte type = 5;
                 DataWorkContent content = new DataWorkContent(taskId, type, data);
                 s.setSlaveTask(content);
                 start += jobNum;
             }
             currState.postValue(MasterState.WAIT_FOR_RESULT);
-        }else{
+        } else {
             //TODO: Matrix Multiplication
         }
     }
@@ -443,10 +443,10 @@ public class WorkOffloadMaster extends ViewModel {
         int seq = 0;
         Boolean face = this.face.getValue();
         assert face != null;
-        if(face){
+        if (face) {
             try {
                 double[] localResult = ecs.take().get();
-                if((int) localResult[0]==target){
+                if ((int) localResult[0] == target) {
                     seq = (int) localResult[0];
                     maxLevel = localResult[1];
                 }
@@ -459,20 +459,20 @@ public class WorkOffloadMaster extends ViewModel {
         for (Slave s : slaves) {
             byte[] result = s.getWorkResult().getData();
             ByteBuffer buffer = ByteBuffer.wrap(result);
-            if(face){
+            if (face) {
                 int id = buffer.getInt();
                 double acc = buffer.getDouble();
-                if(id!=0){
-                    if(maxLevel>acc){
+                if (id != 0) {
+                    if (maxLevel > acc) {
                         seq = id;
                         maxLevel = acc;
                     }
                 }
-            }else{
+            } else {
 
             }
         }
-        if(face){
+        if (face) {
             faceResult.postValue(seq);
         }
         taskEnd.postValue(System.currentTimeMillis());

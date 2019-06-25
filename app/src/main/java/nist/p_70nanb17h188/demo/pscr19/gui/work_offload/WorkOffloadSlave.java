@@ -26,6 +26,7 @@ import static org.bytedeco.javacpp.opencv_imgproc.resize;
 
 public class WorkOffloadSlave extends ViewModel {
     private static final long WAIT_WORK_DELAY_MS = 30000;
+    private static final String TAG = "WorkOffloadSlave";
 
     enum SlaveState {
         IDLE(R.string.work_offload_slave_state_idle),
@@ -106,7 +107,7 @@ public class WorkOffloadSlave extends ViewModel {
         taskStart.postValue(null);
         taskEnd.postValue(null);
         workerHandler.postDelayed(() -> waitWorkTimeout(workId, src), WAIT_WORK_DELAY_MS);
-        NetLayer.sendData(myName, src, new DataWorkResponse(workId).toBytes(), true);
+        NetLayer.sendData(myName, src, new DataWorkResponse(workId).toBytes(), false);
     }
 
     private synchronized void onUnicastDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data) {
@@ -139,35 +140,34 @@ public class WorkOffloadSlave extends ViewModel {
     private void performTask(DataWorkContent content) {
         taskEnd.postValue(null);
         taskStart.postValue(System.currentTimeMillis());
-        // TODO: perform the task
         ByteBuffer buffer = ByteBuffer.wrap(content.getData());
-        if(content.getWorkType()==5){
-            synchronized (FaceUtil.faceRecognizer){
+        if (content.getWorkType() == 5) {
+            synchronized (FaceUtil.faceRecognizer) {
                 int resultId = 0;
                 double resultLevel = 50000;
                 int target = buffer.getInt();
                 int num = buffer.getInt();
-                while(num>0){
+                while (num > 0) {
                     int seq = buffer.getInt();
                     int size = buffer.getInt();
-                    Log.d("Slave is To",seq+" "+size);
+                    Log.d(TAG, "Slave is To seq=%d, size=%d", seq, size);
                     byte[] bytes = new byte[size];
                     buffer.get(bytes);
-                    opencv_core.Mat testImage = imdecode(new opencv_core.Mat(bytes),CV_LOAD_IMAGE_GRAYSCALE);
+                    opencv_core.Mat testImage = imdecode(new opencv_core.Mat(bytes), CV_LOAD_IMAGE_GRAYSCALE);
                     opencv_core.Mat testFace = detectFaces(testImage);
                     int prediction;
                     double acceptanceLevel;
-                    if(testFace!=null){
+                    if (testFace != null) {
                         IntPointer label = new IntPointer(1);
                         DoublePointer reliability = new DoublePointer(1);
                         FaceUtil.faceRecognizer.predict(testFace, label, reliability);
                         prediction = label.get(0);
                         acceptanceLevel = reliability.get(0);
-                    }else{
+                    } else {
                         prediction = 0;
                         acceptanceLevel = 0;
                     }
-                    if(prediction==target&&acceptanceLevel<resultLevel){
+                    if (prediction == target && acceptanceLevel < resultLevel) {
                         resultId = seq;
                         resultLevel = acceptanceLevel;
                     }
@@ -177,24 +177,24 @@ public class WorkOffloadSlave extends ViewModel {
                 // send the result back
                 Name currMasterName = this.currMasterName.getValue();
                 assert currMasterName != null;
-                ByteBuffer buffer1 = ByteBuffer.allocate(2*Helper.INTEGER_SIZE+Helper.DOUBLE_SIZE);
+                ByteBuffer buffer1 = ByteBuffer.allocate(2 * Helper.INTEGER_SIZE + Helper.DOUBLE_SIZE);
                 buffer1.putInt(resultId);
                 buffer1.putDouble(resultLevel);
-                NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), true);
+                NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), false);
                 currState.postValue(SlaveState.IDLE);
             }
         }
     }
 
-    opencv_core.Mat detectFaces(opencv_core.Mat grey){
+    private opencv_core.Mat detectFaces(opencv_core.Mat grey) {
         opencv_core.RectVector detectedFaces = new opencv_core.RectVector();
-        FaceUtil.faceDetector.detectMultiScale(grey, detectedFaces, 1.1, 1, 0, new opencv_core.Size(150,150), new opencv_core.Size(500,500));
+        FaceUtil.faceDetector.detectMultiScale(grey, detectedFaces, 1.1, 1, 0, new opencv_core.Size(150, 150), new opencv_core.Size(500, 500));
         opencv_core.Rect rectFace = detectedFaces.get(0);
-        if(rectFace==null){
+        if (rectFace == null) {
             return null;
         }
         opencv_core.Mat capturedFace = new opencv_core.Mat(grey, rectFace);
-        resize(capturedFace, capturedFace, new opencv_core.Size(160,160));
+        resize(capturedFace, capturedFace, new opencv_core.Size(160, 160));
         return capturedFace;
     }
 
