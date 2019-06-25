@@ -57,9 +57,9 @@ public class GossipFragment extends Fragment {
                 txtNonce.setText(String.format(Locale.US, "%016X", msg.getNonce()));
                 byte[] buf = msg.getData();
                 if (buf.length > MAX_MSG_SHOW_LEN) {
-                    txtMsg.setText(String.format("%s...", Helper.getHexString(buf, 0, MAX_MSG_SHOW_LEN)));
+                    txtMsg.setText(String.format(Locale.US, "[%d] %s...", buf.length, Helper.getHexString(buf, 0, MAX_MSG_SHOW_LEN)));
                 } else {
-                    txtMsg.setText(Helper.getHexString(buf));
+                    txtMsg.setText(String.format(Locale.US, "[%d] %s", buf.length, Helper.getHexString(buf)));
                 }
             }
         }

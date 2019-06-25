@@ -17,7 +17,7 @@ public class Namespace {
     /**
      * The context for namespace events.
      */
-    public static final String CONTEXT_NAMESPACE = "nist.p_70nanb17h188.demo.pscr19.logic.net.namespace";
+    public static final String CONTEXT_NAMESPACE = "nist.p_70nanb17h188.demo.pscr19.logic.net.Namespace";
 
     /**
      * Broadcast intent action indicating that there is a name added/removed.
@@ -49,12 +49,14 @@ public class Namespace {
     }
 
     public static class LoopDetectedException extends Exception {
+        @NonNull
         private final Name[] loopNames;
 
-        LoopDetectedException(Name[] loopNames) {
+        LoopDetectedException(@NonNull Name[] loopNames) {
             this.loopNames = loopNames;
         }
 
+        @NonNull
         public Name[] getLoopNames() {
             return loopNames;
         }
