@@ -20,6 +20,7 @@ import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.LoadClassifier;
+import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
@@ -85,6 +86,7 @@ public class LauncherActivity extends AppCompatActivity {
         Log.d("LAUNCHER", "INIT START");
         LinkLayer.init();
         NetLayer.init();
+        MessagingNamespace.init();
         Log.d("LAUNCHER", "INIT END");
 
         startActivity(new android.content.Intent(this, MainActivity.class));

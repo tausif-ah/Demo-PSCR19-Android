@@ -118,7 +118,7 @@
             android:text="@string/work_offload_master_no_slave_text" />
 
         <android.support.v7.widget.RecyclerView
-            android:id="@+id/name_list"
+            android:id="@+id/work_offload_name_list"
             android:layout_height="120dp"
             android:layout_width="match_parent"
             android:layout_marginStart="8dp"

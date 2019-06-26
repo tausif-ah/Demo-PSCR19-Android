@@ -15,7 +15,6 @@
     <string name="nav_log">Log</string>
 
     <string name="hello_messaging_fragment">Hello fragment messaging</string>
-    <string name="hello_naming_fragment">Hello fragment naming</string>
     <string name="hello_work_offload_fragment">Hello fragment work offload</string>
 
     <string name="log_top">Move to top in the log view</string>
@@ -79,6 +78,11 @@
     <string name="gossip_nonce">Nonce</string>
     <string name="gossip_msg">Message</string>
 
+    <string name="naming_ancestors">Ancestors</string>
+    <string name="naming_parents">Parents</string>
+    <string name="naming_siblings">Siblings</string>
+    <string name="naming_children">Children</string>
+    <string name="naming_descendants">Descendants</string>
 
     <string name="millisecond">ms</string>
 </resources>

@@ -23,11 +23,11 @@ public class Name {
 
     /**
      * Gets the value of the name.
-     * Should not be used by app layer. Do not set it public.
+     * Should not be used by app layer.
      *
      * @return the value of the name
      */
-    long getValue() {
+    public long getValue() {
         return value;
     }
 

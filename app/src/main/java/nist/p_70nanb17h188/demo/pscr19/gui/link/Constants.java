@@ -24,9 +24,9 @@ class Constants {
     }
 
     static int getLinkTypeColorResource(Class<? extends Link> type) {
-        if (type == LinkWifiDirect.class) return R.color.colorWifiDirect;
-        if (type == LinkBluetooth.class) return R.color.colorBluetooth;
-        return R.color.coloUnknown;
+        if (type == LinkWifiDirect.class) return R.color.colorLinkWifiDirect;
+        if (type == LinkBluetooth.class) return R.color.colorLinkBluetooth;
+        return R.color.colorLinkUnknown;
     }
 
     static int getLinkStatusImageResource(@Nullable Link.LinkStatus status) {

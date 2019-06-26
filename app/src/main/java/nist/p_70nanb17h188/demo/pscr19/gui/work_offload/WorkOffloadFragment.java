@@ -17,15 +17,11 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -153,7 +149,7 @@ public class WorkOffloadFragment extends Fragment {
         Button btnOffload = view.findViewById(R.id.work_offload_master_btn_offload);
         Button btnApp = view.findViewById(R.id.application_type);
         RecyclerView list = view.findViewById(R.id.work_offload_master_list);
-        RecyclerView nameList = view.findViewById(R.id.name_list);
+        RecyclerView nameList = view.findViewById(R.id.work_offload_name_list);
         List<String> names = new ArrayList<>();
         names.add("Adam");
         names.add("Jack");

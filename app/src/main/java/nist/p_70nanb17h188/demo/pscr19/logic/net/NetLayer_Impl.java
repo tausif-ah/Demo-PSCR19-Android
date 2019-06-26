@@ -15,7 +15,8 @@ public class NetLayer_Impl {
 
     private static final String TAG = "NetLayer_Impl";
     // initiator of namespace change when a net-based change happens
-    private static final String INITIATOR_NET = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl.net";
+    // can use this initiator for actions that do not 
+    public static final String INITIATOR_NET = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl.net";
 
     private final HashMap<Name, HashSet<DataReceivedHandler>> dataHandlers = new HashMap<>();
     private final GossipModule gossipModule;
@@ -256,7 +257,7 @@ public class NetLayer_Impl {
                 + Name.WRITE_SIZE * 2 // parent, child
                 + 1;                   // added
         ByteBuffer buffer = ByteBuffer.allocate(size);
-        writePrefix(buffer, TYPE_NAME_CHANGE);
+        writePrefix(buffer, TYPE_LINK_CHANGE);
         parent.write(buffer);
         child.write(buffer);
         buffer.put(added ? (byte) 1 : (byte) 0);

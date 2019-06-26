@@ -3,7 +3,10 @@
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
-    <color name="colorWifiDirect">#FFD5AA</color>
-    <color name="colorBluetooth">#D5D5FF</color>
-    <color name="coloUnknown">#D5D5D5</color>
+    <color name="colorLinkWifiDirect">#FFD5AA</color>
+    <color name="colorLinkBluetooth">#D5D5FF</color>
+    <color name="colorLinkUnknown">#D5D5D5</color>
+    <color name="colorNameIncident">#D5D5FF</color>
+    <color name="colorNameAdministrative">#FFD5AA</color>
+    <color name="colorNameUnknown">#D5D5D5</color>
 </resources>

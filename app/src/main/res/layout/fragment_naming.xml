@@ -6,46 +6,33 @@
     android:orientation="vertical"
     tools:context=".gui.net.NamingFragment">
 
+
     <LinearLayout
-        style="?android:attr/buttonBarStyle"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/name_tab_neighbors"
-            style="?android:attr/buttonBarButtonStyle"
+        <nist.p_70nanb17h188.demo.pscr19.gui.VerticalTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/name_tab_routing" />
+            android:layout_gravity="center"
+            android:gravity="bottom"
+            android:padding="4dp"
+            android:text="@string/naming_ancestors"
+            android:textAlignment="center"
+            android:textIsSelectable="false"
+            android:textStyle="bold" />
 
         <View
             android:layout_width="1dp"
             android:layout_height="match_parent"
             android:background="?attr/colorPrimary" />
 
-        <Button
-            android:id="@+id/name_tab_namespace"
-            style="?android:attr/buttonBarButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:enabled="false"
-            android:text="@string/name_tab_namespace" />
-
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="?attr/colorPrimary" />
-
-        <Button
-            android:id="@+id/name_tab_pubsub"
-            style="?android:attr/buttonBarButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:enabled="false"
-            android:text="@string/name_tab_pubsub" />
+        <ListView
+            android:id="@+id/naming_ancestors"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
     </LinearLayout>
 
     <View
@@ -53,8 +40,109 @@
         android:layout_height="1dp"
         android:background="?attr/colorPrimary" />
 
-    <FrameLayout
-        android:id="@+id/naming_fragment_container"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="0dp"
+        android:layout_weight="3"
+        android:orientation="horizontal">
+
+        <nist.p_70nanb17h188.demo.pscr19.gui.VerticalTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="bottom"
+            android:padding="4dp"
+            android:text="@string/naming_parents"
+            android:textAlignment="center"
+            android:textIsSelectable="false"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="?attr/colorPrimary" />
+
+        <ListView
+            android:id="@+id/naming_parents"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="?attr/colorPrimary" />
+
+    <Spinner
+        android:id="@+id/naming_names"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="2dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="?attr/colorPrimary" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3"
+        android:orientation="horizontal">
+
+        <nist.p_70nanb17h188.demo.pscr19.gui.VerticalTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="bottom"
+            android:padding="4dp"
+            android:text="@string/naming_children"
+            android:textAlignment="center"
+            android:textIsSelectable="false"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="?attr/colorPrimary" />
+
+        <ListView
+            android:id="@+id/naming_children"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorPrimary" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:orientation="horizontal">
+
+        <nist.p_70nanb17h188.demo.pscr19.gui.VerticalTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="bottom"
+            android:padding="4dp"
+            android:text="@string/naming_descendants"
+            android:textAlignment="center"
+            android:textIsSelectable="false"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="?attr/colorPrimary" />
+
+        <ListView
+            android:id="@+id/naming_descendants"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
 </LinearLayout>
