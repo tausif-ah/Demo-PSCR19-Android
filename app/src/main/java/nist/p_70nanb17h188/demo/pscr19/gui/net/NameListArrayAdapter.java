@@ -1,4 +1,4 @@
-package nist.p_70nanb17h188.demo.pscr19.gui.messaging;
+package nist.p_70nanb17h188.demo.pscr19.gui.net;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
@@ -15,7 +15,7 @@ import java.util.List;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace;
 
 public class NameListArrayAdapter extends ArrayAdapter<MessagingNamespace.MessagingName> {
-    public NameListArrayAdapter(@NonNull Context context, @NonNull List<MessagingNamespace.MessagingName> objects) {
+    NameListArrayAdapter(@NonNull Context context, @NonNull List<MessagingNamespace.MessagingName> objects) {
         super(context, android.R.layout.simple_spinner_dropdown_item, objects);
     }
 

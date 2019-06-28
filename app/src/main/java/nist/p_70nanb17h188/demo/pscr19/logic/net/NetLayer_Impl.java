@@ -10,13 +10,14 @@ import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
+import nist.p_70nanb17h188.demo.pscr19.logic.Consumer;
 
 public class NetLayer_Impl {
 
     private static final String TAG = "NetLayer_Impl";
-    // initiator of namespace change when a net-based change happens
-    // can use this initiator for actions that do not 
-    public static final String INITIATOR_NET = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl.net";
+
+    public static final String INITIATOR_INIT = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl.init";
+    private static final String INITIATOR_NET = "nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl.net";
 
     private final HashMap<Name, HashSet<DataReceivedHandler>> dataHandlers = new HashMap<>();
     private final GossipModule gossipModule;
@@ -34,7 +35,9 @@ public class NetLayer_Impl {
             if (!intent.getAction().equals(GossipModule.ACTION_DATA_RECEIVED)) {
                 return;
             }
-            onDataReceivedFromGossip(intent.getExtra(GossipModule.EXTRA_DATA));
+            byte[] data = intent.getExtra(GossipModule.EXTRA_DATA);
+            if (data == null) return;
+            onDataReceivedFromGossip(data);
         }, new IntentFilter().addAction(GossipModule.ACTION_DATA_RECEIVED));
         Context.getContext(Namespace.CONTEXT_NAMESPACE).registerReceiver((context, intent) -> {
             switch (intent.getAction()) {
@@ -65,7 +68,7 @@ public class NetLayer_Impl {
         return gossipModule;
     }
 
-    public Namespace getNamespace() {
+    private Namespace getNamespace() {
         return namespace;
     }
 
@@ -88,23 +91,47 @@ public class NetLayer_Impl {
         gossipModule.addMessage(buf.array(), store);
     }
 
-    void registerName(Name n, boolean add, String initiator) {
+    Name registerRandomName(@NonNull String initiator) {
+        return namespace.addRandomName(initiator);
+    }
+
+    boolean registerName(@NonNull Name n, boolean add, @NonNull String initiator) {
         if (add) {
-            namespace.addName(n, initiator);
+            return namespace.addName(n, initiator);
         } else {
-            namespace.removeName(n, initiator);
+            return namespace.removeName(n, initiator);
         }
     }
 
-    void registerRelationship(Name parent, Name child, boolean add, String initiator) {
+    boolean hasName(@NonNull Name n) {
+        return namespace.hasName(n);
+    }
+
+    void forEachAncestor(@NonNull Name leaf, @NonNull Consumer<Name> consumer) {
+        namespace.forEachAncestor(leaf, consumer);
+    }
+
+    void forEachParent(@NonNull Name child, @NonNull Consumer<Name> consumer) {
+        namespace.forEachParent(child, consumer);
+    }
+
+    void forEachChild(@NonNull Name parent, @NonNull Consumer<Name> consumer) {
+        namespace.forEachChild(parent, consumer);
+    }
+
+    void forEachDescendant(@NonNull Name root, @NonNull Consumer<Name> consumer) {
+        namespace.forEachDescendant(root, consumer);
+    }
+
+    boolean registerRelationship(@NonNull Name parent, @NonNull Name child, boolean add, @NonNull String initiator) {
         if (add) {
-            namespace.addRelationship(parent, child, initiator);
+            return namespace.addRelationship(parent, child, initiator);
         } else {
-            namespace.removeRelationship(parent, child, initiator);
+            return namespace.removeRelationship(parent, child, initiator);
         }
     }
 
-    boolean subscribe(Name n, DataReceivedHandler h) {
+    boolean subscribe(@NonNull Name n, @NonNull DataReceivedHandler h) {
         synchronized (dataHandlers) {
             HashSet<DataReceivedHandler> handlers = dataHandlers.get(n);
             if (handlers == null) {
@@ -114,7 +141,7 @@ public class NetLayer_Impl {
         }
     }
 
-    boolean unSubscribe(Name n, DataReceivedHandler h) {
+    boolean unSubscribe(@NonNull Name n, @NonNull DataReceivedHandler h) {
         synchronized (dataHandlers) {
             HashSet<DataReceivedHandler> handlers = dataHandlers.get(n);
             if (handlers == null) {
@@ -130,10 +157,7 @@ public class NetLayer_Impl {
         }
     }
 
-    private void onDataReceivedFromGossip(byte[] data) {
-        if (data == null) {
-            return;
-        }
+    private void onDataReceivedFromGossip(@NonNull byte[] data) {
         ByteBuffer buffer = ByteBuffer.wrap(data);
         if (buffer.remaining() < Helper.INTEGER_SIZE) {
             Log.e(TAG, "Receive size (%d) < INTEGER_SIZE (%d)", buffer.remaining(), Helper.INTEGER_SIZE);
@@ -231,9 +255,9 @@ public class NetLayer_Impl {
         }
     }
 
-    private void onNameChanged(Name n, boolean added, String initiator) {
+    private void onNameChanged(@NonNull Name n, boolean added, @NonNull String initiator) {
         // ignore the events from the net layer
-        if (INITIATOR_NET.equals(initiator)) {
+        if (INITIATOR_NET.equals(initiator) || INITIATOR_INIT.equals(initiator)) {
             return;
         }
         // send msg to the net
@@ -247,9 +271,9 @@ public class NetLayer_Impl {
         gossipModule.addMessage(buffer.array(), true);
     }
 
-    private void onLinkChanged(Name parent, Name child, boolean added, String initiator) {
+    private void onLinkChanged(@NonNull Name parent, @NonNull Name child, boolean added, @NonNull String initiator) {
         // ignore the events from the net layer
-        if (INITIATOR_NET.equals(initiator)) {
+        if (INITIATOR_NET.equals(initiator) || INITIATOR_INIT.equals(initiator)) {
             return;
         }
         // send msg to the net

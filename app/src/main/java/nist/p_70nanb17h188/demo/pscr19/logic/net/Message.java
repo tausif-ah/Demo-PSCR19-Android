@@ -9,7 +9,7 @@ import java.util.Locale;
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 
 public class Message {
-    private static final int MAX_MSG_SHOW_LEN = 20;
+    private static final int MAX_MSG_SHOW_LEN = 50;
     @NonNull
     private final byte[] data;
     private final long nonce;

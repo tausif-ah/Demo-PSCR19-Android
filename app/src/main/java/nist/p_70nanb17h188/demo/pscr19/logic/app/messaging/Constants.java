@@ -1,5 +1,7 @@
 package nist.p_70nanb17h188.demo.pscr19.logic.app.messaging;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -7,18 +9,22 @@ import nist.p_70nanb17h188.demo.pscr19.logic.Tuple2;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 
 public class Constants {
+    @NonNull
     static Name getDefaultListenName() {
         return new Name(-99);
     }
 
+    @NonNull
     static Name getIncidentRoot() {
         return new Name(-102);
     }
 
+    @NonNull
     static Name getDispatcherRoot() {
         return new Name(-108);
     }
 
+    @NonNull
     static HashSet<MessagingNamespace.MessagingName> getInitialNamespaceNames() {
         HashSet<MessagingNamespace.MessagingName> ret = new HashSet<>();
         ret.add(new MessagingNamespace.MessagingName(new Name(-100), "New Jersey", MessagingNamespace.MessagingNameType.Administrative));
@@ -47,38 +53,41 @@ public class Constants {
         ret.add(new MessagingNamespace.MessagingName(new Name(-123), "Patrol Car", MessagingNamespace.MessagingNameType.Administrative));
         ret.add(new MessagingNamespace.MessagingName(new Name(-124), "TAC1", MessagingNamespace.MessagingNameType.Administrative));
         ret.add(new MessagingNamespace.MessagingName(new Name(-125), "Rescue 1", MessagingNamespace.MessagingNameType.Administrative));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-126), "Field Officer", MessagingNamespace.MessagingNameType.Administrative));
 
-        ret.add(new MessagingNamespace.MessagingName(new Name(-126), "Irma", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-127), "Task Force Leaders", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-128), "Safety Officers", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-129), "Search Team", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-130), "Search Team Managers", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-131), "Canine Search Specialist", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-132), "Technical Search Specialist", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-133), "Rescue Teams", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-134), "Rescue Team Managers", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-135), "Rescue Squad 1", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-136), "Rescue Squad 2", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-137), "Rescue Squad 1 Officer", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-138), "Rescue Squad 2 Officer", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-139), "Rescue Squad 2 Specialists", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-140), "Rescue Squad 1 Specialists", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-141), "Haz Mat Team", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-142), "Haz Mat Managers", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-143), "Haz Mat Specialists", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-144), "Heavy Equipment Rigging Specialists", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-145), "Medical Team", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-146), "Medical Managers", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-147), "Medical Specialists", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-148), "Logistic Team", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-149), "Logistic Team Managers", MessagingNamespace.MessagingNameType.Incident));
-        ret.add(new MessagingNamespace.MessagingName(new Name(-150), "Logistic Team Specialists", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-200), "Irma", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-201), "Task Force Leaders", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-202), "Safety Officers", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-203), "Search Team", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-204), "Search Team Managers", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-205), "Canine Search Specialist", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-206), "Technical Search Specialist", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-207), "Rescue Teams", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-208), "Rescue Team Managers", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-209), "Rescue Squad 1", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-210), "Rescue Squad 2", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-211), "Rescue Squad 1 Officer", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-212), "Rescue Squad 2 Officer", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-213), "Rescue Squad 2 Specialists", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-214), "Rescue Squad 1 Specialists", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-215), "Haz Mat Team", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-216), "Haz Mat Managers", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-217), "Haz Mat Specialists", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-218), "Heavy Equipment Rigging Specialists", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-219), "Medical Team", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-220), "Medical Managers", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-221), "Medical Specialists", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-222), "Logistic Team", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-223), "Logistic Team Managers", MessagingNamespace.MessagingNameType.Incident));
+        ret.add(new MessagingNamespace.MessagingName(new Name(-224), "Logistic Team Specialists", MessagingNamespace.MessagingNameType.Incident));
+
 
         return ret;
     }
 
+    @NonNull
     static ArrayList<Tuple2<Name, Name>> getInitialNamespaceRelationship() {
-        ArrayList<Tuple2<Name,Name>> ret = new ArrayList<>();
+        ArrayList<Tuple2<Name, Name>> ret = new ArrayList<>();
 
         ret.add(new Tuple2<>(new Name(-100), new Name(-103)));
         ret.add(new Tuple2<>(new Name(-100), new Name(-104)));
@@ -108,40 +117,40 @@ public class Constants {
         ret.add(new Tuple2<>(new Name(-117), new Name(-123)));
         ret.add(new Tuple2<>(new Name(-118), new Name(-124)));
         ret.add(new Tuple2<>(new Name(-118), new Name(-125)));
+        ret.add(new Tuple2<>(new Name(-117), new Name(-126)));
 
-        ret.add(new Tuple2<>(new Name(-102), new Name(-126)));
-        ret.add(new Tuple2<>(new Name(-126), new Name(-127)));
-        ret.add(new Tuple2<>(new Name(-126), new Name(-128)));
-        ret.add(new Tuple2<>(new Name(-126), new Name(-129)));
-        ret.add(new Tuple2<>(new Name(-126), new Name(-133)));
-        ret.add(new Tuple2<>(new Name(-126), new Name(-141)));
-        ret.add(new Tuple2<>(new Name(-126), new Name(-145)));
-        ret.add(new Tuple2<>(new Name(-126), new Name(-148)));
-        ret.add(new Tuple2<>(new Name(-129), new Name(-130)));
-        ret.add(new Tuple2<>(new Name(-129), new Name(-131)));
-        ret.add(new Tuple2<>(new Name(-129), new Name(-132)));
-        ret.add(new Tuple2<>(new Name(-133), new Name(-134)));
-        ret.add(new Tuple2<>(new Name(-133), new Name(-135)));
-        ret.add(new Tuple2<>(new Name(-133), new Name(-136)));
-        ret.add(new Tuple2<>(new Name(-135), new Name(-137)));
-        ret.add(new Tuple2<>(new Name(-135), new Name(-140)));
-        ret.add(new Tuple2<>(new Name(-136), new Name(-138)));
-        ret.add(new Tuple2<>(new Name(-136), new Name(-139)));
-        ret.add(new Tuple2<>(new Name(-141), new Name(-142)));
-        ret.add(new Tuple2<>(new Name(-141), new Name(-143)));
-        ret.add(new Tuple2<>(new Name(-141), new Name(-144)));
-        ret.add(new Tuple2<>(new Name(-145), new Name(-146)));
-        ret.add(new Tuple2<>(new Name(-145), new Name(-147)));
-        ret.add(new Tuple2<>(new Name(-148), new Name(-149)));
-        ret.add(new Tuple2<>(new Name(-148), new Name(-150)));
+        ret.add(new Tuple2<>(new Name(-102), new Name(-200)));
+        ret.add(new Tuple2<>(new Name(-200), new Name(-201)));
+        ret.add(new Tuple2<>(new Name(-200), new Name(-202)));
+        ret.add(new Tuple2<>(new Name(-200), new Name(-203)));
+        ret.add(new Tuple2<>(new Name(-200), new Name(-207)));
+        ret.add(new Tuple2<>(new Name(-200), new Name(-215)));
+        ret.add(new Tuple2<>(new Name(-200), new Name(-219)));
+        ret.add(new Tuple2<>(new Name(-200), new Name(-222)));
+        ret.add(new Tuple2<>(new Name(-203), new Name(-204)));
+        ret.add(new Tuple2<>(new Name(-203), new Name(-205)));
+        ret.add(new Tuple2<>(new Name(-203), new Name(-206)));
+        ret.add(new Tuple2<>(new Name(-207), new Name(-208)));
+        ret.add(new Tuple2<>(new Name(-207), new Name(-209)));
+        ret.add(new Tuple2<>(new Name(-207), new Name(-210)));
+        ret.add(new Tuple2<>(new Name(-209), new Name(-211)));
+        ret.add(new Tuple2<>(new Name(-209), new Name(-214)));
+        ret.add(new Tuple2<>(new Name(-210), new Name(-212)));
+        ret.add(new Tuple2<>(new Name(-210), new Name(-213)));
+        ret.add(new Tuple2<>(new Name(-215), new Name(-216)));
+        ret.add(new Tuple2<>(new Name(-215), new Name(-217)));
+        ret.add(new Tuple2<>(new Name(-215), new Name(-218)));
+        ret.add(new Tuple2<>(new Name(-219), new Name(-220)));
+        ret.add(new Tuple2<>(new Name(-219), new Name(-221)));
+        ret.add(new Tuple2<>(new Name(-222), new Name(-223)));
+        ret.add(new Tuple2<>(new Name(-222), new Name(-224)));
 
-        ret.add(new Tuple2<>(new Name(-148), new Name(-149)));
-        ret.add(new Tuple2<>(new Name(-148), new Name(-150)));
-        ret.add(new Tuple2<>(new Name(-127), new Name(-109)));
-        ret.add(new Tuple2<>(new Name(-147), new Name(-116)));
-        ret.add(new Tuple2<>(new Name(-137), new Name(-123)));
-        ret.add(new Tuple2<>(new Name(-140), new Name(-119)));
-        ret.add(new Tuple2<>(new Name(-140), new Name(-120)));
+        ret.add(new Tuple2<>(new Name(-201), new Name(-109)));
+        ret.add(new Tuple2<>(new Name(-221), new Name(-116)));
+        ret.add(new Tuple2<>(new Name(-211), new Name(-123)));
+        ret.add(new Tuple2<>(new Name(-214), new Name(-119)));
+        ret.add(new Tuple2<>(new Name(-214), new Name(-120)));
+
 
         return ret;
     }

@@ -9,7 +9,8 @@ import java.util.Locale;
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 
 public class Name {
-    static final int WRITE_SIZE = Helper.LONG_SIZE;
+
+    public static final int WRITE_SIZE = Helper.LONG_SIZE;
 
     private final long value;
 
@@ -22,8 +23,7 @@ public class Name {
     }
 
     /**
-     * Gets the value of the name.
-     * Should not be used by app layer.
+     * Gets the value of the name. Should not be used by app layer.
      *
      * @return the value of the name
      */
@@ -53,20 +53,21 @@ public class Name {
         return this.value == other.value;
     }
 
-    boolean write(@NonNull ByteBuffer byteBuffer) {
-        if (byteBuffer.capacity() - byteBuffer.position() < Helper.LONG_SIZE) return false;
+    public boolean write(@NonNull ByteBuffer byteBuffer) {
+        if (byteBuffer.capacity() - byteBuffer.position() < Helper.LONG_SIZE) {
+            return false;
+        }
         byteBuffer.putLong(value);
         return true;
     }
 
     @Nullable
-    static Name read(@NonNull ByteBuffer byteBuffer) {
+    public static Name read(@NonNull ByteBuffer byteBuffer) {
         if (byteBuffer.remaining() < Helper.LONG_SIZE) {
             return null;
         }
         return new Name(byteBuffer.getLong());
     }
-
 
     @NonNull
     @Override

@@ -12,20 +12,23 @@ import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 
 public class Helper {
+
     /**
-     * A common interface shared between the logic and the gui, mostly for ui updates like notifications.
+     * A common interface shared between the logic and the gui, mostly for ui
+     * updates like notifications.
      */
     public static final String CONTEXT_USER_INTERFACE = "nist.p_70nanb17h188.demo.pscr19.gui";
 
     /**
-     * An action to let the gui notify the user something is happening.
-     * It should have extra {@link #EXTRA_NOTIFICATION_CONTENT} ({@link String}) for the text to be notified.
-     * It also has an extra {@link #EXTRA_NOTIFICATION_TYPE} ({@link LogType}) for the type of the notification.
+     * An action to let the gui notify the user something is happening. It
+     * should have extra {@link #EXTRA_NOTIFICATION_CONTENT} ({@link String})
+     * for the text to be notified. It also has an extra
+     * {@link #EXTRA_NOTIFICATION_TYPE} ({@link LogType}) for the type of the
+     * notification.
      */
     public static final String ACTION_NOTIFY_USER = "nist.p_70nanb17h188.demo.pscr19.gui.notifyUser";
     public static final String EXTRA_NOTIFICATION_CONTENT = "notificationContent";
     public static final String EXTRA_NOTIFICATION_TYPE = "notificationType";
-
 
     public static void notifyUser(@NonNull LogType type, @NonNull String content) {
         Context.getContext(CONTEXT_USER_INTERFACE).sendBroadcast(new Intent(ACTION_NOTIFY_USER).putExtra(EXTRA_NOTIFICATION_CONTENT, content).putExtra(EXTRA_NOTIFICATION_TYPE, type));
@@ -87,8 +90,9 @@ public class Helper {
 
     @NonNull
     public static String getRandomString(int lengthMin, int lengthMax, @NonNull String candidateCharSet) {
-        if (lengthMin <= 0 || lengthMax < lengthMin)
+        if (lengthMin <= 0 || lengthMax < lengthMin) {
             throw new IllegalArgumentException("lengthMin and lengthMax should be > 0 and lengthMax should > lengthMin");
+        }
 
         int length = lengthMin == lengthMax ? lengthMin : DEFAULT_RANDOM.nextInt(lengthMax - lengthMin) + lengthMin;
         char[] ret = new char[length];
@@ -96,6 +100,14 @@ public class Helper {
             ret[i] = candidateCharSet.charAt(DEFAULT_RANDOM.nextInt(candidateCharSet.length()));
         }
         return new String(ret);
+    }
+
+    public static long getPositiveRandom() {
+        for (;;) {
+            long v = DEFAULT_RANDOM.nextLong();
+            if (v == Long.MIN_VALUE || v == 0) continue;
+            return v < 0 ? -v : v;
+        }
     }
 
 }

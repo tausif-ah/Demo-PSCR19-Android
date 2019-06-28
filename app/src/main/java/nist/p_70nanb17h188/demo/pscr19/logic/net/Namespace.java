@@ -11,6 +11,7 @@ import nist.p_70nanb17h188.demo.pscr19.Helper;
 
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
+import nist.p_70nanb17h188.demo.pscr19.logic.Consumer;
 
 public class Namespace {
 
@@ -34,7 +35,7 @@ public class Namespace {
      * action.
      * <p>
      * The current names can be iterated through
-     * {@link #forEachName(NameConsumer)}.
+     * {@link #forEachName(Consumer)}.
      */
     public static final String ACTION_NAME_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.Namespace.nameChanged";
     public static final String EXTRA_NAME = "name";
@@ -50,17 +51,12 @@ public class Namespace {
      * initiator of the action.
      * <p>
      * The current relationships can be iterated through function
-     * {@link #forEachChild(Name, NameConsumer)} and
-     * {@link #forEachParent(Name, NameConsumer)}.
+     * {@link #forEachChild(Name, Consumer)} and
+     * {@link #forEachParent(Name, Consumer)}.
      */
     public static final String ACTION_RELATIONSHIP_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.Namespace.relationshipChanged";
     public static final String EXTRA_PARENT = "parent";
     public static final String EXTRA_CHILD = "child";
-
-    public interface NameConsumer {
-
-        void accept(@NonNull Name name);
-    }
 
     public static class LoopDetectedException extends Exception {
 
@@ -89,10 +85,11 @@ public class Namespace {
         return allNames.containsKey(name);
     }
 
+    @NonNull
     private NameWithRelationship innerAddName(@NonNull Name name, @NonNull String initiator) {
         NameWithRelationship ret = allNames.get(name);
         if (ret == null) {
-            allNames.put(name, new NameWithRelationship(name));
+            allNames.put(name, ret = new NameWithRelationship(name));
             Context.getContext(CONTEXT_NAMESPACE).sendBroadcast(
                     new Intent(ACTION_NAME_CHANGED)
                             .putExtra(EXTRA_NAME, name)
@@ -108,9 +105,21 @@ public class Namespace {
      *
      * @param name      The name to be added.
      * @param initiator The initiator of the action.
+     *
+     * @return True if the name is added, false if the name already exists.
      */
-    public synchronized void addName(@NonNull Name name, @NonNull String initiator) {
-        innerAddName(name, initiator);
+    public synchronized boolean addName(@NonNull Name name, @NonNull String initiator) {
+        NameWithRelationship ret = allNames.get(name);
+        if (ret != null) {
+            return false;
+        }
+        allNames.put(name, new NameWithRelationship(name));
+        Context.getContext(CONTEXT_NAMESPACE).sendBroadcast(
+                new Intent(ACTION_NAME_CHANGED)
+                        .putExtra(EXTRA_NAME, name)
+                        .putExtra(EXTRA_ADDED, true)
+                        .putExtra(EXTRA_INITIATOR, initiator));
+        return true;
     }
 
     /**
@@ -118,13 +127,15 @@ public class Namespace {
      * {@link #ACTION_NAME_CHANGED} will be broadcasted.
      *
      * @param initiator The initiator of the action.
+     * @return The name created.
      */
-    public synchronized void addRandomName(@NonNull String initiator) {
+    public synchronized Name addRandomName(@NonNull String initiator) {
         Name n;
         do {
-            n = new Name(Helper.DEFAULT_RANDOM.nextLong() % (RANDOM_NAME_MAX - RANDOM_NAME_MIN) + RANDOM_NAME_MIN);
+            n = new Name(Helper.getPositiveRandom() % (RANDOM_NAME_MAX - RANDOM_NAME_MIN) + RANDOM_NAME_MIN);
         } while (allNames.containsKey(n));
         innerAddName(n, initiator);
+        return n;
     }
 
     /**
@@ -136,9 +147,11 @@ public class Namespace {
      * @param name      The name to be deleted.
      * @param initiator The initiator of the action.
      */
-    public synchronized void removeName(@NonNull Name name, @NonNull String initiator) {
+    public synchronized boolean removeName(@NonNull Name name, @NonNull String initiator) {
         NameWithRelationship n = allNames.get(name);
-        if (n != null) {
+        if (n == null) {
+            return false;
+        }
             n.clearRelationships(initiator);
             allNames.remove(name);
             Context.getContext(CONTEXT_NAMESPACE).sendBroadcast(
@@ -146,7 +159,7 @@ public class Namespace {
                             .putExtra(EXTRA_NAME, name)
                             .putExtra(EXTRA_ADDED, false)
                             .putExtra(EXTRA_INITIATOR, initiator));
-        }
+        return true;
     }
 
     /**
@@ -192,7 +205,7 @@ public class Namespace {
      *
      * @param consumer The consumer of the names.
      */
-    public synchronized void forEachName(@NonNull NameConsumer consumer) {
+    public synchronized void forEachName(@NonNull Consumer<Name> consumer) {
         for (NameWithRelationship value : allNames.values()) {
             consumer.accept(value.name);
         }
@@ -206,7 +219,7 @@ public class Namespace {
      * @param parent   The parent name.
      * @param consumer The consumer of the child names.
      */
-    public synchronized void forEachChild(@NonNull Name parent, @NonNull NameConsumer consumer) {
+    public synchronized void forEachChild(@NonNull Name parent, @NonNull Consumer<Name> consumer) {
         NameWithRelationship p = allNames.get(parent);
         if (p != null) {
             p.forEachChild(consumer);
@@ -221,7 +234,7 @@ public class Namespace {
      * @param child    The child name.
      * @param consumer The consumer of the parent names.
      */
-    public synchronized void forEachParent(@NonNull Name child, @NonNull NameConsumer consumer) {
+    public synchronized void forEachParent(@NonNull Name child, @NonNull Consumer<Name> consumer) {
         NameWithRelationship c = allNames.get(child);
         if (c != null) {
             c.forEachParent(consumer);
@@ -237,7 +250,7 @@ public class Namespace {
      * @param root     The root name.
      * @param consumer The consumer of the descendant names.
      */
-    public synchronized void forEachDescendant(@NonNull Name root, @NonNull NameConsumer consumer) {
+    public synchronized void forEachDescendant(@NonNull Name root, @NonNull Consumer<Name> consumer) {
         NameWithRelationship r = allNames.get(root);
         if (r != null) {
             r.forEachDescendant(consumer);
@@ -253,7 +266,7 @@ public class Namespace {
      * @param leaf     The leaf name.
      * @param consumer The consumer of the ancestor names.
      */
-    public synchronized void forEachAncestor(@NonNull Name leaf, @NonNull NameConsumer consumer) {
+    public synchronized void forEachAncestor(@NonNull Name leaf, @NonNull Consumer<Name> consumer) {
         NameWithRelationship l = allNames.get(leaf);
         if (l != null) {
             l.forEachAncestor(consumer);
@@ -382,19 +395,19 @@ public class Namespace {
             }
         }
 
-        void forEachChild(@NonNull NameConsumer consumer) {
+        void forEachChild(@NonNull Consumer<Name> consumer) {
             for (NameWithRelationship child : children) {
                 consumer.accept(child.name);
             }
         }
 
-        void forEachParent(@NonNull NameConsumer consumer) {
+        void forEachParent(@NonNull Consumer<Name> consumer) {
             for (NameWithRelationship parent : parents) {
                 consumer.accept(parent.name);
             }
         }
 
-        void forEachAncestor(@NonNull NameConsumer consumer) {
+        void forEachAncestor(@NonNull Consumer<Name> consumer) {
             ArrayDeque<NameWithRelationship> todo = new ArrayDeque<>();
             HashSet<NameWithRelationship> traversed = new HashSet<>();
             todo.add(this);
@@ -412,7 +425,7 @@ public class Namespace {
             }
         }
 
-        void forEachDescendant(@NonNull NameConsumer consumer) {
+        void forEachDescendant(@NonNull Consumer<Name> consumer) {
             ArrayDeque<NameWithRelationship> todo = new ArrayDeque<>();
             HashSet<NameWithRelationship> traversed = new HashSet<>();
             todo.add(this);
