@@ -68,6 +68,7 @@ public class LinkFragment extends Fragment {
         viewModel.bluetoothDiscovering.observe(this, discovering -> txtBluetoothUpdate.setCompoundDrawablesWithIntrinsicBounds(0, 0, Constants.getDiscoverStatusImageResource(discovering), 0));
         txtWifiDiscoverUpdate.setOnClickListener(v -> LinkLayer.getDefaultImplementation().getWifiLinkManager().discoverPeers());
         txtBluetoothUpdate.setOnClickListener(v -> {
+            LinkLayer.getDefaultImplementation().getBluetoothLinkManager().startDiscovery();
 //            Context.getContext(Helper.CONTEXT_USER_INTERFACE).sendBroadcast(new Intent(Helper.ACTION_NOTIFY_USER).putExtra(Helper.EXTRA_NOTIFICATION_TYPE, LogType.Info).putExtra(Helper.EXTRA_NOTIFICATION_CONTENT, "txtBluetoothUpdate clicked!"));
         });
 

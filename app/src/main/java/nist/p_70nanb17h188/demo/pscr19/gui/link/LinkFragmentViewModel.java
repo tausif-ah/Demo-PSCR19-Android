@@ -51,12 +51,16 @@ public class LinkFragmentViewModel extends ViewModel {
                         .addAction(WifiLinkManager.ACTION_WIFI_DISCOVERY_STATE_CHANGED)
                         .addAction(WifiLinkManager.ACTION_WIFI_LIST_CHANGED)
         );
+        Context.getContext(BluetoothLinkManager.CONTEXT_BLUETOOTH_LINK_MANAGER).registerReceiver(
+                receiver,
+                new IntentFilter()
+                        .addAction(BluetoothLinkManager.ACTION_BLUETOOTH_DEVICE_FOUND));
         Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).registerReceiver(
                 receiver,
                 new IntentFilter()
                         .addAction(LinkLayer.ACTION_LINK_CHANGED)
         );
-        Context.getContext(BluetoothLinkManager.CONTEXT_BLUETOOTH_LINK_MANAGER).registerReceiver(receiver, new IntentFilter().addAction(BluetoothLinkManager.ACTION_BLUETOOTH_LIST_CHANGED));
+
         synchronizeData();
     }
 
@@ -87,8 +91,8 @@ public class LinkFragmentViewModel extends ViewModel {
                     }
                 }
                 break;
-            case BluetoothLinkManager.ACTION_BLUETOOTH_LIST_CHANGED:
-                updateBluetoothDeviceList(intent.getExtra(BluetoothLinkManager.EXTRA_DEVICE_LIST));
+            case BluetoothLinkManager.ACTION_BLUETOOTH_DEVICE_FOUND:
+                updateBluetoothDeviceList(intent.getExtra(BluetoothLinkManager.EXTRA_DEVICE));
                 break;
         }
     }
@@ -98,6 +102,7 @@ public class LinkFragmentViewModel extends ViewModel {
         super.onCleared();
         Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).unregisterReceiver(receiver);
         Context.getContext(WifiLinkManager.CONTEXT_WIFI_LINK_MANAGER).unregisterReceiver(receiver);
+        Context.getContext(BluetoothLinkManager.CONTEXT_BLUETOOTH_LINK_MANAGER).unregisterReceiver(receiver);
     }
 
     private void synchronizeData() {
@@ -148,10 +153,15 @@ public class LinkFragmentViewModel extends ViewModel {
         }
     }
 
-    private void updateBluetoothDeviceList(ArrayList<BluetoothDevice> bluetoothDevices) {
-        for (BluetoothDevice device: bluetoothDevices
+    private void updateBluetoothDeviceList(BluetoothDevice device) {
+        Log.d("newBtLinkFragment", device.getName());
+        for (Link l: links
              ) {
-            Log.d("bluetooth device name", device.getName());
+            if (l instanceof LinkBluetooth) {
+                if (device.getName().equals(l.name)) {
+                    ((LinkBluetooth) l).setDeviceInDiscovery(device);
+                }
+            }
         }
     }
 }

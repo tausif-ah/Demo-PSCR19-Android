@@ -8,32 +8,40 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.view.View;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.MyApplication;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 public class BluetoothLinkManager extends Thread{
 
     private BluetoothAdapter bluetoothAdapter;
-    private int timeSlotNo;
     private ArrayList<BluetoothDevice> bluetoothDevices;
     public static final String CONTEXT_BLUETOOTH_LINK_MANAGER = "nist.p_70nanb17h188.demo.pscr19.logic.link.BluetoothLinkManager";
-    public static final String ACTION_BLUETOOTH_LIST_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.link.BluetoothLinkManager.listChanged";
-    public static final String EXTRA_DEVICE_LIST = "deviceList";
+    public static final String ACTION_BLUETOOTH_DEVICE_FOUND = "nist.p_70nanb17h188.demo.pscr19.logic.link.BluetoothLinkManager.deviceFound";
+    public static final String EXTRA_DEVICE = "device";
     private BluetoothServerSocket bluetoothServerSocket;
+    private BluetoothSocket bluetoothSocket1;
+    private BluetoothSocket bluetoothSocket2;
+    private InputStream inputStream1;
+    private InputStream inputStream2;
 
     BluetoothLinkManager() {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        timeSlotNo = 0;
         bluetoothDevices = new ArrayList<>();
         setBluetoothName();
-        makeBluetoothDeviceDiscoverable();
+        bluetoothSocket1 = null;
+        bluetoothSocket2 = null;
 //        try {
 //            bluetoothServerSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(Constants.RF_COMM_LISTENER, UUID.fromString(Constants.MY_UUID));
 //        }catch (IOException ex) {
@@ -56,8 +64,6 @@ public class BluetoothLinkManager extends Thread{
                 }
             }
         }, intentFilter);
-        Timer timer = new Timer();
-        timer.scheduleAtFixedRate(new controlBluetoothDiscovery(), 0, Constants.BLUETOOTH_DISCOVERY_CYCLE_LENGTH * 1000);
     }
 
     private void setBluetoothName() {
@@ -65,11 +71,14 @@ public class BluetoothLinkManager extends Thread{
         bluetoothAdapter.setName(name);
     }
 
-    private void makeBluetoothDeviceDiscoverable() {
-        android.content.Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, Constants.BLUETOOTH_dISCOVERABLE_LENGTH);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        MyApplication.getDefaultInstance().getApplicationContext().startActivity(intent);
+    public void startDiscovery() {
+        if (bluetoothAdapter.isDiscovering()) {
+            bluetoothAdapter.cancelDiscovery();
+            if (bluetoothDevices.size() > 0)
+                bluetoothDevices.clear();
+            bluetoothDevices = new ArrayList<>();
+        }
+        bluetoothAdapter.startDiscovery();
     }
 
     private void BluetoothDeviceFound(BluetoothDevice newDevice) {
@@ -86,8 +95,11 @@ public class BluetoothLinkManager extends Thread{
                     break;
                 }
             }
-            if (isNewDevice)
+            if (isNewDevice) {
+                android.util.Log.d("newBtFromManager", newDevice.getName());
                 bluetoothDevices.add(newDevice);
+                nist.p_70nanb17h188.demo.pscr19.imc.Context.getContext(CONTEXT_BLUETOOTH_LINK_MANAGER).sendBroadcast(new nist.p_70nanb17h188.demo.pscr19.imc.Intent(ACTION_BLUETOOTH_DEVICE_FOUND).putExtra(EXTRA_DEVICE, newDevice));
+            }
         }
     }
 
@@ -95,32 +107,47 @@ public class BluetoothLinkManager extends Thread{
     public void run() {
         super.run();
         BluetoothSocket bluetoothSocket;
+        byte buffer1[] = new byte[500];
         while (true) {
             try {
-                bluetoothSocket = bluetoothServerSocket.accept();
-
+                if (bluetoothSocket1 == null) {
+                    bluetoothSocket1 = bluetoothServerSocket.accept();
+                    inputStream1 = bluetoothSocket1.getInputStream();
+                }
+                else {
+                    bluetoothSocket2 = bluetoothServerSocket.accept();
+                }
+                int numbytes = inputStream1.read(buffer1);
+                String data;
+                if (numbytes > 0) {
+                    data = new String(buffer1);
+                    Log.i("Name Received", data);
+                }
             } catch (IOException ex) {
 
             }
         }
     }
 
-    private class controlBluetoothDiscovery extends TimerTask {
-        @Override
-        public void run() {
-            if (timeSlotNo%2==0) {
-                bluetoothDevices = new ArrayList<>();
-//                adding paired devices
-                bluetoothDevices.addAll(bluetoothAdapter.getBondedDevices());
-//                initiating discovery
-                bluetoothAdapter.startDiscovery();
+    private void connect(BluetoothDevice device) {
+        if (bluetoothSocket1 == null) {
+            try {
+                bluetoothSocket1 = device.createRfcommSocketToServiceRecord(UUID.fromString(Constants.MY_UUID));
+                bluetoothSocket1.connect();
+                inputStream1 = bluetoothSocket1.getInputStream();
+//                write(bluetoothSocket1, Device.getName());
+            } catch (IOException ex) {
+
             }
-            else {
-//                canceling discovery
-                bluetoothAdapter.cancelDiscovery();
-                nist.p_70nanb17h188.demo.pscr19.imc.Context.getContext(CONTEXT_BLUETOOTH_LINK_MANAGER).sendBroadcast(new nist.p_70nanb17h188.demo.pscr19.imc.Intent(ACTION_BLUETOOTH_LIST_CHANGED).putExtra(EXTRA_DEVICE_LIST, bluetoothDevices));
-            }
-            timeSlotNo++;
+        }
+    }
+
+    private void write(BluetoothSocket bluetoothSocket, String data) {
+        try {
+            OutputStream outputStream = bluetoothSocket.getOutputStream();
+            outputStream.write(data.getBytes());
+            outputStream.flush();
+        } catch (IOException writeEx) {
         }
     }
 }
