@@ -41,8 +41,9 @@ public class Constants {
     public static String[] getWifiDirectNeighbors() {
         switch (Device.getName()) {
             case Device.NAME_M1:
-                return new String[]{Device.NAME_PC1, Device.NAME_M2, Device.NAME_MULE};
+                return new String[]{Device.NAME_PC1, Device.NAME_M2, Device.NAME_MULE, Device.NAME_S11};
             case Device.NAME_M2:
+            case Device.NAME_S11:
             case Device.NAME_PC1:
                 return new String[]{Device.NAME_M1};
             case Device.NAME_MULE:
