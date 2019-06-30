@@ -72,6 +72,8 @@ public class MessagingNamespace {
 
     public static void init() {
         defaultInstance = new MessagingNamespace();
+        Constants.initTemplates();
+
     }
 
     @NonNull

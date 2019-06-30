@@ -154,4 +154,146 @@ public class Constants {
 
         return ret;
     }
+
+    static void initTemplates() {
+
+        // Template Structural Collapse
+        {
+            HashSet<MessagingNamespace.MessagingName> allnames = new HashSet<>();
+            ArrayList<Tuple2<Name, Name>> allRelationships = new ArrayList<>();
+
+            allnames.add(new MessagingNamespace.MessagingName(new Name(1), "Structural collapse", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(2), "Task force leader", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(3), "Safety officer", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(4), "Plans officer", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(5), "Search team", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(6), "Search team manager", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(7), "Canine search specialist T1", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(8), "Canine search specialist T2", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(9), "Technical search specialists", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(10), "Rescue team", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(11), "Rescue team manager", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(12), "Rescue squad 1", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(13), "Rescue squad 2", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(14), "Rescue squad 3", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(15), "Rescue squad 4", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(16), "Rescue s1 officer", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(17), "Rescue s2 officer", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(18), "Rescue s3 officer", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(19), "Rescue s4 officer", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(20), "Rescue s4 specialists", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(21), "Rescue s2 specialists", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(22), "Rescue s3 specialists", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(23), "Rescue s1 specialists", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(24), "Medical team", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(25), "Medical team manager", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(26), "Medical team specialist", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(27), "Medical team specialist", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(28), "Technical team", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(29), "Technical team manager", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(30), "Structures specialist", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(31), "Haz Mat specialist", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(32), "Heavy rigging & equipment specialist", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(33), "Communications specialist", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(34), "Logistics specialist", MessagingNamespace.MessagingNameType.Incident));
+
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(2)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(3)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(4)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(5)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(10)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(24)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(28)));
+            allRelationships.add(new Tuple2<>(new Name(5), new Name(6)));
+            allRelationships.add(new Tuple2<>(new Name(5), new Name(7)));
+            allRelationships.add(new Tuple2<>(new Name(5), new Name(8)));
+            allRelationships.add(new Tuple2<>(new Name(5), new Name(9)));
+            allRelationships.add(new Tuple2<>(new Name(10), new Name(11)));
+            allRelationships.add(new Tuple2<>(new Name(10), new Name(12)));
+            allRelationships.add(new Tuple2<>(new Name(10), new Name(13)));
+            allRelationships.add(new Tuple2<>(new Name(10), new Name(14)));
+            allRelationships.add(new Tuple2<>(new Name(10), new Name(15)));
+            allRelationships.add(new Tuple2<>(new Name(12), new Name(16)));
+            allRelationships.add(new Tuple2<>(new Name(12), new Name(23)));
+            allRelationships.add(new Tuple2<>(new Name(13), new Name(17)));
+            allRelationships.add(new Tuple2<>(new Name(13), new Name(21)));
+            allRelationships.add(new Tuple2<>(new Name(14), new Name(18)));
+            allRelationships.add(new Tuple2<>(new Name(14), new Name(22)));
+            allRelationships.add(new Tuple2<>(new Name(15), new Name(19)));
+            allRelationships.add(new Tuple2<>(new Name(15), new Name(20)));
+            allRelationships.add(new Tuple2<>(new Name(24), new Name(25)));
+            allRelationships.add(new Tuple2<>(new Name(24), new Name(26)));
+            allRelationships.add(new Tuple2<>(new Name(24), new Name(27)));
+            allRelationships.add(new Tuple2<>(new Name(28), new Name(29)));
+            allRelationships.add(new Tuple2<>(new Name(28), new Name(30)));
+            allRelationships.add(new Tuple2<>(new Name(28), new Name(31)));
+            allRelationships.add(new Tuple2<>(new Name(28), new Name(32)));
+            allRelationships.add(new Tuple2<>(new Name(28), new Name(33)));
+            allRelationships.add(new Tuple2<>(new Name(28), new Name(34)));
+
+
+            new Template("Structural collapse", new Name(1), new Name(2), allnames, allRelationships);
+
+        }
+
+        // Template Structural Collapse
+        {
+            HashSet<MessagingNamespace.MessagingName> allnames = new HashSet<>();
+            ArrayList<Tuple2<Name, Name>> allRelationships = new ArrayList<>();
+
+            allnames.add(new MessagingNamespace.MessagingName(new Name(1), "Incident", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(2), "Task Force Leaders", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(3), "Safety Officers", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(4), "Search Team", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(5), "Search Team Managers", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(6), "Canine Search Specialist", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(7), "Technical Search Specialist", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(8), "Rescue Teams", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(9), "Rescue Team Managers", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(10), "Rescue Squad 1", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(11), "Rescue Squad 2", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(12), "Rescue Squad 1 Officer", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(13), "Rescue Squad 2 Officer", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(14), "Rescue Squad 2 Specialists", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(15), "Rescue Squad 1 Specialists", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(16), "Haz Mat Team", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(17), "Haz Mat Managers", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(18), "Haz Mat Specialists", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(19), "Heavy Equipment Rigging Specialists", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(20), "Medical Team", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(21), "Medical Managers", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(22), "Medical Specialists", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(23), "Logistic Team", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(24), "Logistic Team Managers", MessagingNamespace.MessagingNameType.Incident));
+            allnames.add(new MessagingNamespace.MessagingName(new Name(25), "Logistic Team Specialists", MessagingNamespace.MessagingNameType.Incident));
+
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(2)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(3)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(4)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(8)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(16)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(20)));
+            allRelationships.add(new Tuple2<>(new Name(1), new Name(23)));
+            allRelationships.add(new Tuple2<>(new Name(4), new Name(5)));
+            allRelationships.add(new Tuple2<>(new Name(4), new Name(6)));
+            allRelationships.add(new Tuple2<>(new Name(4), new Name(7)));
+            allRelationships.add(new Tuple2<>(new Name(8), new Name(9)));
+            allRelationships.add(new Tuple2<>(new Name(8), new Name(10)));
+            allRelationships.add(new Tuple2<>(new Name(8), new Name(11)));
+            allRelationships.add(new Tuple2<>(new Name(10), new Name(12)));
+            allRelationships.add(new Tuple2<>(new Name(10), new Name(15)));
+            allRelationships.add(new Tuple2<>(new Name(11), new Name(13)));
+            allRelationships.add(new Tuple2<>(new Name(11), new Name(14)));
+            allRelationships.add(new Tuple2<>(new Name(16), new Name(17)));
+            allRelationships.add(new Tuple2<>(new Name(16), new Name(18)));
+            allRelationships.add(new Tuple2<>(new Name(16), new Name(19)));
+            allRelationships.add(new Tuple2<>(new Name(20), new Name(21)));
+            allRelationships.add(new Tuple2<>(new Name(20), new Name(22)));
+            allRelationships.add(new Tuple2<>(new Name(23), new Name(24)));
+            allRelationships.add(new Tuple2<>(new Name(23), new Name(25)));
+
+            new Template("Hurricane", new Name(1), new Name(2), allnames, allRelationships);
+
+        }
+    }
 }
