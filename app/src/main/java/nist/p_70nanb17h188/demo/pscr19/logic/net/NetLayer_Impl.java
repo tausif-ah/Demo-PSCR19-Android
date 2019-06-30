@@ -72,11 +72,11 @@ public class NetLayer_Impl {
         return namespace;
     }
 
-    void sendData(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, int start, int len, boolean store) {
+    void sendData(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, int start, int len, boolean store, @NonNull String initiator) {
         byte[] tmp = new byte[len];
         System.arraycopy(data, start, tmp, 0, len);
         // notify the applications
-        onDataReceived(src, dst, tmp);
+        onDataReceived(src, dst, tmp, initiator);
 
         int size = getWritePrefixSize()
                 + Name.WRITE_SIZE * 2  // src, dst
@@ -193,7 +193,7 @@ public class NetLayer_Impl {
                 }
                 byte[] d = new byte[size];
                 buffer.get(d);
-                onDataReceived(src, dst, d);
+                onDataReceived(src, dst, d, INITIATOR_NET);
                 break;
             }
             case TYPE_NAME_CHANGE: {
@@ -235,13 +235,13 @@ public class NetLayer_Impl {
         }
     }
 
-    private void onDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data) {
+    private void onDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, @NonNull String initiator) {
         if (getNamespace().hasName(dst)) {
             getNamespace().forEachDescendant(dst, n -> {
                 HashSet<DataReceivedHandler> handlers = dataHandlers.get(n);
                 if (handlers != null) {
                     for (DataReceivedHandler h : handlers) {
-                        h.dataReceived(src, n, data);
+                        h.dataReceived(src, n, data, initiator);
                     }
                 }
             });
@@ -249,7 +249,7 @@ public class NetLayer_Impl {
             HashSet<DataReceivedHandler> handlers = dataHandlers.get(dst);
             if (handlers != null) {
                 for (DataReceivedHandler h : handlers) {
-                    h.dataReceived(src, dst, data);
+                    h.dataReceived(src, dst, data, initiator);
                 }
             }
         }

@@ -27,6 +27,7 @@ import static org.bytedeco.javacpp.opencv_imgproc.resize;
 public class WorkOffloadSlave extends ViewModel {
     private static final long WAIT_WORK_DELAY_MS = 30000;
     private static final String TAG = "WorkOffloadSlave";
+    private static final String INITIATOR_WORK_OFFLOAD_SLAVE = "nist.p_70nanb17h188.demo.pscr19.gui.work_offload.WorkOffloadSlave";
 
     enum SlaveState {
         IDLE(R.string.work_offload_slave_state_idle),
@@ -50,21 +51,25 @@ public class WorkOffloadSlave extends ViewModel {
     final MutableLiveData<Name> currMasterName = new MutableLiveData<>();
     final MutableLiveData<Long> taskStart = new MutableLiveData<>();
     final MutableLiveData<Long> taskEnd = new MutableLiveData<>();
-    final Name myName = Constants.getName();
+    @NonNull
+    final Name myName;
     private final Name groupName = Constants.getMulticastName();
     private Handler workerHandler;
-    private final Thread workerThread;
 
     private final DataReceivedHandler multicastDataReceivedHandler = this::onMulticastDataReceived;
     private final DataReceivedHandler unicastDataReceivedHandler = this::onUnicastDataReceived;
 
     public WorkOffloadSlave() {
+        Name tmpMyName = Constants.getName();
+        assert tmpMyName != null;
+        myName = tmpMyName;
+
         currState.setValue(SlaveState.IDLE);
         currWorkId.setValue(0);
         enabled.setValue(false);
         NetLayer.subscribe(myName, unicastDataReceivedHandler);
         NetLayer.subscribe(groupName, multicastDataReceivedHandler);
-        workerThread = new Thread(this::workerThread);
+        Thread workerThread = new Thread(this::workerThread);
         workerThread.setDaemon(true);
         workerThread.start();
         while (workerHandler == null) {
@@ -89,7 +94,7 @@ public class WorkOffloadSlave extends ViewModel {
         NetLayer.unSubscribe(groupName, multicastDataReceivedHandler);
     }
 
-    private synchronized void onMulticastDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data) {
+    private synchronized void onMulticastDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, @NonNull String initiator) {
         if (!dst.equals(groupName)) return;
         SlaveState slaveState = currState.getValue();
         assert slaveState != null;
@@ -107,10 +112,10 @@ public class WorkOffloadSlave extends ViewModel {
         taskStart.postValue(null);
         taskEnd.postValue(null);
         workerHandler.postDelayed(() -> waitWorkTimeout(workId, src), WAIT_WORK_DELAY_MS);
-        NetLayer.sendData(myName, src, new DataWorkResponse(workId).toBytes(), false);
+        NetLayer.sendData(myName, src, new DataWorkResponse(workId).toBytes(), false, INITIATOR_WORK_OFFLOAD_SLAVE);
     }
 
-    private synchronized void onUnicastDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data) {
+    private synchronized void onUnicastDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, @NonNull String initiator) {
         if (!dst.equals(myName)) return;
         SlaveState slaveState = currState.getValue();
         assert slaveState != null;
@@ -180,7 +185,7 @@ public class WorkOffloadSlave extends ViewModel {
                 ByteBuffer buffer1 = ByteBuffer.allocate(2 * Helper.INTEGER_SIZE + Helper.DOUBLE_SIZE);
                 buffer1.putInt(resultId);
                 buffer1.putDouble(resultLevel);
-                NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), false);
+                NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), false, INITIATOR_WORK_OFFLOAD_SLAVE);
                 currState.postValue(SlaveState.IDLE);
             }
         }

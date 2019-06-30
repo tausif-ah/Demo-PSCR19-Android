@@ -43,7 +43,7 @@ import static org.bytedeco.javacpp.opencv_imgproc.resize;
 public class WorkOffloadMaster extends ViewModel {
     private static final String TAG = "WorkOffloadMaster";
     private static final long WAIT_RESPONSE_DELAY_MS = 2000;
-    private static final long PERFORM_TASK_DURATION = 5000;
+    private static final String INITIATOR_WORK_OFFLOAD_MASTER = "nist.p_70nanb17h188.demo.pscr19.gui.work_offload.WorkOffloadMaster";
 
     enum MasterState {
         IDLE(R.string.work_offload_master_state_idle),
@@ -97,7 +97,7 @@ public class WorkOffloadMaster extends ViewModel {
         synchronized void setSlaveTask(DataWorkContent content) {
             if (workContent != null || workResult != null) return;
             workContent = content;
-            NetLayer.sendData(masterName, slaveName, content.toBytes(), false);
+            NetLayer.sendData(masterName, slaveName, content.toBytes(), false, INITIATOR_WORK_OFFLOAD_MASTER);
             slaveState.postValue(SlaveState.WORKING);
         }
 
@@ -147,6 +147,7 @@ public class WorkOffloadMaster extends ViewModel {
     final ArrayList<Slave> slaves = new ArrayList<>();
 
     private final DataReceivedHandler dataReceivedHandler = this::onDataReceived;
+    @NonNull
     private final Name myName;
     private Handler workerHandler;
     private Consumer<WorkOffloadMaster> slaveChangedHandler = null;
@@ -159,6 +160,10 @@ public class WorkOffloadMaster extends ViewModel {
     private final CompletionService<double[]> ecs = new ExecutorCompletionService<>(pool);
 
     public WorkOffloadMaster() {
+        Name tmpMyName = Constants.getName();
+        assert  tmpMyName != null;
+        myName = tmpMyName;
+
         address.put("Adam", 1);
         address.put("Jack", 2);
         address.put("Mary", 5);
@@ -168,7 +173,6 @@ public class WorkOffloadMaster extends ViewModel {
         offload.setValue(true);
         face.setValue(true);
         showNoSlaveText.setValue(false);
-        myName = Constants.getName();
         boolean succeed = NetLayer.subscribe(myName, dataReceivedHandler);
         Log.d(TAG, "Subscribe name: %s, succeed=%b", myName, succeed);
         workerThread = new Thread(this::workerThread);
@@ -191,7 +195,7 @@ public class WorkOffloadMaster extends ViewModel {
         this.slaveChangedHandler = slaveChangedHandler;
     }
 
-    private void onDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data) {
+    private void onDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, @NonNull String initiator) {
         if (!dst.equals(myName)) return;
         MasterState state = currState.getValue();
         assert state != null;
@@ -246,7 +250,7 @@ public class WorkOffloadMaster extends ViewModel {
             showNoSlaveText.setValue(false);
             if (offload) {
                 currState.setValue(MasterState.WAIT_FOR_RESPONSE);
-                NetLayer.sendData(myName, Constants.getMulticastName(), new DataWorkRequest(workId).toBytes(), false);
+                NetLayer.sendData(myName, Constants.getMulticastName(), new DataWorkRequest(workId).toBytes(), false, INITIATOR_WORK_OFFLOAD_MASTER);
                 workerHandler.postDelayed(() -> onWaitSlaveTimeout(workId), WAIT_RESPONSE_DELAY_MS);
             } else {
                 taskStart.postValue(System.currentTimeMillis());

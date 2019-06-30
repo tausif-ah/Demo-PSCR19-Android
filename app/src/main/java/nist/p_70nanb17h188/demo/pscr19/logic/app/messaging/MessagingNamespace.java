@@ -15,6 +15,7 @@ import java.util.Objects;
 
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
+import nist.p_70nanb17h188.demo.pscr19.imc.DelayRunner;
 import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
 import nist.p_70nanb17h188.demo.pscr19.logic.Consumer;
 import nist.p_70nanb17h188.demo.pscr19.logic.Tuple2;
@@ -35,22 +36,12 @@ public class MessagingNamespace {
     public static final String CONTEXT_MESSAGINGNAMESPACE = "nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace";
 
     /**
-     * Broadcast intent action indicating that there are names added, removed,
-     * and relationships added, removed.
+     * Broadcast intent action indicating that there are names added, removed, and relationships added, removed.
      * <p>
-     * One extra {@link #EXTRA_NAMES_ADDED}
-     * (Collection&lt;{@link MessagingName}&gt;) indicates the names added.
-     * <p>
-     * Another extra {@link #EXTRA_NAMES_REMOVED}
-     * (Collection&lt;{@link Name}&gt;) indicates the names removed.
-     * <p>
-     * A third extra {@link #EXTRA_RELATIONSHIPS_ADDED}
-     * (Collection&lt;Tuple2&lt;{@link Name},{@link Name}&gt;&gt;) indicates the
-     * relationships added.
-     * <p>
-     * A fourth extra {@link #EXTRA_RELATIONSHIPS_REMOVED}
-     * (Collection&lt;Tuple2&lt;{@link Name},{@link Name}&gt;&gt;) indicates the
-     * relationships removed.
+     * One extra {@link #EXTRA_NAMES_ADDED} (Collection&lt;{@link MessagingName}&gt;) indicates the names added.
+     * Another extra {@link #EXTRA_NAMES_REMOVED} (Collection&lt;{@link Name}&gt;) indicates the names removed.
+     * A third extra {@link #EXTRA_RELATIONSHIPS_ADDED} (Collection&lt;Tuple2&lt;{@link Name},{@link Name}&gt;&gt;) indicates the relationships added.
+     * A fourth extra {@link #EXTRA_RELATIONSHIPS_REMOVED} (Collection&lt;Tuple2&lt;{@link Name},{@link Name}&gt;&gt;) indicates the relationships removed.
      */
     public static final String ACTION_NAMESPACE_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace.namespaceChanged";
     public static final String EXTRA_NAMES_ADDED = "na";
@@ -59,20 +50,20 @@ public class MessagingNamespace {
     public static final String EXTRA_RELATIONSHIPS_REMOVED = "rd";
 
     /**
-     * Broadcast intent action indicating that there are names added, removed,
-     * and relationships added, removed.
+     * Broadcast intent action indicating that there are names added, removed, and relationships added, removed.
      * <p>
-     * One extra {@link #EXTRA_NAME} ({@link MessagingName}) indicates the names
-     * whose appName is changed.
+     * One extra {@link #EXTRA_NAME} ({@link MessagingName}) indicates the names whose appName is changed.
      */
     public static final String ACTION_APPNAME_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace.appNameChanged";
     public static final String EXTRA_NAME = "name";
 
     private static final byte DATA_TYPE_GRAPH_CHANGED = 1;
     private static final byte DATA_TYPE_APPNAME_CHANGED = 2;
+    private static final long MESSAGE_BUFFER_FLUSH_DELAY = 1000;
 
     private static final String INITIATOR_INIT = NetLayer_Impl.INITIATOR_INIT;
     private static final String INITIATOR_NET = "nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace.net";
+    private static final String INITIATOR_APP = "nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace.app";
 
     private static final String TAG = "MessagingNamespace";
     private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
@@ -269,6 +260,29 @@ public class MessagingNamespace {
         }
     }
 
+    public synchronized String[] getNameIncidents(Name name) {
+        if (incidentMappings == null) {
+            calculateNameIncidents();
+        }
+        MessagingName mn = getName(name);
+        if (mn == null) {
+            Log.e(TAG, "getNameIncidents: cannot find name %s", name);
+            return new String[0];
+        }
+        HashSet<MessagingName> incidents = incidentMappings.get(mn);
+        if (incidents == null) {
+            // no incidents
+            return new String[0];
+        }
+        String[] ret = new String[incidents.size()];
+        int i = 0;
+        for (MessagingName incident : incidents) {
+            ret[i++] = incident.getAppName();
+        }
+        return ret;
+    }
+
+
     //    public Tuple3<Collection<GraphNode>, Integer, Integer> instantiateTemplate(int templateId, String incidentName) {
 //        throw new UnsupportedOperationException();
 //    }
@@ -290,7 +304,7 @@ public class MessagingNamespace {
         ArrayList<MessagingName> nas = new ArrayList<>();
         nas.add(mn);
         ArrayList<Tuple2<Name, Name>> ras = new ArrayList<>();
-        if (innerCreateRelationship(mn.getName(), parentName, initiator)) {
+        if (innerCreateRelationship(parentName, mn.getName(), initiator)) {
             ras.add(new Tuple2<>(parentName, mn.getName()));
         }
         notifyNamespaceEvent(nas, new ArrayList<>(), ras, new ArrayList<>(), initiator);
@@ -426,32 +440,14 @@ public class MessagingNamespace {
             return null;
         }
         String origAppName = mn.getAppName();
+        if (origAppName.equals(appName)) {
+            Log.d(TAG, "%s updateName, %s. orig name the same as new name, ignore", initiator, mn);
+            return mn;
+        }
         mn.setAppName(appName);
-        Log.d(TAG, "%s update Name, %s to origName=%s", initiator, name, mn, origAppName);
+        Log.d(TAG, "%s update Name, %s, origName=%s", initiator, mn, origAppName);
         notifyAppNameEvent(mn, initiator);
         return mn;
-    }
-
-    public synchronized String[] getNameIncidents(Name name) {
-        if (incidentMappings == null) {
-            calculateNameIncidents();
-        }
-        MessagingName mn = getName(name);
-        if (mn == null) {
-            Log.e(TAG, "getNameIncidents: cannot find name %s", name);
-            return new String[0];
-        }
-        HashSet<MessagingName> incidents = incidentMappings.get(mn);
-        if (incidents == null) {
-            // no incidents
-            return new String[0];
-        }
-        String[] ret = new String[incidents.size()];
-        int i = 0;
-        for (MessagingName incident : incidents) {
-            ret[i++] = incident.getAppName();
-        }
-        return ret;
     }
 
     private void clearNameIncidents() {
@@ -476,12 +472,12 @@ public class MessagingNamespace {
         );
     }
 
-    private synchronized void onMessageReceivedFromListenChannel(@NonNull Name src, @NonNull Name dst, @NonNull byte[] buf) {
-        // should not use the functions that notifies the net layer, write our own logic here
-        // the message should only arrive 
-        if (!dst.equals(Constants.getDefaultListenName())) {
+    private synchronized void onMessageReceivedFromListenChannel(@NonNull Name src, @NonNull Name dst, @NonNull byte[] buf, @NonNull String initiator) {
+        // ignore the messages that are 1) not on the listen channel, or 2) sent by myself
+        if (!dst.equals(Constants.getDefaultListenName()) || INITIATOR_APP.equals(initiator)) {
             return;
         }
+        // should not use the functions that notifies the net layer, write our own logic here
         ByteBuffer buffer = ByteBuffer.wrap(buf);
         byte type = buffer.get();
         switch (type) {
@@ -502,13 +498,16 @@ public class MessagingNamespace {
                                       @NonNull ArrayList<Tuple2<Name, Name>> ras,
                                       @NonNull ArrayList<Tuple2<Name, Name>> rds, String initiator) {
         // notify application
-        Context.getContext(CONTEXT_MESSAGINGNAMESPACE).sendBroadcast(
-                new Intent(ACTION_NAMESPACE_CHANGED)
-                        .putExtra(EXTRA_NAMES_ADDED, nas)
-                        .putExtra(EXTRA_NAMES_REMOVED, nds)
-                        .putExtra(EXTRA_RELATIONSHIPS_ADDED, ras)
-                        .putExtra(EXTRA_RELATIONSHIPS_REMOVED, rds)
-        );
+        // skip notification when update buffer presents, it will be eventually added to the event buffer
+        if (updateBuffer == null) {
+            Context.getContext(CONTEXT_MESSAGINGNAMESPACE).sendBroadcast(
+                    new Intent(ACTION_NAMESPACE_CHANGED)
+                            .putExtra(EXTRA_NAMES_ADDED, nas)
+                            .putExtra(EXTRA_NAMES_REMOVED, nds)
+                            .putExtra(EXTRA_RELATIONSHIPS_ADDED, ras)
+                            .putExtra(EXTRA_RELATIONSHIPS_REMOVED, rds)
+            );
+        }
         // save message
         if (!INITIATOR_INIT.equals(initiator) && !INITIATOR_NET.equals(initiator)) {
             byte[][] naNames = new byte[nas.size()][];
@@ -555,7 +554,7 @@ public class MessagingNamespace {
                 rd.getV1().write(buffer);
                 rd.getV2().write(buffer);
             }
-            NetLayer.sendData(Constants.getDefaultListenName(), Constants.getDefaultListenName(), buffer.array(), true);
+            NetLayer.sendData(Constants.getDefaultListenName(), Constants.getDefaultListenName(), buffer.array(), true, INITIATOR_APP);
         }
     }
 
@@ -639,11 +638,12 @@ public class MessagingNamespace {
             rds.add(new Tuple2<>(parent, child));
         }
 
+        startBuffer();
         // update data structure
-        ArrayList<MessagingName> effectiveNas = new ArrayList<>();
-        ArrayList<Name> effectiveNds = new ArrayList<>();
-        ArrayList<Tuple2<Name, Name>> effectiveRas = new ArrayList<>();
-        ArrayList<Tuple2<Name, Name>> effectiveRds = new ArrayList<>();
+//        ArrayList<MessagingName> effectiveNas = new ArrayList<>();
+//        ArrayList<Name> effectiveNds = new ArrayList<>();
+//        ArrayList<Tuple2<Name, Name>> effectiveRas = new ArrayList<>();
+//        ArrayList<Tuple2<Name, Name>> effectiveRds = new ArrayList<>();
 
         boolean needClearNameIncidents = false;
 
@@ -654,7 +654,7 @@ public class MessagingNamespace {
             }
             nameMappings.put(na.getName(), na);
             Log.d(TAG, "onNamespaceEventGotFromNet: add name %s", na);
-            effectiveNas.add(na);
+//            effectiveNas.add(na);
         }
 
         for (Name nd : nds) {
@@ -672,7 +672,7 @@ public class MessagingNamespace {
             }
             needClearNameIncidents = true;
             Log.d(TAG, "onNamespaceEventGotFromNet: remove name %s", mn);
-            effectiveNds.add(nd);
+//            effectiveNds.add(nd);
         }
 
         for (Tuple2<Name, Name> ra : ras) {
@@ -693,7 +693,7 @@ public class MessagingNamespace {
             child.parents.add(parent);
             needClearNameIncidents = true;
             Log.d(TAG, "onNamespaceEventGotFromNet: create relationship %s->%s", parent, child);
-            effectiveRas.add(ra);
+//            effectiveRas.add(ra);
         }
 
         for (Tuple2<Name, Name> rd : rds) {
@@ -714,29 +714,33 @@ public class MessagingNamespace {
             child.parents.remove(parent);
             needClearNameIncidents = true;
             Log.d(TAG, "onNamespaceEventGotFromNet: remove relationship %s->%s", parent, child);
-            effectiveRas.add(rd);
+//            effectiveRas.add(rd);
         }
 
         if (needClearNameIncidents) {
             clearNameIncidents();
         }
 
-        // notify the applications
-        Context.getContext(CONTEXT_MESSAGINGNAMESPACE).sendBroadcast(
-                new Intent(ACTION_NAMESPACE_CHANGED)
-                        .putExtra(EXTRA_NAMES_ADDED, effectiveNas)
-                        .putExtra(EXTRA_NAMES_REMOVED, effectiveNds)
-                        .putExtra(EXTRA_RELATIONSHIPS_ADDED, effectiveRas)
-                        .putExtra(EXTRA_RELATIONSHIPS_REMOVED, effectiveRds)
-        );
+        // notify the applications (no need to do it now, in the buffer)
+//        Context.getContext(CONTEXT_MESSAGINGNAMESPACE).sendBroadcast(
+//                new Intent(ACTION_NAMESPACE_CHANGED)
+//                        .putExtra(EXTRA_NAMES_ADDED, effectiveNas)
+//                        .putExtra(EXTRA_NAMES_REMOVED, effectiveNds)
+//                        .putExtra(EXTRA_RELATIONSHIPS_ADDED, effectiveRas)
+//                        .putExtra(EXTRA_RELATIONSHIPS_REMOVED, effectiveRds)
+//        );
     }
 
     private void notifyAppNameEvent(@NonNull MessagingName name, @NonNull String initiator) {
         // notify application
-        Context.getContext(CONTEXT_MESSAGINGNAMESPACE).sendBroadcast(
-                new Intent(ACTION_APPNAME_CHANGED)
-                        .putExtra(EXTRA_NAME, name)
-        );
+        // skip notification when update buffer presents, it will be eventually added to the event buffer
+        if (updateBuffer == null) {
+
+            Context.getContext(CONTEXT_MESSAGINGNAMESPACE).sendBroadcast(
+                    new Intent(ACTION_APPNAME_CHANGED)
+                            .putExtra(EXTRA_NAME, name)
+            );
+        }
 
         // write to the network
         if (!INITIATOR_INIT.equals(initiator) && !INITIATOR_NET.equals(initiator)) {
@@ -750,7 +754,7 @@ public class MessagingNamespace {
             name.getName().write(buffer);
             buffer.putInt(nameBytes.length);
             buffer.put(nameBytes);
-            NetLayer.sendData(Constants.getDefaultListenName(), Constants.getDefaultListenName(), buffer.array(), true);
+            NetLayer.sendData(Constants.getDefaultListenName(), Constants.getDefaultListenName(), buffer.array(), true, INITIATOR_APP);
         }
     }
 
@@ -778,14 +782,30 @@ public class MessagingNamespace {
         byte[] nameBytes = new byte[size];
         buffer.get(nameBytes);
         String newName = new String(nameBytes, DEFAULT_CHARSET);
-
         String origName = mn.getAppName();
+
+        startBuffer();
         mn.setAppName(newName);
         Log.d(TAG, "onAppNameEventGotFromNet: name=%s, origName=%s", mn, origName);
 
-        Context.getContext(CONTEXT_MESSAGINGNAMESPACE).sendBroadcast(
-                new Intent(ACTION_APPNAME_CHANGED)
-                        .putExtra(EXTRA_NAME, mn)
-        );
+        // notify the applications (no need to do it now, in the buffer)
+//        Context.getContext(CONTEXT_MESSAGINGNAMESPACE).sendBroadcast(
+//                new Intent(ACTION_APPNAME_CHANGED)
+//                        .putExtra(EXTRA_NAME, mn)
+//        );
+    }
+
+    private MessagingNamespaceBuffer updateBuffer = null;
+
+    private synchronized void startBuffer() {
+        if (updateBuffer != null) return;
+        updateBuffer = new MessagingNamespaceBuffer();
+        DelayRunner.getDefaultInstance().postDelayed(MESSAGE_BUFFER_FLUSH_DELAY, this::flushBuffer);
+    }
+
+    private synchronized void flushBuffer() {
+        if (updateBuffer == null) return;
+        updateBuffer.flush();
+        updateBuffer = null;
     }
 }

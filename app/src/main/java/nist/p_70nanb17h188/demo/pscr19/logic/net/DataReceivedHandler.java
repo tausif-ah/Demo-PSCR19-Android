@@ -10,7 +10,8 @@ public interface DataReceivedHandler {
      * @param src  name of the sender.
      * @param dst  name of the target.
      * @param data data received.
+     * @param initiator initiator of the action.
      */
-    void dataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data);
+    void dataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, @NonNull String initiator);
 
 }
