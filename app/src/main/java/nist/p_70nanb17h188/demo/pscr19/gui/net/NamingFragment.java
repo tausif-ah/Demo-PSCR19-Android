@@ -14,18 +14,20 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.ToggleButton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
-import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
+import nist.p_70nanb17h188.demo.pscr19.logic.net.Namespace;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 
 /**
@@ -33,15 +35,19 @@ import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
  */
 public class NamingFragment extends Fragment {
 
+    private static final Comparator<MessagingNamespace.MessagingName> DEFAULT_MESSAGING_NAME_COMPARATOR = (n1, n2) -> n1.getAppName().toLowerCase().compareTo(n2.getAppName().toLowerCase());
+    private static final Comparator<Name> DEFAULT_NAME_COMPARATOR = (n1, n2) -> Long.compare(n1.getValue(), n2.getValue());
+
     public static class NamingFragmentViewModel extends ViewModel {
-        final MutableLiveData<MessagingNamespace.MessagingName> currName = new MutableLiveData<>();
+        final MutableLiveData<Name> currName = new MutableLiveData<>();
+        final MutableLiveData<Boolean> usingMessagingNamespace = new MutableLiveData<>();
 
         public NamingFragmentViewModel() {
             MessagingNamespace namespace = MessagingNamespace.getDefaultInstance();
-            currName.setValue(namespace.getName(namespace.getIncidentRoot()));
+            currName.setValue(namespace.getIncidentRoot());
+            usingMessagingNamespace.setValue(true);
         }
     }
-
 
     private Spinner names;
     private NameListArrayAdapter namesAdapter;
@@ -69,7 +75,7 @@ public class NamingFragment extends Fragment {
         names.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                MessagingNamespace.MessagingName mn = namesAdapter.getItem(position);
+                Name mn = namesAdapter.getItem(position);
                 if (mn != null) viewModel.currName.postValue(mn);
             }
 
@@ -99,8 +105,16 @@ public class NamingFragment extends Fragment {
         descendants.setAdapter(descendantsAdapter);
         descendants.setOnItemClickListener((parent, view1, position, id) -> viewModel.currName.postValue(descendantsAdapter.getItem(position)));
 
+        ToggleButton namespaceSwitch = view.findViewById(R.id.naming_namespace_switch);
+        namespaceSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.usingMessagingNamespace.postValue(isChecked));
+
         updateNames();
         viewModel.currName.observe(this, this::setName);
+        viewModel.usingMessagingNamespace.observe(this, usingNamespace -> {
+            assert usingNamespace != null;
+            namespaceSwitch.setChecked(usingNamespace);
+            updateNames();
+        });
 
         // listen to context events
         Context.getContext(MessagingNamespace.CONTEXT_MESSAGINGNAMESPACE).registerReceiver(
@@ -109,7 +123,10 @@ public class NamingFragment extends Fragment {
         Context.getContext(MessagingNamespace.CONTEXT_MESSAGINGNAMESPACE).registerReceiver(
                 onAppNameChangeReceived,
                 new IntentFilter().addAction(MessagingNamespace.ACTION_APPNAME_CHANGED));
-
+        Context.getContext(Namespace.CONTEXT_NAMESPACE).registerReceiver(
+                onNamespaceChangeReceived,
+                new IntentFilter().addAction(Namespace.ACTION_NAME_CHANGED).addAction(Namespace.ACTION_RELATIONSHIP_CHANGED)
+        );
         return view;
     }
 
@@ -117,7 +134,9 @@ public class NamingFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         viewModel.currName.removeObservers(this);
+        viewModel.usingMessagingNamespace.removeObservers(this);
         Context.getContext(MessagingNamespace.CONTEXT_MESSAGINGNAMESPACE).unregisterReceiver(onNamespaceChangeReceived);
+        Context.getContext(Namespace.CONTEXT_NAMESPACE).unregisterReceiver(onNamespaceChangeReceived);
 
     }
 
@@ -132,56 +151,115 @@ public class NamingFragment extends Fragment {
     };
 
     private void updateNames() {
-        MessagingNamespace.MessagingName currName = viewModel.currName.getValue();
-
         MessagingNamespace namespace = MessagingNamespace.getDefaultInstance();
-        MessagingNamespace.MessagingName[] allNames = namespace.getAllNames().toArray(new MessagingNamespace.MessagingName[0]);
-        Arrays.sort(allNames, (n1, n2) -> n1.getAppName().toLowerCase().compareTo(n2.getAppName().toLowerCase()));
+        Name currName = viewModel.currName.getValue();
+
+        Boolean usingMessagingNamespace = viewModel.usingMessagingNamespace.getValue();
+        assert usingMessagingNamespace != null;
+
+
         namesAdapter.clear();
-        namesAdapter.addAll(allNames);
+        if (usingMessagingNamespace) {
+            MessagingNamespace.MessagingName[] allNames = namespace.getAllNames().toArray(new MessagingNamespace.MessagingName[0]);
+            Arrays.sort(allNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
+            for (MessagingNamespace.MessagingName name : allNames) namesAdapter.add(name.getName());
+
+        } else {
+            ArrayList<Name> allNameList = new ArrayList<>();
+            NetLayer.forEachName(allNameList::add);
+            Name[] allNames = allNameList.toArray(new Name[0]);
+            Arrays.sort(allNames, DEFAULT_NAME_COMPARATOR);
+            for (Name name : allNames) namesAdapter.add(name);
+        }
         namesAdapter.notifyDataSetChanged();
 
         // if current name is removed, go back to incident root
-        if (currName == null || namespace.getName(currName.getName()) == null) {
-            currName = namespace.getName(namespace.getIncidentRoot());
-        }
+        if (currName == null || namesAdapter.getPosition(currName) < 0)
+            currName = namespace.getIncidentRoot();
+
         viewModel.currName.postValue(currName);
         setName(currName);
     }
 
-    private void setName(MessagingNamespace.MessagingName mn) {
+    private void setName(Name name) {
         MessagingNamespace namespace = MessagingNamespace.getDefaultInstance();
-        if (mn == null) return;
-        names.setSelection(namesAdapter.getPosition(mn));
+        Boolean usingMessagingNamespace = viewModel.usingMessagingNamespace.getValue();
+        assert usingMessagingNamespace != null;
+        if (name == null) return;
+        names.setSelection(namesAdapter.getPosition(name));
 
-        HashSet<MessagingNamespace.MessagingName> children = new HashSet<>();
-        namespace.forEachChild(mn, children::add);
-        childrenAdapter.clear();
-        childrenAdapter.addAll(children);
-        childrenAdapter.notifyDataSetChanged();
-
-        HashSet<MessagingNamespace.MessagingName> parents = new HashSet<>();
-        namespace.forEachParent(mn, parents::add);
-        parentsAdapter.clear();
-        parentsAdapter.addAll(parents);
-        parentsAdapter.notifyDataSetChanged();
-
-        HashSet<MessagingNamespace.MessagingName> ancestors = new HashSet<>();
-        namespace.forEachAncestor(mn, ancestors::add);
-        ancestors.remove(mn);
-        ancestors.removeAll(parents);
         ancestorsAdapter.clear();
-        ancestorsAdapter.addAll(ancestors);
-        ancestorsAdapter.notifyDataSetChanged();
-
-        HashSet<MessagingNamespace.MessagingName> descendants = new HashSet<>();
-        namespace.forEachDescendant(mn, descendants::add);
-        descendants.remove(mn);
-        descendants.removeAll(children);
+        parentsAdapter.clear();
+        childrenAdapter.clear();
         descendantsAdapter.clear();
-        descendantsAdapter.addAll(descendants);
-        descendantsAdapter.notifyDataSetChanged();
+        if (usingMessagingNamespace) {
+            MessagingNamespace.MessagingName mn = namespace.getName(name);
+            if (mn != null) {
+                HashSet<MessagingNamespace.MessagingName> parents = new HashSet<>();
+                namespace.forEachParent(mn, parents::add);
+                MessagingNamespace.MessagingName[] parentsNames = parents.toArray(new MessagingNamespace.MessagingName[0]);
+                Arrays.sort(parentsNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
+                for (MessagingNamespace.MessagingName parentName : parentsNames)
+                    parentsAdapter.add(parentName.getName());
 
+                HashSet<MessagingNamespace.MessagingName> ancestors = new HashSet<>();
+                namespace.forEachAncestor(mn, ancestors::add);
+                ancestors.removeAll(parents);
+                ancestors.remove(mn);
+                MessagingNamespace.MessagingName[] ancestorsNames = ancestors.toArray(new MessagingNamespace.MessagingName[0]);
+                Arrays.sort(ancestorsNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
+                for (MessagingNamespace.MessagingName ancestorName : ancestorsNames)
+                    ancestorsAdapter.add(ancestorName.getName());
+
+                HashSet<MessagingNamespace.MessagingName> children = new HashSet<>();
+                namespace.forEachChild(mn, children::add);
+                MessagingNamespace.MessagingName[] childrenNames = children.toArray(new MessagingNamespace.MessagingName[0]);
+                Arrays.sort(childrenNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
+                for (MessagingNamespace.MessagingName childName : childrenNames)
+                    childrenAdapter.add(childName.getName());
+
+                HashSet<MessagingNamespace.MessagingName> descendants = new HashSet<>();
+                namespace.forEachDescendant(mn, descendants::add);
+                descendants.removeAll(children);
+                descendants.remove(mn);
+                MessagingNamespace.MessagingName[] descendantsNames = descendants.toArray(new MessagingNamespace.MessagingName[0]);
+                Arrays.sort(descendantsNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
+                for (MessagingNamespace.MessagingName descendantName : descendantsNames)
+                    descendantsAdapter.add(descendantName.getName());
+            }
+        } else {
+            HashSet<Name> parents = new HashSet<>();
+            NetLayer.forEachParent(name, parents::add);
+            Name[] parentsNames = parents.toArray(new Name[0]);
+            Arrays.sort(parentsNames, DEFAULT_NAME_COMPARATOR);
+            for (Name parentName : parentsNames) parentsAdapter.add(parentName);
+
+            HashSet<Name> ancestors = new HashSet<>();
+            NetLayer.forEachAncestor(name, ancestors::add);
+            ancestors.removeAll(parents);
+            ancestors.remove(name);
+            Name[] ancestorsNames = ancestors.toArray(new Name[0]);
+            Arrays.sort(ancestorsNames, DEFAULT_NAME_COMPARATOR);
+            for (Name ancestorName : ancestorsNames) ancestorsAdapter.add(ancestorName);
+
+            HashSet<Name> children = new HashSet<>();
+            NetLayer.forEachChild(name, children::add);
+            Name[] childrenNames = children.toArray(new Name[0]);
+            Arrays.sort(childrenNames, DEFAULT_NAME_COMPARATOR);
+            for (Name childName : childrenNames) childrenAdapter.add(childName);
+
+            HashSet<Name> descendants = new HashSet<>();
+            NetLayer.forEachDescendant(name, descendants::add);
+            descendants.removeAll(children);
+            descendants.remove(name);
+            Name[] descendantsNames = descendants.toArray(new Name[0]);
+            Arrays.sort(descendantsNames, DEFAULT_NAME_COMPARATOR);
+            for (Name descendantName : descendantsNames) descendantsAdapter.add(descendantName);
+        }
+        ancestorsAdapter.notifyDataSetChanged();
+        parentsAdapter.notifyDataSetChanged();
+        childrenAdapter.notifyDataSetChanged();
+        descendantsAdapter.notifyDataSetChanged();
     }
 
 

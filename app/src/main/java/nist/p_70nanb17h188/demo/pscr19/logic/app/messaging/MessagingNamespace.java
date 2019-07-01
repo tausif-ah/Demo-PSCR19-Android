@@ -191,7 +191,7 @@ public class MessagingNamespace {
         }
 
         // listen to a common channel for name updates
-        NetLayer.subscribe(Constants.getDefaultListenName(), this::onMessageReceivedFromListenChannel);
+        NetLayer.subscribe(Constants.getDefaultListenName(), this::onMessageReceivedFromListenChannel, INITIATOR_INIT);
     }
 
     @NonNull
@@ -211,6 +211,12 @@ public class MessagingNamespace {
 
     public synchronized Collection<MessagingName> getAllNames() {
         return nameMappings.values();
+    }
+
+    public synchronized void forEachName(Consumer<MessagingName> consumer) {
+        for (MessagingName name : nameMappings.values()) {
+            consumer.accept(name);
+        }
     }
 
     public synchronized void forEachChild(@NonNull MessagingName parent, @NonNull Consumer<MessagingName> consumer) {

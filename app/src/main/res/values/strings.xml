@@ -85,4 +85,6 @@
     <string name="naming_descendants">Descendants</string>
 
     <string name="millisecond">ms</string>
+    <string name="naming_namespace_net">NET</string>
+    <string name="naming_namespace_messaging">MSG</string>
 </resources>

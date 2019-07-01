@@ -107,6 +107,10 @@ public class NetLayer_Impl {
         return namespace.hasName(n);
     }
 
+    void forEachName(@NonNull Consumer<Name> consumer) {
+        namespace.forEachName(consumer);
+    }
+
     void forEachAncestor(@NonNull Name leaf, @NonNull Consumer<Name> consumer) {
         namespace.forEachAncestor(leaf, consumer);
     }
@@ -131,7 +135,8 @@ public class NetLayer_Impl {
         }
     }
 
-    boolean subscribe(@NonNull Name n, @NonNull DataReceivedHandler h) {
+    boolean subscribe(@NonNull Name n, @NonNull DataReceivedHandler h, @NonNull String initiator) {
+        registerName(n, true, initiator);
         synchronized (dataHandlers) {
             HashSet<DataReceivedHandler> handlers = dataHandlers.get(n);
             if (handlers == null) {
@@ -141,7 +146,7 @@ public class NetLayer_Impl {
         }
     }
 
-    boolean unSubscribe(@NonNull Name n, @NonNull DataReceivedHandler h) {
+    boolean unSubscribe(@NonNull Name n, @NonNull DataReceivedHandler h, @NonNull String initiator) {
         synchronized (dataHandlers) {
             HashSet<DataReceivedHandler> handlers = dataHandlers.get(n);
             if (handlers == null) {

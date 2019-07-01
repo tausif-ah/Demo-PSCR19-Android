@@ -35,7 +35,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
  * A simple {@link Fragment} subclass.
  */
 public class GossipFragment extends Fragment {
-    private static final int MAX_MSG_SHOW_LEN = 20;
+    private static final int MAX_MSG_SHOW_LEN = 50;
 
     static class MessageViewHolder extends RecyclerView.ViewHolder {
         private TextView txtDigest, txtNonce, txtMsg;
@@ -69,6 +69,7 @@ public class GossipFragment extends Fragment {
     private final ArrayList<Digest> digests = new ArrayList<>();
     private boolean topScroll = true;
     private RecyclerView blacklist;
+    private TextView counts;
     private final RecyclerView.Adapter<MessageViewHolder> adapter = new RecyclerView.Adapter<MessageViewHolder>() {
         @NonNull
         @Override
@@ -120,6 +121,7 @@ public class GossipFragment extends Fragment {
                 break;
             }
         }
+        updateCounts();
     };
 
     public GossipFragment() {
@@ -194,11 +196,19 @@ public class GossipFragment extends Fragment {
             }
         });
 
+        counts = view.findViewById(R.id.gossip_counts);
+        updateCounts();
+
         digests.addAll(Arrays.asList(NetLayer.getDefaultInstance().getGossipModule().getBlacklist()));
         Context.getContext(GossipModule.CONTEXT_GOSSIP_MODULE).registerReceiver(gossipReceiver,
                 new IntentFilter().addAction(GossipModule.ACTION_BLACKLIST_CHANGED)
                         .addAction(GossipModule.ACTION_BUFFER_CHANGED));
         return view;
+    }
+
+    private void updateCounts() {
+        counts.setText(String.format(Locale.US, "MB:%d / BL:%d", NetLayer.getDefaultInstance().getGossipModule().getMessageBufferSize(), NetLayer.getDefaultInstance().getGossipModule().getBlackListSize()));
+
     }
 
     @Override

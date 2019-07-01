@@ -108,6 +108,14 @@ public class GossipModule {
         return connectedNeighbors.toArray(new NeighborID[0]);
     }
 
+    public int getMessageBufferSize() {
+        return messageBuffer.size();
+    }
+
+    public int getBlackListSize() {
+        return blacklist.size();
+    }
+
     @Nullable
     public Message getMessage(@NonNull Digest digest) {
         return messageBuffer.get(digest);

@@ -48,8 +48,8 @@ public class NetLayer {
      * @param h the data handler when the name is received.
      * @return true if successfully added, false otherwise.
      */
-    public static boolean subscribe(@NonNull Name n, @NonNull DataReceivedHandler h) {
-        return defaultInstance.subscribe(n, h);
+    public static boolean subscribe(@NonNull Name n, @NonNull DataReceivedHandler h, @NonNull String initiator) {
+        return defaultInstance.subscribe(n, h, initiator);
     }
 
     /**
@@ -59,8 +59,8 @@ public class NetLayer {
      * @param h the data handler to remove.
      * @return true if successfully removed, false otherwise.
      */
-    public static boolean unSubscribe(@NonNull Name n, @NonNull DataReceivedHandler h) {
-        return defaultInstance.unSubscribe(n, h);
+    public static boolean unSubscribe(@NonNull Name n, @NonNull DataReceivedHandler h, @NonNull String initiator) {
+        return defaultInstance.unSubscribe(n, h, initiator);
     }
 
     public static Name registerRandomName(@NonNull String initiator) {
@@ -77,6 +77,10 @@ public class NetLayer {
 
     public static boolean registerRelationship(@NonNull Name parent, @NonNull Name child, boolean add, @NonNull String initiator) {
         return defaultInstance.registerRelationship(parent, child, add, initiator);
+    }
+
+    public static void forEachName(@NonNull Consumer<Name> consumer) {
+        defaultInstance.forEachName(consumer);
     }
 
     public static void forEachAncestor(@NonNull Name leaf, @NonNull Consumer<Name> consumer) {

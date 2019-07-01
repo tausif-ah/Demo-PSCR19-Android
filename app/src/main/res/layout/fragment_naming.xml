@@ -73,11 +73,27 @@
         android:layout_height="2dp"
         android:background="?attr/colorPrimary" />
 
-    <Spinner
-        android:id="@+id/naming_names"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="2dp" />
+        android:orientation="horizontal">
+
+        <ToggleButton
+            android:id="@+id/naming_namespace_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:textOff="@string/naming_namespace_net"
+            android:textOn="@string/naming_namespace_messaging" />
+
+        <Spinner
+            android:id="@+id/naming_names"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp" />
+
+    </LinearLayout>
+
 
     <View
         android:layout_width="match_parent"

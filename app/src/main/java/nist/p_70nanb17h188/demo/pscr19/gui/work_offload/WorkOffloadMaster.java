@@ -35,6 +35,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.DataReceivedHandler;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
+import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl;
 
 import static org.bytedeco.javacpp.opencv_imgcodecs.CV_LOAD_IMAGE_GRAYSCALE;
 import static org.bytedeco.javacpp.opencv_imgcodecs.imread;
@@ -44,6 +45,7 @@ public class WorkOffloadMaster extends ViewModel {
     private static final String TAG = "WorkOffloadMaster";
     private static final long WAIT_RESPONSE_DELAY_MS = 2000;
     private static final String INITIATOR_WORK_OFFLOAD_MASTER = "nist.p_70nanb17h188.demo.pscr19.gui.work_offload.WorkOffloadMaster";
+    private static final String INITIATOR_INIT = NetLayer_Impl.INITIATOR_INIT;
 
     enum MasterState {
         IDLE(R.string.work_offload_master_state_idle),
@@ -173,7 +175,7 @@ public class WorkOffloadMaster extends ViewModel {
         offload.setValue(true);
         face.setValue(true);
         showNoSlaveText.setValue(false);
-        boolean succeed = NetLayer.subscribe(myName, dataReceivedHandler);
+        boolean succeed = NetLayer.subscribe(myName, dataReceivedHandler, INITIATOR_INIT);
         Log.d(TAG, "Subscribe name: %s, succeed=%b", myName, succeed);
         workerThread = new Thread(this::workerThread);
         workerThread.setDaemon(true);
@@ -235,7 +237,7 @@ public class WorkOffloadMaster extends ViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
-        boolean succeed = NetLayer.unSubscribe(myName, dataReceivedHandler);
+        boolean succeed = NetLayer.unSubscribe(myName, dataReceivedHandler, INITIATOR_INIT);
         Log.d(TAG, "Unsubscribe from name %s, succeed=%b", myName, succeed);
     }
 

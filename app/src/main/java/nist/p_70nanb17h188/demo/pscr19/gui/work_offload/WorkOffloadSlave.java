@@ -19,6 +19,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.DataReceivedHandler;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
+import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer_Impl;
 
 import static org.bytedeco.javacpp.opencv_imgcodecs.CV_LOAD_IMAGE_GRAYSCALE;
 import static org.bytedeco.javacpp.opencv_imgcodecs.imdecode;
@@ -28,6 +29,7 @@ public class WorkOffloadSlave extends ViewModel {
     private static final long WAIT_WORK_DELAY_MS = 30000;
     private static final String TAG = "WorkOffloadSlave";
     private static final String INITIATOR_WORK_OFFLOAD_SLAVE = "nist.p_70nanb17h188.demo.pscr19.gui.work_offload.WorkOffloadSlave";
+    private static final String INITIATOR_INIT = NetLayer_Impl.INITIATOR_INIT;
 
     enum SlaveState {
         IDLE(R.string.work_offload_slave_state_idle),
@@ -67,8 +69,8 @@ public class WorkOffloadSlave extends ViewModel {
         currState.setValue(SlaveState.IDLE);
         currWorkId.setValue(0);
         enabled.setValue(false);
-        NetLayer.subscribe(myName, unicastDataReceivedHandler);
-        NetLayer.subscribe(groupName, multicastDataReceivedHandler);
+        NetLayer.subscribe(myName, unicastDataReceivedHandler, INITIATOR_INIT);
+        NetLayer.subscribe(groupName, multicastDataReceivedHandler, INITIATOR_INIT);
         Thread workerThread = new Thread(this::workerThread);
         workerThread.setDaemon(true);
         workerThread.start();
@@ -90,8 +92,8 @@ public class WorkOffloadSlave extends ViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
-        NetLayer.unSubscribe(myName, unicastDataReceivedHandler);
-        NetLayer.unSubscribe(groupName, multicastDataReceivedHandler);
+        NetLayer.unSubscribe(myName, unicastDataReceivedHandler, INITIATOR_INIT);
+        NetLayer.unSubscribe(groupName, multicastDataReceivedHandler, INITIATOR_INIT);
     }
 
     private synchronized void onMulticastDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, @NonNull String initiator) {
