@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -93,13 +94,11 @@ public class BluetoothLinkManager extends Thread{
             try {
                 bluetoothSocket = bluetoothServerSocket.accept();
                 BluetoothDevice remoteDevice = bluetoothSocket.getRemoteDevice();
-                Log.d("remote device name", remoteDevice.getName());
+//                Log.d("remote device name", remoteDevice.getName());
+                String remoteName = remoteDevice.getName();
             } catch (Exception ex) {
 
             }
         }
-    }
-
-    private void connect(BluetoothDevice device) {
     }
 }

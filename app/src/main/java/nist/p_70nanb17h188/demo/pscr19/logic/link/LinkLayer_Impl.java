@@ -25,7 +25,7 @@ public final class LinkLayer_Impl {
         wifiLinkManager = new WifiLinkManager();
         wifiTCPConnectionManager = WifiTCPConnectionManager.createWifiTCPConnectionManager(tcpConnectionManager);
         bluetoothLinkManager = new BluetoothLinkManager();
-
+        bluetoothLinkManager.start();
 //        WifiTCPConnectionManager.init(context);
         Log.d("LinkLayer_Impl", "%s initialized", Device.getName());
     }
