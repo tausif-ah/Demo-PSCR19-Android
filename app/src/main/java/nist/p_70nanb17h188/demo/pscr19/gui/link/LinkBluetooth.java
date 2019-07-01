@@ -1,6 +1,7 @@
 package nist.p_70nanb17h188.demo.pscr19.gui.link;
 
 import android.bluetooth.BluetoothDevice;
+import android.util.Log;
 
 class LinkBluetooth extends Link {
 
@@ -21,6 +22,6 @@ class LinkBluetooth extends Link {
 
     @Override
     void onEstablishConnectionClick() {
-
+        Log.d("bluetooth connect", "clicked");
     }
 }
