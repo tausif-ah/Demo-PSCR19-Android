@@ -390,18 +390,18 @@ public class WorkOffloadMaster extends ViewModel {
     private final int smallCol = 2;
     private final int range = 128;
 
-    int[][] smallMat = {{},{},{},{},{},{}};
-    int[] smallVector = {};
+    int[][] smallMat = {{1,7},{2,8},{3,9},{4,9},{5,8},{6,7}};
+    int[] smallVector = {1,2};
 
     private int[][] genMatrix(boolean isBig){
-        return isBig ? genMatrix(bigRow,bigCol) : smallMat;
+        return isBig ? genMatrix() : smallMat;
     }
 
-    private int[][] genMatrix(int row, int col){
-        int[][] res = new int[row][col];
+    private int[][] genMatrix(){
+        int[][] res = new int[bigRow][bigCol];
         Random random = new Random();
-        for(int i = 0; i<row; i++){
-            for(int j = 0; j<col; j++){
+        for(int i = 0; i<bigRow; i++){
+            for(int j = 0; j<bigCol; j++){
                 res[i][j] = random.nextInt(range);
             }
         }
@@ -409,13 +409,13 @@ public class WorkOffloadMaster extends ViewModel {
     }
 
     private int[] genVector(boolean isBig){
-        return isBig ? genVector(bigCol) : smallVector;
+        return isBig ? genVector() : smallVector;
     }
 
-    private int[] genVector(int size){
-        int[] res = new int[size];
+    private int[] genVector(){
+        int[] res = new int[bigCol];
         Random random = new Random();
-        for(int n = 0; n<size; n++){
+        for(int n = 0; n<bigCol; n++){
             res[n] = random.nextInt(range);
         }
         return res;
@@ -553,7 +553,7 @@ public class WorkOffloadMaster extends ViewModel {
             int[][] secondHalf = genMatrix(isBig);
             byte[] data2 = dataToBytes(secondHalf, vec,1,isBig);
             DataWorkContent content2 = new DataWorkContent(taskId,type, data2);
-            s1.setSlaveTask(content2);
+            s2.setSlaveTask(content2);
             Slave s3 = slaves.get(2);
             byte[] data3 = dataToBytes(matPlus(firstHalf,secondHalf), vec,2,isBig);
             DataWorkContent content3 = new DataWorkContent(taskId,type, data3);
