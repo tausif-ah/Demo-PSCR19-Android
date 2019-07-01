@@ -117,10 +117,6 @@ public class WorkOffloadMaster extends ViewModel {
             return slaveName;
         }
 
-        SlaveState getSlaveState() {
-            return slaveState.getValue();
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -369,10 +365,14 @@ public class WorkOffloadMaster extends ViewModel {
         } else {
             Boolean isBig = this.isBigMat.getValue();
             assert isBig!= null;
-            int[] vec = genVector(isBig);
-            long[] a = matrixMultiplyVector(genMatrix(isBig),vec,isBig);
-            long[] b = matrixMultiplyVector(genMatrix(isBig),vec,isBig);
-            matrixResult = paste(a,b);
+            if(isBig){
+                int[] vec = genVector();
+                long[] a = matrixMultiplyVector(genMatrix(),vec,true);
+                long[] b = matrixMultiplyVector(genMatrix(),vec,true);
+                matrixResult = paste(a,b);
+            }else{
+                matrixResult = matrixMultiplyVector(smallMat,smallVector,false);
+            }
         }
         synchronized (this) {
             Integer currentTaskId = this.currentTaskId.getValue();
@@ -391,11 +391,9 @@ public class WorkOffloadMaster extends ViewModel {
     private final int range = 128;
 
     int[][] smallMat = {{1,7},{2,8},{3,9},{4,9},{5,8},{6,7}};
+    int[][] smallMat1 = {{1,7},{2,8},{3,9}};
+    int[][] smallMat2 = {{4,9},{5,8},{6,7}};
     int[] smallVector = {1,2};
-
-    private int[][] genMatrix(boolean isBig){
-        return isBig ? genMatrix() : smallMat;
-    }
 
     private int[][] genMatrix(){
         int[][] res = new int[bigRow][bigCol];
@@ -406,10 +404,6 @@ public class WorkOffloadMaster extends ViewModel {
             }
         }
         return res;
-    }
-
-    private int[] genVector(boolean isBig){
-        return isBig ? genVector() : smallVector;
     }
 
     private int[] genVector(){
@@ -544,13 +538,13 @@ public class WorkOffloadMaster extends ViewModel {
             assert isBig != null;
             byte type = 6;
             Slave s1 = slaves.get(0);
-            int[][] firstHalf = genMatrix(isBig);
-            int[] vec = genVector(isBig);
+            int[][] firstHalf = isBig ? genMatrix() : smallMat1;
+            int[] vec = isBig ? genVector() : smallVector;
             byte[] data1 = dataToBytes(firstHalf, vec,0,isBig);
             DataWorkContent content1 = new DataWorkContent(taskId,type, data1);
             s1.setSlaveTask(content1);
             Slave s2 = slaves.get(1);
-            int[][] secondHalf = genMatrix(isBig);
+            int[][] secondHalf = isBig ? genMatrix() : smallMat2;
             byte[] data2 = dataToBytes(secondHalf, vec,1,isBig);
             DataWorkContent content2 = new DataWorkContent(taskId,type, data2);
             s2.setSlaveTask(content2);
