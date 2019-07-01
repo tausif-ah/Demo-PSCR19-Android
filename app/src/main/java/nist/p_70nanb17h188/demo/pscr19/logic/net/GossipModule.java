@@ -13,6 +13,8 @@ import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
+import nist.p_70nanb17h188.demo.pscr19.logic.BiConsumer;
+import nist.p_70nanb17h188.demo.pscr19.logic.Consumer;
 import nist.p_70nanb17h188.demo.pscr19.logic.FIFOMap;
 import nist.p_70nanb17h188.demo.pscr19.logic.FIFOSet;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
@@ -35,25 +37,27 @@ public class GossipModule {
     public static final String ACTION_NEIGHBOR_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.GossipModule.neighborChanged";
     public static final String EXTRA_NEIGHBORS = "neighbors";
 
+    public static final String EXTRA_ADDED = "added";
+    public static final String EXTRA_DIGEST = "digest";
+
     /**
      * Broadcast intent action indicating that a data has been added to/removed from the message pool.
      * One extra {@link #EXTRA_MESSAGE} ({@link Message) indicates the data,
      * Another extra {@link #EXTRA_ADDED} ({@link Boolean}) indicates if the data is added (true) or removed (false).
      * A third extra {@link #EXTRA_DIGEST} ({@link Digest}) indicates the digest of the data.
      * <p>
-     * The values can be retrieved by checking {@link #getMessage(Digest)}. The digests can be retrieved by {@link #getBlacklist()}.
+     * The values are also available for iterate with function {@link #forEachMessageInMessageBuffer(BiConsumer)}.
+     * The values can be retrieved by checking {@link #getMessage(Digest)}.
      */
     public static final String ACTION_BUFFER_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.GossipModule.bufferChanged";
     public static final String EXTRA_MESSAGE = "message";
-    public static final String EXTRA_ADDED = "added";
-    public static final String EXTRA_DIGEST = "digest";
 
     /**
      * Broadcast intent action indicating that a digest has been added to/removed from the black list.
      * An extra {@link #EXTRA_ADDED} ({@link Boolean}) indicates if the digest is added (true) or removed (false).
      * A third extra {@link #EXTRA_DIGEST} ({@link Digest}) indicates the digest.
      * <p>
-     * The values are also available with function {@link #getBlacklist()}.
+     * The values are also available for iterate with function {@link #forEachDigestInBlacklist(Consumer)}.
      */
     public static final String ACTION_BLACKLIST_CHANGED = "nist.p_70nanb17h188.demo.pscr19.logic.net.GossipModule.blackListChanged";
 
@@ -66,8 +70,8 @@ public class GossipModule {
 
     private static final String TAG = "GossipModule";
     private static final int MAGIC = 0x12345678;
-    private static final int CAPACITY_MESSAGE_BUFFER = 1000;
-    private static final int CAPACITY_BLACK_LIST = 2000;
+    private static final int CAPACITY_MESSAGE_BUFFER = 2000;
+    private static final int CAPACITY_BLACK_LIST = 1000;
 
     private static final byte TYPE_SV_POSSESS = 1;  // SV of what I have
     private static final byte TYPE_SV_REQUEST = 2;  // SV of what I want
@@ -82,7 +86,11 @@ public class GossipModule {
     GossipModule() {
         startWorkThread();
         // listen to message buffer and blacklist events, send broadcast once event got
-        messageBuffer.addItemChangedEventHandler((k, v, added) -> Context.getContext(CONTEXT_GOSSIP_MODULE).sendBroadcast(new Intent(ACTION_BUFFER_CHANGED).putExtra(EXTRA_DIGEST, k).putExtra(EXTRA_MESSAGE, v).putExtra(EXTRA_ADDED, added)));
+        messageBuffer.addItemChangedEventHandler((k, v, added) -> {
+            // if a message is flushed out from message buffer, add it to black list
+            if (!added) blacklist.add(k);
+            Context.getContext(CONTEXT_GOSSIP_MODULE).sendBroadcast(new Intent(ACTION_BUFFER_CHANGED).putExtra(EXTRA_DIGEST, k).putExtra(EXTRA_MESSAGE, v).putExtra(EXTRA_ADDED, added));
+        });
         blacklist.addItemChangedEventHandler((k, added) -> Context.getContext(CONTEXT_GOSSIP_MODULE).sendBroadcast(new Intent(ACTION_BLACKLIST_CHANGED).putExtra(EXTRA_DIGEST, k).putExtra(EXTRA_ADDED, added)));
 
         // listen to link layer events
@@ -121,9 +129,12 @@ public class GossipModule {
         return messageBuffer.get(digest);
     }
 
-    @NonNull
-    public Digest[] getBlacklist() {
-        return blacklist.toArray(new Digest[0]);
+    public void forEachDigestInBlacklist(Consumer<Digest> consumer) {
+        blacklist.forEach(consumer);
+    }
+
+    public void forEachMessageInMessageBuffer(BiConsumer<Digest, Message> consumer) {
+        messageBuffer.forEach(consumer);
     }
 
     public void addMessage(@NonNull byte[] value, boolean toStore) {
@@ -135,9 +146,9 @@ public class GossipModule {
             do {
                 msg = new Message(value, toStore);
                 d = new Digest(msg);
-            } while (blacklist.contains(d));
+            } while (blacklist.contains(d) || messageBuffer.containsKey(d));
             if (msg.isStore()) messageBuffer.add(d, msg);
-            blacklist.add(d);
+            else blacklist.add(d);
             Log.d(TAG, "Added digest: %s, msg: %s", d, msg);
 
             // No need to notify the applications that a message has been received
@@ -282,7 +293,7 @@ public class GossipModule {
         for (int i = 0; i < count; i++) {
             Digest d = Digest.read(buffer);
             assert d != null;
-            if (!blacklist.contains(d))
+            if (!blacklist.contains(d) && !messageBuffer.containsKey(d))
                 toRequests.add(d);
         }
         int size = getWritePrefixSize()
@@ -335,12 +346,12 @@ public class GossipModule {
         }
         Digest d = new Digest(msg);
         Log.d(TAG, "Received from %s, MSG, d=%s, msg=%s", from, d, msg);
-        if (blacklist.contains(d)) {
-            Log.d(TAG, "Black list contains digest: %s", d);
+        if (blacklist.contains(d) || messageBuffer.containsKey(d)) {
+            Log.d(TAG, "Black list/message buffer contains digest: %s", d);
             return;
         }
         if (msg.isStore()) messageBuffer.add(d, msg);
-        blacklist.add(d);
+        else blacklist.add(d);
 
         // build toWrite buffer
         byte[] toWrite = messageToByteArray(msg);

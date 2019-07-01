@@ -17,7 +17,6 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Locale;
 
 import nist.p_70nanb17h188.demo.pscr19.Helper;
@@ -26,6 +25,7 @@ import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
 import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
+import nist.p_70nanb17h188.demo.pscr19.logic.Tuple2;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Digest;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.GossipModule;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Message;
@@ -47,9 +47,9 @@ public class GossipFragment extends Fragment {
             txtMsg = itemView.findViewById(R.id.gossip_content);
         }
 
-        void bindDigest(@NonNull Digest digest) {
-            txtDigest.setText(digest.toString());
-            Message msg = NetLayer.getDefaultInstance().getGossipModule().getMessage(digest);
+        void bindMessage(@NonNull Tuple2<Digest, Message> message) {
+            txtDigest.setText(message.getV1().toString());
+            Message msg = message.getV2();
             if (msg == null) {
                 txtNonce.setText("---");
                 txtMsg.setText("---");
@@ -65,27 +65,61 @@ public class GossipFragment extends Fragment {
         }
     }
 
+    static class BlacklistViewHolder extends RecyclerView.ViewHolder {
+        private TextView txtDigest;
+
+        BlacklistViewHolder(@NonNull View itemView) {
+            super(itemView);
+            txtDigest = itemView.findViewById(R.id.gossip_digest);
+        }
+
+        void bindDigest(@NonNull Digest digest) {
+            txtDigest.setText(digest.toString());
+        }
+    }
+
     private GossipFragmentViewModel viewModel;
-    private final ArrayList<Digest> digests = new ArrayList<>();
-    private boolean topScroll = true;
-    private RecyclerView blacklist;
-    private TextView counts;
-    private final RecyclerView.Adapter<MessageViewHolder> adapter = new RecyclerView.Adapter<MessageViewHolder>() {
+    private final ArrayList<Tuple2<Digest, Message>> messagelist = new ArrayList<>();
+    private final ArrayList<Digest> blacklist = new ArrayList<>();
+    private boolean messagelistTopScroll = true, blacklistTopScroll = true;
+    private RecyclerView messagelistView, blacklistView;
+    private TextView countsView;
+
+    private final RecyclerView.Adapter<MessageViewHolder> messageAdapter = new RecyclerView.Adapter<MessageViewHolder>() {
         @NonNull
         @Override
         public MessageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int i) {
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_gossip, parent, false);
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_gossip_message, parent, false);
             return new MessageViewHolder(v);
         }
 
         @Override
         public void onBindViewHolder(@NonNull MessageViewHolder messageViewHolder, int i) {
-            messageViewHolder.bindDigest(digests.get(digests.size() - i - 1));
+            messageViewHolder.bindMessage(messagelist.get(messagelist.size() - i - 1));
         }
 
         @Override
         public int getItemCount() {
-            return digests.size();
+            return messagelist.size();
+        }
+    };
+
+    private final RecyclerView.Adapter<BlacklistViewHolder> blacklistAdapter = new RecyclerView.Adapter<BlacklistViewHolder>() {
+        @NonNull
+        @Override
+        public BlacklistViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int i) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_gossip_blacklist, parent, false);
+            return new BlacklistViewHolder(v);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull BlacklistViewHolder blacklistViewHolder, int i) {
+            blacklistViewHolder.bindDigest(blacklist.get(blacklist.size() - i - 1));
+        }
+
+        @Override
+        public int getItemCount() {
+            return blacklist.size();
         }
     };
 
@@ -93,11 +127,21 @@ public class GossipFragment extends Fragment {
         switch (intent.getAction()) {
             case GossipModule.ACTION_BUFFER_CHANGED: {
                 Digest digest = intent.getExtra(GossipModule.EXTRA_DIGEST);
+                Message msg = intent.getExtra(GossipModule.EXTRA_MESSAGE);
                 Boolean added = intent.getExtra(GossipModule.EXTRA_ADDED);
                 assert added != null;
-                int idx = digests.indexOf(digest);
-                if (idx >= 0) {
-                    adapter.notifyItemChanged(digests.size() - idx - 1);
+                if (added) {
+                    messagelist.add(new Tuple2<>(digest, msg));
+                    messageAdapter.notifyItemRangeInserted(0, 1);
+                    if (messagelistTopScroll) {
+                        messagelistView.scrollToPosition(0);
+                    }
+                } else {
+                    int idx = messagelist.indexOf(new Tuple2<>(digest, msg));
+                    if (idx >= 0) {
+                        messagelist.remove(idx);
+                        messageAdapter.notifyItemRangeRemoved(messagelist.size() - idx, 1);
+                    }
                 }
                 break;
             }
@@ -106,16 +150,16 @@ public class GossipFragment extends Fragment {
                 Boolean added = intent.getExtra(GossipModule.EXTRA_ADDED);
                 assert added != null;
                 if (added) {
-                    digests.add(digest);
-                    adapter.notifyItemRangeInserted(0, 1);
-                    if (topScroll) {
-                        blacklist.scrollToPosition(0);
+                    blacklist.add(digest);
+                    blacklistAdapter.notifyItemRangeInserted(0, 1);
+                    if (blacklistTopScroll) {
+                        blacklistView.scrollToPosition(0);
                     }
                 } else {
-                    int idx = digests.indexOf(digest);
+                    int idx = blacklist.indexOf(digest);
                     if (idx >= 0) {
-                        digests.remove(idx);
-                        adapter.notifyItemRangeRemoved(digests.size() - idx, 1);
+                        blacklist.remove(idx);
+                        blacklistAdapter.notifyItemRangeRemoved(blacklist.size() - idx, 1);
                     }
                 }
                 break;
@@ -164,19 +208,19 @@ public class GossipFragment extends Fragment {
             txtNeighbors.setText(nbr);
         });
 
-        blacklist = view.findViewById(R.id.gossip_blacklist);
-        blacklist.setLayoutManager(new WrapLinearLayoutManager(view.getContext()));
-        blacklist.setAdapter(adapter);
+        blacklistView = view.findViewById(R.id.gossip_blacklist);
+        blacklistView.setLayoutManager(new WrapLinearLayoutManager(view.getContext()));
+        blacklistView.setAdapter(blacklistAdapter);
 
-        FloatingActionButton btnTopScroll = view.findViewById(R.id.gossip_scroll_top);
-        btnTopScroll.setOnClickListener(v -> {
-            topScroll = true;
-            btnTopScroll.hide();
-            blacklist.scrollToPosition(0);
+        FloatingActionButton btnBlacklistTopScroll = view.findViewById(R.id.gossip_blacklist_scroll_top);
+        btnBlacklistTopScroll.setOnClickListener(v -> {
+            blacklistTopScroll = true;
+            btnBlacklistTopScroll.hide();
+            blacklistView.scrollToPosition(0);
         });
-        btnTopScroll.hide();
+        btnBlacklistTopScroll.hide();
 
-        blacklist.addOnScrollListener(new RecyclerView.OnScrollListener() {
+        blacklistView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
             }
@@ -184,22 +228,56 @@ public class GossipFragment extends Fragment {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-                int state = blacklist.getScrollState();
+                int state = blacklistView.getScrollState();
                 if (state == RecyclerView.SCROLL_STATE_DRAGGING || state == RecyclerView.SCROLL_STATE_SETTLING) {
-                    boolean newIsTopLog = blacklist.computeVerticalScrollOffset() == 0;
-                    if (newIsTopLog != topScroll) {
-                        topScroll = newIsTopLog;
-                        if (topScroll) btnTopScroll.hide();
-                        else btnTopScroll.show();
+                    boolean newIsTopLog = blacklistView.computeVerticalScrollOffset() == 0;
+                    if (newIsTopLog != blacklistTopScroll) {
+                        blacklistTopScroll = newIsTopLog;
+                        if (blacklistTopScroll) btnBlacklistTopScroll.hide();
+                        else btnBlacklistTopScroll.show();
                     }
                 }
             }
         });
 
-        counts = view.findViewById(R.id.gossip_counts);
+        messagelistView = view.findViewById(R.id.gossip_message_buffer);
+        messagelistView.setLayoutManager(new WrapLinearLayoutManager(view.getContext()));
+        messagelistView.setAdapter(messageAdapter);
+
+        FloatingActionButton btnMessagelistTopScroll = view.findViewById(R.id.gossip_message_buffer_scroll_top);
+        btnMessagelistTopScroll.setOnClickListener(v -> {
+            messagelistTopScroll = true;
+            btnMessagelistTopScroll.hide();
+            messagelistView.scrollToPosition(0);
+        });
+        btnMessagelistTopScroll.hide();
+
+        messagelistView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+            }
+
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                int state = messagelistView.getScrollState();
+                if (state == RecyclerView.SCROLL_STATE_DRAGGING || state == RecyclerView.SCROLL_STATE_SETTLING) {
+                    boolean newIsTopLog = messagelistView.computeVerticalScrollOffset() == 0;
+                    if (newIsTopLog != messagelistTopScroll) {
+                        messagelistTopScroll = newIsTopLog;
+                        if (messagelistTopScroll) btnMessagelistTopScroll.hide();
+                        else btnMessagelistTopScroll.show();
+                    }
+                }
+            }
+        });
+
+        countsView = view.findViewById(R.id.gossip_counts);
         updateCounts();
 
-        digests.addAll(Arrays.asList(NetLayer.getDefaultInstance().getGossipModule().getBlacklist()));
+        NetLayer.getDefaultInstance().getGossipModule().forEachMessageInMessageBuffer((digest, message) -> messagelist.add(new Tuple2<>(digest, message)));
+        NetLayer.getDefaultInstance().getGossipModule().forEachDigestInBlacklist(blacklist::add);
+
         Context.getContext(GossipModule.CONTEXT_GOSSIP_MODULE).registerReceiver(gossipReceiver,
                 new IntentFilter().addAction(GossipModule.ACTION_BLACKLIST_CHANGED)
                         .addAction(GossipModule.ACTION_BUFFER_CHANGED));
@@ -207,8 +285,7 @@ public class GossipFragment extends Fragment {
     }
 
     private void updateCounts() {
-        counts.setText(String.format(Locale.US, "MB:%d / BL:%d", NetLayer.getDefaultInstance().getGossipModule().getMessageBufferSize(), NetLayer.getDefaultInstance().getGossipModule().getBlackListSize()));
-
+        countsView.setText(String.format(Locale.US, "MB:%d / BL:%d", NetLayer.getDefaultInstance().getGossipModule().getMessageBufferSize(), NetLayer.getDefaultInstance().getGossipModule().getBlackListSize()));
     }
 
     @Override

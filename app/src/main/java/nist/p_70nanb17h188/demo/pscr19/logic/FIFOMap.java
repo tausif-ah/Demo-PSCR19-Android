@@ -106,6 +106,10 @@ public class FIFOMap<T, V> implements Iterable<FIFOMap.Entry<T, V>> {
         return items.toArray(a);
     }
 
+    public synchronized void forEach(BiConsumer<T, V> consumer) {
+        for (Entry<T, V> item : items) consumer.accept(item.key, item.getVal());
+    }
+
     public int getCapacity() {
         return capacity;
     }

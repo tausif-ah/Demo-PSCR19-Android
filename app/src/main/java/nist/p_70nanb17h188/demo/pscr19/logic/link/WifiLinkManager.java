@@ -232,7 +232,7 @@ public class WifiLinkManager {
 
     private void onThisDeviceChanged(@NonNull android.content.Intent intent) {
         WifiP2pDevice thisDevice = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
-        Log.i(TAG, "Device name: %s, isGroupOwner: %b", thisDevice.deviceName, thisDevice.isGroupOwner());
+        Log.i(TAG, "Device name: %s, thisDevice.isGroupOwner: %b, shouldBeGroupOwner: %b", thisDevice.deviceName, thisDevice.isGroupOwner(), Constants.isWifiDirectGroupOwner());
         if (Constants.isWifiDirectGroupOwner()) {
             wifiP2pManager.requestGroupInfo(channel, WifiLinkManager.this::onGroupInfoAvailable);
         }

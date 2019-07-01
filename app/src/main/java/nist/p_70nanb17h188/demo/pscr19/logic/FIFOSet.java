@@ -84,6 +84,10 @@ public class FIFOSet<T> implements Iterable<T> {
         return items.toArray(a);
     }
 
+    public synchronized void forEach(@NonNull Consumer<T> consumer) {
+        for (T val : items) consumer.accept(val);
+    }
+
     public int getCapacity() {
         return capacity;
     }
