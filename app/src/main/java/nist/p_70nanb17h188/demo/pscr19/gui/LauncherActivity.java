@@ -62,7 +62,6 @@ public class LauncherActivity extends AppCompatActivity {
         }
         setContentView(R.layout.activity_launcher);
         Log.init(Log.DEFAULT_CAPACITY);
-        new Thread(new LoadClassifier()).start();
         ListView nameList = findViewById(R.id.launcher_names);
         String[] names = Device.getExistingNames();
         Arrays.sort(names);
@@ -87,6 +86,7 @@ public class LauncherActivity extends AppCompatActivity {
         LinkLayer.init();
         NetLayer.init();
         MessagingNamespace.init();
+        new Thread(new LoadClassifier()).start();
         Log.d("LAUNCHER", "INIT END");
 
         startActivity(new android.content.Intent(this, MainActivity.class));

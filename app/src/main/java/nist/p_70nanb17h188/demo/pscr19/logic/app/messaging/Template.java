@@ -39,17 +39,17 @@ public class Template {
     private final Name rootNode;
     @NonNull
     private final Name commanderNode;
-    private final HashMap<Name, MessagingNamespace.MessagingName> names = new HashMap<>();
+    private final HashMap<Name, MessagingName> names = new HashMap<>();
     private final HashMap<Name, HashSet<Name>> relationships = new HashMap<>();
 
     public Template(@NonNull String name, @NonNull Name rootNode, @NonNull Name commanderNode,
-                    @NonNull HashSet<MessagingNamespace.MessagingName> names,
+                    @NonNull HashSet<MessagingName> names,
                     @NonNull Collection<Tuple2<Name, Name>> relationships) {
         this.name = name;
         this.rootNode = rootNode;
         this.commanderNode = commanderNode;
-        MessagingNamespace.MessagingName rootMn = null, commanderMn = null;
-        for (MessagingNamespace.MessagingName mn : names) {
+        MessagingName rootMn = null, commanderMn = null;
+        for (MessagingName mn : names) {
             this.names.put(mn.getName(), mn);
             this.relationships.put(mn.getName(), new HashSet<>());
             if (mn.getName().equals(rootNode)) rootMn = mn;
@@ -110,24 +110,24 @@ public class Template {
     }
 
     @Nullable
-    public MessagingNamespace.MessagingName getName(@NonNull Name name) {
+    public MessagingName getName(@NonNull Name name) {
         return names.get(name);
     }
 
-    public void forEachName(@NonNull Consumer<MessagingNamespace.MessagingName> consumer) {
-        for (MessagingNamespace.MessagingName mn : names.values()) {
+    public void forEachName(@NonNull Consumer<MessagingName> consumer) {
+        for (MessagingName mn : names.values()) {
             consumer.accept(mn);
         }
     }
 
-    public void forEachChild(@NonNull MessagingNamespace.MessagingName parent, @NonNull Consumer<MessagingNamespace.MessagingName> consumer) {
+    public void forEachChild(@NonNull MessagingName parent, @NonNull Consumer<MessagingName> consumer) {
         HashSet<Name> childrenNames = relationships.get(parent.getName());
         if (childrenNames == null) {
             Log.e(TAG, "create: Template %s does not have parent name %s", name, parent);
             return;
         }
         for (Name childName : childrenNames) {
-            MessagingNamespace.MessagingName childMn = names.get(childName);
+            MessagingName childMn = names.get(childName);
             assert childMn != null;
             consumer.accept(childMn);
         }

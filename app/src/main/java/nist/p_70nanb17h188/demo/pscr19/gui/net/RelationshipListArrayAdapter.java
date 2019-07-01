@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
+import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingName;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 
@@ -31,7 +32,7 @@ public class RelationshipListArrayAdapter extends ArrayAdapter<Name> {
             textView.setText("----");
             textView.setBackgroundResource(R.color.colorLinkUnknown);
         } else {
-            MessagingNamespace.MessagingName mn = namespace.getName(name);
+            MessagingName mn = namespace.getName(name);
             if (mn == null) {
                 textView.setText(name.toString());
                 textView.setBackgroundResource(R.color.colorLinkUnknown);

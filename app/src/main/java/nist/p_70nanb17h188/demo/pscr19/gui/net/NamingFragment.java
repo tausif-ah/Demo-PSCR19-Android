@@ -25,6 +25,7 @@ import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
+import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingName;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Namespace;
@@ -35,7 +36,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
  */
 public class NamingFragment extends Fragment {
 
-    private static final Comparator<MessagingNamespace.MessagingName> DEFAULT_MESSAGING_NAME_COMPARATOR = (n1, n2) -> n1.getAppName().toLowerCase().compareTo(n2.getAppName().toLowerCase());
+    private static final Comparator<MessagingName> DEFAULT_MESSAGING_NAME_COMPARATOR = (n1, n2) -> n1.getAppName().toLowerCase().compareTo(n2.getAppName().toLowerCase());
     private static final Comparator<Name> DEFAULT_NAME_COMPARATOR = (n1, n2) -> Long.compare(n1.getValue(), n2.getValue());
 
     public static class NamingFragmentViewModel extends ViewModel {
@@ -160,9 +161,9 @@ public class NamingFragment extends Fragment {
 
         namesAdapter.clear();
         if (usingMessagingNamespace) {
-            MessagingNamespace.MessagingName[] allNames = namespace.getAllNames().toArray(new MessagingNamespace.MessagingName[0]);
+            MessagingName[] allNames = namespace.getAllNames().toArray(new MessagingName[0]);
             Arrays.sort(allNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
-            for (MessagingNamespace.MessagingName name : allNames) namesAdapter.add(name.getName());
+            for (MessagingName name : allNames) namesAdapter.add(name.getName());
 
         } else {
             ArrayList<Name> allNameList = new ArrayList<>();
@@ -193,38 +194,38 @@ public class NamingFragment extends Fragment {
         childrenAdapter.clear();
         descendantsAdapter.clear();
         if (usingMessagingNamespace) {
-            MessagingNamespace.MessagingName mn = namespace.getName(name);
+            MessagingName mn = namespace.getName(name);
             if (mn != null) {
-                HashSet<MessagingNamespace.MessagingName> parents = new HashSet<>();
+                HashSet<MessagingName> parents = new HashSet<>();
                 namespace.forEachParent(mn, parents::add);
-                MessagingNamespace.MessagingName[] parentsNames = parents.toArray(new MessagingNamespace.MessagingName[0]);
+                MessagingName[] parentsNames = parents.toArray(new MessagingName[0]);
                 Arrays.sort(parentsNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
-                for (MessagingNamespace.MessagingName parentName : parentsNames)
+                for (MessagingName parentName : parentsNames)
                     parentsAdapter.add(parentName.getName());
 
-                HashSet<MessagingNamespace.MessagingName> ancestors = new HashSet<>();
+                HashSet<MessagingName> ancestors = new HashSet<>();
                 namespace.forEachAncestor(mn, ancestors::add);
                 ancestors.removeAll(parents);
                 ancestors.remove(mn);
-                MessagingNamespace.MessagingName[] ancestorsNames = ancestors.toArray(new MessagingNamespace.MessagingName[0]);
+                MessagingName[] ancestorsNames = ancestors.toArray(new MessagingName[0]);
                 Arrays.sort(ancestorsNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
-                for (MessagingNamespace.MessagingName ancestorName : ancestorsNames)
+                for (MessagingName ancestorName : ancestorsNames)
                     ancestorsAdapter.add(ancestorName.getName());
 
-                HashSet<MessagingNamespace.MessagingName> children = new HashSet<>();
+                HashSet<MessagingName> children = new HashSet<>();
                 namespace.forEachChild(mn, children::add);
-                MessagingNamespace.MessagingName[] childrenNames = children.toArray(new MessagingNamespace.MessagingName[0]);
+                MessagingName[] childrenNames = children.toArray(new MessagingName[0]);
                 Arrays.sort(childrenNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
-                for (MessagingNamespace.MessagingName childName : childrenNames)
+                for (MessagingName childName : childrenNames)
                     childrenAdapter.add(childName.getName());
 
-                HashSet<MessagingNamespace.MessagingName> descendants = new HashSet<>();
+                HashSet<MessagingName> descendants = new HashSet<>();
                 namespace.forEachDescendant(mn, descendants::add);
                 descendants.removeAll(children);
                 descendants.remove(mn);
-                MessagingNamespace.MessagingName[] descendantsNames = descendants.toArray(new MessagingNamespace.MessagingName[0]);
+                MessagingName[] descendantsNames = descendants.toArray(new MessagingName[0]);
                 Arrays.sort(descendantsNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
-                for (MessagingNamespace.MessagingName descendantName : descendantsNames)
+                for (MessagingName descendantName : descendantsNames)
                     descendantsAdapter.add(descendantName.getName());
             }
         } else {

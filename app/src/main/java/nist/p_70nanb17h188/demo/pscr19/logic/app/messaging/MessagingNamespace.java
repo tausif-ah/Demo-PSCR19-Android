@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Objects;
 
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
@@ -72,7 +71,6 @@ public class MessagingNamespace {
     public static void init() {
         defaultInstance = new MessagingNamespace();
         Constants.initTemplates();
-
     }
 
     @NonNull
@@ -80,103 +78,7 @@ public class MessagingNamespace {
         return defaultInstance;
     }
 
-    public enum MessagingNameType {
-        Administrative((byte) 0, "AD"),
-        Incident((byte) 1, "IN");
-        private final byte represent;
-        @NonNull
-        private final String abbrv;
 
-        MessagingNameType(byte represent, @NonNull String abbrv) {
-            this.represent = represent;
-            this.abbrv = abbrv;
-        }
-
-        public byte getRepresent() {
-            return represent;
-        }
-
-        @NonNull
-        public String getAbbrv() {
-            return abbrv;
-        }
-
-        @Nullable
-        public static MessagingNameType fromByte(byte val) {
-            switch (val) {
-                case 0:
-                    return MessagingNameType.Administrative;
-                case 1:
-                    return MessagingNameType.Incident;
-                default:
-                    return null;
-            }
-        }
-
-    }
-
-    public static class MessagingName {
-
-        @NonNull
-        private final Name name;
-        @NonNull
-        private String appName;
-        @NonNull
-        private final MessagingNameType type;
-
-        @NonNull
-        private final HashSet<MessagingName> parents = new HashSet<>();
-        @NonNull
-        private final HashSet<MessagingName> children = new HashSet<>();
-
-        MessagingName(@NonNull Name name, @NonNull String appName, @NonNull MessagingNameType type) {
-            this.name = name;
-            this.appName = appName;
-            this.type = type;
-        }
-
-        @NonNull
-        public String getAppName() {
-            return appName;
-        }
-
-        @NonNull
-        public Name getName() {
-            return name;
-        }
-
-        @NonNull
-        public MessagingNameType getType() {
-            return type;
-        }
-
-        void setAppName(@NonNull String appName) {
-            this.appName = appName;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            MessagingName that = (MessagingName) o;
-            return name.equals(that.name);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name);
-        }
-
-        @NonNull
-        @Override
-        public String toString() {
-            return String.format("%s(%s,%s)", appName, name, type);
-        }
-    }
 
     private final HashMap<Name, MessagingName> nameMappings = new HashMap<>();
     private HashMap<MessagingName, HashSet<MessagingName>> incidentMappings = null;
