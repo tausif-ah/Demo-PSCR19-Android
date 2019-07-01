@@ -161,13 +161,13 @@ public class WifiLinkManager {
                 @Override
                 public void onSuccess() {
                     Log.d(TAG, "Changed name to: %s. Close the channel!", newName);
-                    channel.close();
+//                    channel.close();
                 }
 
                 @Override
                 public void onFailure(int reason) {
                     Log.d(TAG, "Failed in changing name to: %s. Close the channel!", newName);
-                    channel.close();
+//                    channel.close();
                 }
             });
         }
