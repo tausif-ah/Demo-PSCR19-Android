@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -284,15 +283,7 @@ public class MessagingNamespace {
         return ret;
     }
 
-
-    //    public Tuple3<Collection<GraphNode>, Integer, Integer> instantiateTemplate(int templateId, String incidentName) {
-//        throw new UnsupportedOperationException();
-//    }
-//
-//    public Collection<GraphNode> removeIncidentTree(int incidentRootId) {
-//        throw new UnsupportedOperationException();
-//    }
-//
+    @NonNull
     public synchronized MessagingName createName(@NonNull String appName, @NonNull MessagingNameType type, @NonNull String initiator) {
         MessagingName mn = innerCreateName(appName, type, initiator);
         ArrayList<MessagingName> nas = new ArrayList<>();
@@ -301,6 +292,7 @@ public class MessagingNamespace {
         return mn;
     }
 
+    @NonNull
     public synchronized MessagingName createNameWithParent(@NonNull String appName, @NonNull MessagingNameType type, @NonNull Name parentName, @NonNull String initiator) {
         MessagingName mn = innerCreateName(appName, type, initiator);
         ArrayList<MessagingName> nas = new ArrayList<>();
@@ -322,6 +314,61 @@ public class MessagingNamespace {
         } else {
             return false;
         }
+    }
+
+    @NonNull
+    public synchronized Tuple2<Name, Name> instantiateTemplate(@NonNull Template t, @NonNull String incidentName, @NonNull String initiator) {
+        ArrayList<MessagingName> nas = new ArrayList<>();
+        ArrayList<Tuple2<Name, Name>> ras = new ArrayList<>();
+
+        // key: name in template, value: messagingName in namespace
+        HashMap<Name, MessagingName> createdNames = new HashMap<>();
+
+        MessagingName[] thisIncidentRoot = new MessagingName[]{null}; // use array as a pointer, value cannot be changed in the lambda expression
+        // add names first
+        t.forEachName(templateName -> {
+            MessagingName nameInNamespace;
+            if (templateName.getName().equals(t.getRootNode())) {
+                nameInNamespace = innerCreateName(incidentName, templateName.getType(), initiator);
+                thisIncidentRoot[0] = nameInNamespace;
+            } else {
+                nameInNamespace = innerCreateName(templateName.getAppName(), templateName.getType(), initiator);
+            }
+            nas.add(nameInNamespace);
+            createdNames.put(templateName.getName(), nameInNamespace);
+        });
+
+        assert thisIncidentRoot[0] != null;
+        MessagingName commanderNode = createdNames.get(t.getCommanderNode());
+        assert commanderNode != null;
+
+        // add relationships
+        t.forEachName(templateName -> {
+            MessagingName nameInNamespace = createdNames.get(templateName.getName());
+            assert nameInNamespace != null;
+            t.forEachChild(templateName, templateChildName -> {
+                MessagingName childNameInNamespace = createdNames.get(templateChildName.getName());
+                assert childNameInNamespace != null;
+                boolean relationshipCreated = innerCreateRelationship(nameInNamespace.getName(), childNameInNamespace.getName(), initiator);
+                if (!relationshipCreated) {
+                    throw new AssertionError(String.format("Failed in creating relationship %s->%s.", nameInNamespace, childNameInNamespace));
+                }
+                ras.add(new Tuple2<>(nameInNamespace.getName(), childNameInNamespace.getName()));
+            });
+        });
+
+        {
+            // add relationship with incident root
+            boolean relationshipCreated = innerCreateRelationship(getIncidentRoot(), thisIncidentRoot[0].getName(), initiator);
+            if (!relationshipCreated) {
+                throw new AssertionError(String.format("Failed in creating relationship from incident root %s to this incident %s.", getIncidentRoot(), thisIncidentRoot[0]));
+            }
+            ras.add(new Tuple2<>(getIncidentRoot(), thisIncidentRoot[0].getName()));
+        }
+
+        notifyNamespaceEvent(nas, new ArrayList<>(), ras, new ArrayList<>(), initiator);
+
+        return new Tuple2<>(thisIncidentRoot[0].getName(), commanderNode.getName());
     }
 
     @Nullable
@@ -379,6 +426,44 @@ public class MessagingNamespace {
             nds.add(name);
             notifyNamespaceEvent(new ArrayList<>(), nds, new ArrayList<>(), new ArrayList<>(), initiator);
         }
+    }
+
+    public synchronized void removeIncidentTree(@NonNull Name incidentRootName, @NonNull String initiator) {
+        MessagingName thisIncidentRoot = nameMappings.get(incidentRootName);
+        if (thisIncidentRoot == null) {
+            Log.e(TAG, "%s remove incident tree %s failed. name does not exist.", initiator, incidentRootName);
+            return;
+        }
+        if (thisIncidentRoot.getType() != MessagingNameType.Incident) {
+            Log.e(TAG, "%s remove incident tree %s failed. name is not incident.", initiator, thisIncidentRoot);
+            return;
+        }
+        if (incidentRootName == getIncidentRoot()) {
+            Log.e(TAG, "%s remove incident tree %s failed. name is incident root.", initiator, thisIncidentRoot);
+            return;
+        }
+        // find all the incident descendants, stop at administrative nodes.
+        // should not use for each descendant.
+        HashSet<MessagingName> toRemoves = new HashSet<>();
+        ArrayDeque<MessagingName> todos = new ArrayDeque<>();
+        todos.offer(thisIncidentRoot);
+        MessagingName curr;
+        while ((curr = todos.poll()) != null) {
+            if (toRemoves.add(curr)) {
+                for (MessagingName child : curr.children) {
+                    if (child.getType() == MessagingNameType.Incident) {
+                        todos.offer(child);
+                    }
+                }
+            }
+        }
+        ArrayList<Name> nds = new ArrayList<>();
+        for (MessagingName toRemove : toRemoves) {
+            if (innerRemoveName(toRemove.getName(), initiator)) {
+                nds.add(toRemove.getName());
+            }
+        }
+        notifyNamespaceEvent(new ArrayList<>(), nds, new ArrayList<>(), new ArrayList<>(), initiator);
     }
 
     private boolean innerRemoveName(@NonNull Name name, @NonNull String initiator) {

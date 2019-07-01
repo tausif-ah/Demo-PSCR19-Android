@@ -30,8 +30,9 @@ public class RelationshipListArrayAdapter extends ArrayAdapter<MessagingNamespac
             textView.setBackgroundResource(R.color.colorLinkUnknown);
         } else {
             String[] incidents = MessagingNamespace.getDefaultInstance().getNameIncidents(mn.getName());
-            textView.setText(String.format("%s %s",
+            textView.setText(String.format("%s %s %s",
                     mn.getAppName(),
+                    mn.getName(),
                     incidents.length == 0 ? "" : Arrays.toString(incidents)));
             textView.setBackgroundResource(Constants.getNameTypeColorResource(mn.getType()));
         }

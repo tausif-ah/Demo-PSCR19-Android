@@ -41,8 +41,9 @@ public class NameListArrayAdapter extends ArrayAdapter<MessagingNamespace.Messag
         }
         textView.setBackgroundResource(Constants.getNameTypeColorResource(name.getType()));
         String[] incidents = MessagingNamespace.getDefaultInstance().getNameIncidents(name.getName());
-        textView.setText(String.format("%s %s",
+        textView.setText(String.format("%s %s %s",
                 name.getAppName(),
+                name.getName(),
                 incidents.length == 0 ? "" : Arrays.toString(incidents)
         ));
 
