@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.Constants;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 class LinkBluetooth extends Link {
 
@@ -33,15 +34,9 @@ class LinkBluetooth extends Link {
             connectionStatus = true;
             updateLinkStatus(LinkStatus.TCPEstablished, connectionStatus);
             DataListner dataListner = new DataListner(this.bluetoothSocket);
-            try {
-                this.inputStream = this.bluetoothSocket.getInputStream();
-            } catch (Exception ex) {
-
-            }
             dataListner.start();
-            byte[] dataToSend = Device.getName().getBytes();
-//            TODO send data
-            sendData(dataToSend);
+//            byte[] dataToSend = Device.getName().getBytes();
+//            sendData(dataToSend);
         }
     }
 
@@ -58,11 +53,9 @@ class LinkBluetooth extends Link {
                 bluetoothSocket.connect();
                 updateLinkStatus(LinkStatus.TCPEstablished, true);
                 DataListner dataListener = new DataListner(bluetoothSocket);
-                this.inputStream = bluetoothSocket.getInputStream();
                 dataListener.start();
-                byte[] dataToSend = Device.getName().getBytes();
-//                TODO send data
-                sendData(dataToSend);
+//                byte[] dataToSend = Device.getName().getBytes();
+//                sendData(dataToSend);
             }
         } catch (Exception ex) {
 
@@ -79,12 +72,13 @@ class LinkBluetooth extends Link {
     }
 
     private class DataListner extends Thread {
-        private BluetoothSocket bluetoothSocket;
-        private boolean threadStarted;
 
         DataListner(BluetoothSocket bluetoothSocket) {
-            this.bluetoothSocket = bluetoothSocket;
-            this.threadStarted = false;
+            try {
+                inputStream = bluetoothSocket.getInputStream();
+            } catch (Exception ex) {
+
+            }
         }
 
         @Override
@@ -99,6 +93,7 @@ class LinkBluetooth extends Link {
                     // Read from the InputStream.
                     numBytes = inputStream.read(readBuffer);
                     String receivedData = new String(readBuffer);
+//                    Log.d("bluetooth data received from", receivedData);
                 } catch (IOException e) {
                     break;
                 }
