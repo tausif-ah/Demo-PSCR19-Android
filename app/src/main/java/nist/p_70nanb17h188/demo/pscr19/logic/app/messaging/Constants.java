@@ -1,10 +1,12 @@
 package nist.p_70nanb17h188.demo.pscr19.logic.app.messaging;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.logic.Tuple2;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 
@@ -22,6 +24,29 @@ public class Constants {
     @NonNull
     static Name getDispatcherRoot() {
         return new Name(-108);
+    }
+
+    @Nullable
+    static Name getDefaultSubscription() {
+        switch (Device.getName()) {
+            case Device.NAME_M1:
+                return new Name(-125); // Rescue 1
+            case Device.NAME_M2:
+                return new Name(-119); // 5-1 Pumper
+            case Device.NAME_S11:
+                return new Name(-124); // TAC 1
+            case Device.NAME_S12:
+                return new Name(-122); // Ambulance 2
+            case Device.NAME_S13:
+                return new Name(-121); // Ambulance 1
+            case Device.NAME_S21:
+                return new Name(-120); // 5-2 Rescue
+            case Device.NAME_MULE:
+                return new Name(-123); // Patrol Car
+            // PCs will have subscriptions defined on web page parameters
+            default:
+                return null;
+        }
     }
 
     @NonNull

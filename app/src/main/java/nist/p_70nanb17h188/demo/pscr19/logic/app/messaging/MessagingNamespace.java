@@ -4,7 +4,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,7 +63,6 @@ public class MessagingNamespace {
     private static final String INITIATOR_APP = "nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace.app";
 
     private static final String TAG = "MessagingNamespace";
-    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     private static MessagingNamespace defaultInstance;
 
@@ -77,8 +75,6 @@ public class MessagingNamespace {
     public static MessagingNamespace getDefaultInstance() {
         return defaultInstance;
     }
-
-
 
     private final HashMap<Name, MessagingName> nameMappings = new HashMap<>();
     private HashMap<MessagingName, HashSet<MessagingName>> incidentMappings = null;
@@ -225,7 +221,7 @@ public class MessagingNamespace {
     }
 
     @NonNull
-    public synchronized Tuple2<Name, Name> instantiateTemplate(@NonNull Template t, @NonNull String incidentName, @NonNull String initiator) {
+    public synchronized Tuple2<Name, Name> instantiateTemplate(@NonNull Template t, @NonNull String incidentName, @NonNull Name instantiatorName, @NonNull String initiator) {
         ArrayList<MessagingName> nas = new ArrayList<>();
         ArrayList<Tuple2<Name, Name>> ras = new ArrayList<>();
 
@@ -272,6 +268,15 @@ public class MessagingNamespace {
                 throw new AssertionError(String.format("Failed in creating relationship from incident root %s to this incident %s.", getIncidentRoot(), thisIncidentRoot[0]));
             }
             ras.add(new Tuple2<>(getIncidentRoot(), thisIncidentRoot[0].getName()));
+        }
+
+        {
+            // add relationship from commander name to instantiator name
+            boolean relationshipCreated = innerCreateRelationship(commanderNode.getName(), instantiatorName, initiator);
+            if (!relationshipCreated) {
+                throw new AssertionError(String.format("Failed in creating relationship from commander node %s to instantiator %s.", commanderNode, instantiatorName));
+            }
+            ras.add(new Tuple2<>(commanderNode.getName(), instantiatorName));
         }
 
         notifyNamespaceEvent(nas, new ArrayList<>(), ras, new ArrayList<>(), initiator);
@@ -513,7 +518,7 @@ public class MessagingNamespace {
                     + Name.WRITE_SIZE * 2 * rds.size() // rds
                     + (Name.WRITE_SIZE + 1 + Helper.INTEGER_SIZE) * nas.size(); // na.names, na.types, na.nameLengths
             for (int i = 0; i < nas.size(); i++) {
-                naNames[i] = nas.get(i).getAppName().getBytes(DEFAULT_CHARSET);
+                naNames[i] = nas.get(i).getAppName().getBytes(Helper.DEFAULT_CHARSET);
                 size += naNames[i].length;
             }
 
@@ -583,7 +588,7 @@ public class MessagingNamespace {
             int strLen = buffer.getInt();
             byte[] bAppName = new byte[strLen];
             buffer.get(bAppName);
-            String appName = new String(bAppName, DEFAULT_CHARSET);
+            String appName = new String(bAppName, Helper.DEFAULT_CHARSET);
             nas.add(new MessagingName(name, appName, type));
         }
 
@@ -739,7 +744,7 @@ public class MessagingNamespace {
 
         // write to the network
         if (!INITIATOR_INIT.equals(initiator) && !INITIATOR_NET.equals(initiator)) {
-            byte[] nameBytes = name.getAppName().getBytes(DEFAULT_CHARSET);
+            byte[] nameBytes = name.getAppName().getBytes(Helper.DEFAULT_CHARSET);
             int size = 1 // type
                     + Name.WRITE_SIZE // name
                     + Helper.INTEGER_SIZE // appName.length
@@ -776,7 +781,7 @@ public class MessagingNamespace {
         }
         byte[] nameBytes = new byte[size];
         buffer.get(nameBytes);
-        String newName = new String(nameBytes, DEFAULT_CHARSET);
+        String newName = new String(nameBytes, Helper.DEFAULT_CHARSET);
         String origName = mn.getAppName();
 
         startBuffer();

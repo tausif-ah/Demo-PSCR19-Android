@@ -13,7 +13,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -427,7 +426,6 @@ class SocketChannelBufferHandler {
     private static final long KEEP_ALIVE_DURATION_MS = 2000;
     private static final long KEEP_ALIVE_TIMEOUT_MS = 10000;
     private static final long GET_NAME_TIMEOUT_MS = 5000;
-    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
     private static final int STATE_READ_NAME_MAGIC_TYPE = 0;
     private static final int STATE_READ_NAME_LENGTH = 1;
     private static final int STATE_READ_NAME_CONTENT = 2;
@@ -459,7 +457,7 @@ class SocketChannelBufferHandler {
     }
 
     private void writeName() {
-        byte[] data = Device.getName().getBytes(DEFAULT_CHARSET);
+        byte[] data = Device.getName().getBytes(Helper.DEFAULT_CHARSET);
         writeVariableLengthData(TYPE_NAME, data);
     }
 
@@ -624,7 +622,7 @@ class SocketChannelBufferHandler {
                     start += require;
                     remaining -= require;
                     contentBuffer.rewind();
-                    name = new String(contentBuffer.array(), DEFAULT_CHARSET);
+                    name = new String(contentBuffer.array(), Helper.DEFAULT_CHARSET);
                     Log.v(TAG, "name=%s", name);
                     if (socketChannelEventHandler != null)
                         socketChannelEventHandler.onSocketChannelNameReceived(socketChannel, name);

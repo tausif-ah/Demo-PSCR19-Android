@@ -2,8 +2,11 @@ package nist.p_70nanb17h188.demo.pscr19;
 
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.io.PrintStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Locale;
 import java.util.Random;
 
@@ -47,6 +50,7 @@ public class Helper {
     public static final String CANDIDATE_CHARSET_LETTERS_NUMBERS = CANDIDATE_CHARSET_LETTERS + CANDIDATE_CHARSET_NUMBERS;
     public static final String CANDIDATE_CHARSET_LETTERS_NUMBERS_SPACES = CANDIDATE_CHARSET_LETTERS_NUMBERS + " \t\n";
     public static final int INTEGER_SIZE, LONG_SIZE, DOUBLE_SIZE;
+    public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     static {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -103,11 +107,31 @@ public class Helper {
     }
 
     public static long getPositiveRandom() {
-        for (;;) {
+        for (; ; ) {
             long v = DEFAULT_RANDOM.nextLong();
             if (v == Long.MIN_VALUE || v == 0) continue;
             return v < 0 ? -v : v;
         }
+    }
+
+    public static int getStringWriteSize(String str) {
+        return str.getBytes(DEFAULT_CHARSET).length + Helper.INTEGER_SIZE;
+    }
+
+    public static void writeString(ByteBuffer buffer, String str) {
+        byte[] bStr = str.getBytes(DEFAULT_CHARSET);
+        buffer.putInt(bStr.length);
+        buffer.put(bStr);
+    }
+
+    @Nullable
+    public static String readString(ByteBuffer buffer) {
+        if (buffer.remaining() < INTEGER_SIZE) return null;
+        int length = buffer.getInt();
+        if (buffer.remaining() < length) return null;
+        byte[] bStr = new byte[length];
+        buffer.get(bStr);
+        return new String(bStr, DEFAULT_CHARSET);
     }
 
 }
