@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothSocket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
@@ -17,6 +18,12 @@ class LinkBluetooth extends Link {
     private BluetoothDevice deviceInDiscovery;
     private BluetoothSocket bluetoothSocket;
     private InputStream inputStream;
+
+    private static final int MAGIC = 0xdeadbeef;
+    private static final byte TYPE_NAME = 1;
+    private static final byte TYPE_KEEP_ALIVE = 2;
+    private static final byte TYPE_DATA = 3;
+
     LinkBluetooth(String name) {
         super(name);
         this.bluetoothSocket = null;
@@ -35,8 +42,8 @@ class LinkBluetooth extends Link {
             updateLinkStatus(LinkStatus.TCPEstablished, connectionStatus);
             DataListner dataListner = new DataListner(this.bluetoothSocket);
             dataListner.start();
-//            byte[] dataToSend = Device.getName().getBytes();
-//            sendData(dataToSend);
+            byte[] dataToSend = Device.getName().getBytes();
+            sendData(dataToSend);
         }
     }
 
@@ -54,8 +61,8 @@ class LinkBluetooth extends Link {
                 updateLinkStatus(LinkStatus.TCPEstablished, true);
                 DataListner dataListener = new DataListner(bluetoothSocket);
                 dataListener.start();
-//                byte[] dataToSend = Device.getName().getBytes();
-//                sendData(dataToSend);
+                byte[] dataToSend = Device.getName().getBytes();
+                sendData(dataToSend);
             }
         } catch (Exception ex) {
 
@@ -65,8 +72,37 @@ class LinkBluetooth extends Link {
     private void sendData(byte[] data) {
         try {
             OutputStream outputStream = bluetoothSocket.getOutputStream();
-            outputStream.write(data);
+
+//            writing type byte
+            ByteBuffer typeBuffer = ByteBuffer.allocate(1);
+            typeBuffer.put(TYPE_DATA);
+            typeBuffer.rewind();
+            outputStream.write(typeBuffer.array());
             outputStream.flush();
+
+//            writing size bytes
+            ByteBuffer sizeBuffer = ByteBuffer.allocate(4);
+            sizeBuffer.putInt(data.length);
+            sizeBuffer.rewind();
+            outputStream.write(sizeBuffer.array());
+            outputStream.flush();
+
+            int fullWriteCount = data.length / Constants.BLUETOOTH_DATA_CHUNK_SIZE;
+            int remainder = data.length % Constants.BLUETOOTH_DATA_CHUNK_SIZE;
+            int srcPos = 0;
+            for (int i=0; i<fullWriteCount; i++) {
+                byte[] writeBuffer = new byte[Constants.BLUETOOTH_DATA_CHUNK_SIZE];
+                System.arraycopy(data, srcPos, writeBuffer, 0, Constants.BLUETOOTH_DATA_CHUNK_SIZE);
+                outputStream.write(writeBuffer);
+                outputStream.flush();
+                srcPos += Constants.BLUETOOTH_DATA_CHUNK_SIZE;
+            }
+            if (remainder > 0) {
+                byte[] writeBuffer = new byte[remainder];
+                System.arraycopy(data, srcPos, writeBuffer, 0, remainder);
+                outputStream.write(writeBuffer);
+                outputStream.flush();
+            }
         } catch (Exception writeEx) {
         }
     }
@@ -84,16 +120,40 @@ class LinkBluetooth extends Link {
         @Override
         public void run() {
             super.run();
-            byte [] readBuffer = new byte[1500];
-            int numBytes; // bytes returned from read()
+            byte[] typeBuffer = new byte[1];
+            byte[] sizeBuffer = new byte[4];
+            int numBytes;
 
-            // Keep listening to the InputStream until an exception occurs.
             while (true) {
                 try {
-                    // Read from the InputStream.
-                    numBytes = inputStream.read(readBuffer);
-                    String receivedData = new String(readBuffer);
-//                    Log.d("bluetooth data received from", receivedData);
+//                    reading type byte
+                    numBytes = inputStream.read(typeBuffer);
+                    byte type = ByteBuffer.wrap(typeBuffer).get();
+
+//                    reading size bytes
+                    numBytes = inputStream.read(sizeBuffer);
+                    int size = ByteBuffer.wrap(sizeBuffer).getInt();
+
+                    Log.d("BT data type", String.valueOf(type));
+                    Log.d("BT data size", String.valueOf(size));
+
+                    byte[] receivedData = new byte[size];
+                    int destPos = 0;
+                    byte[] readBuffer;
+                    int fullRead = size / Constants.BLUETOOTH_DATA_CHUNK_SIZE;
+                    int remainder = size % Constants.BLUETOOTH_DATA_CHUNK_SIZE;
+                    for (int i=0; i<fullRead; i++) {
+                        readBuffer = new byte[Constants.BLUETOOTH_DATA_CHUNK_SIZE];
+                        numBytes = inputStream.read(readBuffer);
+                        System.arraycopy(readBuffer, 0, receivedData, destPos, readBuffer.length);
+                        destPos += Constants.BLUETOOTH_DATA_CHUNK_SIZE;
+                    }
+                    if (remainder  > 0) {
+                        readBuffer = new byte[remainder];
+                        numBytes = inputStream.read(readBuffer);
+                        System.arraycopy(readBuffer, 0, receivedData, destPos, readBuffer.length);
+                    }
+                    Log.d("BT data recv", new String(receivedData));
                 } catch (IOException e) {
                     break;
                 }

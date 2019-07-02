@@ -16,9 +16,9 @@ public class Constants {
     static final int BLUETOOTH_SERVER_LISTEN_PORT = 10307;
     static final InetAddress WIFI_DIRECT_SERVER_ADDRESS;
     public static final int BLUETOOTH_dISCOVERABLE_LENGTH = 3600;     //in seconds, value can be 0 seconds to 3600 seconds, setting to 0 means device will be visible always
-    static final int BLUETOOTH_DISCOVERY_CYCLE_LENGTH = 5;  //in seconds
     static final String RF_COMM_LISTENER = "RF COMM LISTENER";
     public static final String MY_UUID = "e439084f-b7f1-460c-8a3f-d4cc883413e2";
+    public static final int BLUETOOTH_DATA_CHUNK_SIZE = 900;        //in bytes
 
     private static final HashSet<String> WIFI_DIRECT_GROUP_OWNERS = new HashSet<>(Arrays.asList(Device.NAME_M1, Device.NAME_ROUTER));
 
