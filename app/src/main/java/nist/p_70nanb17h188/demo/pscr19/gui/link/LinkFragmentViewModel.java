@@ -6,13 +6,13 @@ import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.Transformations;
 import android.arch.lifecycle.ViewModel;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pGroup;
 import android.util.Log;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -54,7 +54,9 @@ public class LinkFragmentViewModel extends ViewModel {
         Context.getContext(BluetoothLinkManager.CONTEXT_BLUETOOTH_LINK_MANAGER).registerReceiver(
                 receiver,
                 new IntentFilter()
-                        .addAction(BluetoothLinkManager.ACTION_BLUETOOTH_DEVICE_FOUND));
+                        .addAction(BluetoothLinkManager.ACTION_DEVICE_FOUND)
+                        .addAction(BluetoothLinkManager.ACTION_TCP_CONNECTED)
+        );
         Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).registerReceiver(
                 receiver,
                 new IntentFilter()
@@ -91,8 +93,11 @@ public class LinkFragmentViewModel extends ViewModel {
                     }
                 }
                 break;
-            case BluetoothLinkManager.ACTION_BLUETOOTH_DEVICE_FOUND:
+            case BluetoothLinkManager.ACTION_DEVICE_FOUND:
                 updateBluetoothDeviceList(intent.getExtra(BluetoothLinkManager.EXTRA_DEVICE));
+                break;
+            case BluetoothLinkManager.ACTION_TCP_CONNECTED:
+                updateBluetoothConnectionStatus(intent.getExtra(BluetoothLinkManager.EXTRA_DEVICE_NAME), intent.getExtra(BluetoothLinkManager.EXTRA_SOCKET));
                 break;
         }
     }
@@ -154,12 +159,24 @@ public class LinkFragmentViewModel extends ViewModel {
     }
 
     private void updateBluetoothDeviceList(BluetoothDevice device) {
-        Log.d("newBtLinkFragment", device.getName());
         for (Link l: links
              ) {
             if (l instanceof LinkBluetooth) {
                 if (device.getName().equals(l.name)) {
                     ((LinkBluetooth) l).setDeviceInDiscovery(device);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void updateBluetoothConnectionStatus(String deviceName, BluetoothSocket bluetoothSocket) {
+        for (Link l: links
+             ) {
+            if (l instanceof LinkBluetooth) {
+                if (deviceName.equals(l.name)) {
+                    ((LinkBluetooth) l).setBluetoothSocket(bluetoothSocket);
+                    break;
                 }
             }
         }

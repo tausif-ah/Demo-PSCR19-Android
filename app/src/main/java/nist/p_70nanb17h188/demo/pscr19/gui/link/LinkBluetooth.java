@@ -2,9 +2,6 @@ package nist.p_70nanb17h188.demo.pscr19.gui.link;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.util.Log;
-
-import java.io.InputStream;
 import java.util.UUID;
 
 import nist.p_70nanb17h188.demo.pscr19.logic.link.Constants;
@@ -21,6 +18,17 @@ class LinkBluetooth extends Link {
     void setDeviceInDiscovery(BluetoothDevice deviceInDiscovery) {
         this.deviceInDiscovery = deviceInDiscovery;
         updateLinkStatus(LinkStatus.NotConnected, false);
+    }
+
+    void setBluetoothSocket(BluetoothSocket bluetoothSocket) {
+        this.bluetoothSocket = bluetoothSocket;
+        boolean connectionStatus;
+        if (bluetoothSocket != null) {
+            connectionStatus = true;
+            updateLinkStatus(LinkStatus.TCPEstablished, connectionStatus);
+            DataListner dataListner = new DataListner(this.bluetoothSocket);
+            dataListner.start();
+        }
     }
 
     private void updateLinkStatus(LinkStatus newStatus, boolean connectionStatus) {
@@ -56,7 +64,6 @@ class LinkBluetooth extends Link {
         public void run() {
             super.run();
             if (!threadStarted) {
-                Log.d("data listener", "started");
                 threadStarted = true;
             }
         }

@@ -8,10 +8,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.util.Log;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -23,8 +21,11 @@ public class BluetoothLinkManager extends Thread{
     private BluetoothAdapter bluetoothAdapter;
     private ArrayList<BluetoothDevice> bluetoothDevices;
     public static final String CONTEXT_BLUETOOTH_LINK_MANAGER = "nist.p_70nanb17h188.demo.pscr19.logic.link.BluetoothLinkManager";
-    public static final String ACTION_BLUETOOTH_DEVICE_FOUND = "nist.p_70nanb17h188.demo.pscr19.logic.link.BluetoothLinkManager.deviceFound";
+    public static final String ACTION_DEVICE_FOUND = "nist.p_70nanb17h188.demo.pscr19.logic.link.BluetoothLinkManager.deviceFound";
+    public static final String ACTION_TCP_CONNECTED = "nist.p_70nanb17h188.demo.pscr19.logic.link.BluetoothLinkManager.tcpConnected";
     public static final String EXTRA_DEVICE = "device";
+    public static final String EXTRA_DEVICE_NAME = "deviceName";
+    public static final String EXTRA_SOCKET = "socket";
     private BluetoothServerSocket bluetoothServerSocket;
 
     BluetoothLinkManager() {
@@ -81,7 +82,7 @@ public class BluetoothLinkManager extends Thread{
             }
             if (isNewDevice) {
                 bluetoothDevices.add(newDevice);
-                nist.p_70nanb17h188.demo.pscr19.imc.Context.getContext(CONTEXT_BLUETOOTH_LINK_MANAGER).sendBroadcast(new nist.p_70nanb17h188.demo.pscr19.imc.Intent(ACTION_BLUETOOTH_DEVICE_FOUND).putExtra(EXTRA_DEVICE, newDevice));
+                nist.p_70nanb17h188.demo.pscr19.imc.Context.getContext(CONTEXT_BLUETOOTH_LINK_MANAGER).sendBroadcast(new nist.p_70nanb17h188.demo.pscr19.imc.Intent(ACTION_DEVICE_FOUND).putExtra(EXTRA_DEVICE, newDevice));
             }
         }
     }
@@ -94,8 +95,7 @@ public class BluetoothLinkManager extends Thread{
             try {
                 bluetoothSocket = bluetoothServerSocket.accept();
                 BluetoothDevice remoteDevice = bluetoothSocket.getRemoteDevice();
-//                Log.d("remote device name", remoteDevice.getName());
-                String remoteName = remoteDevice.getName();
+                nist.p_70nanb17h188.demo.pscr19.imc.Context.getContext(CONTEXT_BLUETOOTH_LINK_MANAGER).sendBroadcast(new nist.p_70nanb17h188.demo.pscr19.imc.Intent(ACTION_TCP_CONNECTED).putExtra(EXTRA_DEVICE_NAME, remoteDevice.getName()).putExtra(EXTRA_SOCKET, bluetoothSocket));
             } catch (Exception ex) {
 
             }
