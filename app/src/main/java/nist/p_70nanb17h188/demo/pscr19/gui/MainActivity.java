@@ -1,5 +1,6 @@
 package nist.p_70nanb17h188.demo.pscr19.gui;
 
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -125,21 +126,27 @@ public class MainActivity extends AppCompatActivity {
         Fragment fragment;
         switch (showFragment) {
             case R.id.main_nav_messaging:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
                 fragment = new MessagingFragment();
                 break;
             case R.id.main_nav_workoffload:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
                 fragment = new WorkOffloadFragment();
                 break;
             case R.id.main_nav_link:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 fragment = new LinkFragment();
                 break;
             case R.id.main_nav_gossip:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 fragment = new GossipFragment();
                 break;
             case R.id.main_nav_naming:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 fragment = new NamingFragment();
                 break;
             case R.id.main_nav_log:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 fragment = new LogFragment();
                 break;
             default:

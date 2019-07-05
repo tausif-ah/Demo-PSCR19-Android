@@ -134,4 +134,23 @@ public class Helper {
         return new String(bStr, DEFAULT_CHARSET);
     }
 
+    public static int getByteArrayWriteSize(byte[] content) {
+        return Helper.INTEGER_SIZE + content.length;
+    }
+
+    public static void writeByteArray(ByteBuffer buffer, byte[] content) {
+        buffer.putInt(content.length);
+        buffer.put(content);
+    }
+
+    @Nullable
+    public static byte[] readByteArray(ByteBuffer buffer) {
+        if (buffer.remaining() < INTEGER_SIZE) return null;
+        int length = buffer.getInt();
+        if (buffer.remaining() < length) return null;
+        byte[] content = new byte[length];
+        buffer.get(content);
+        return content;
+    }
+
 }

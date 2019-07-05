@@ -36,41 +36,45 @@ public class Message {
     }
 
     private final long sendTime;
+    private final long duration;
     private final Name senderGroup, receiverGroup;
     private final String senderName;
     private final Name[] carriedNames;
     private final MessageType type;
     private final String mime;
-    private final String content;
+    private final byte[] content;
     private final int writeSize;
 
-    private static int calculateWriteSize(@NonNull String senderName, int carriedNamesLength, @NonNull String mime, @NonNull String content) {
-        return Helper.LONG_SIZE // sendTime
+    private static int calculateWriteSize(@NonNull String senderName, int carriedNamesLength, @NonNull String mime, @NonNull byte[] content) {
+        return Helper.LONG_SIZE * 2 // sendTime, duration
                 + Helper.INTEGER_SIZE
                 + Name.WRITE_SIZE * (2 + carriedNamesLength) // senderGroup, receiverGroup, carriedNames
                 + 1 // type
                 + Helper.getStringWriteSize(senderName)
                 + Helper.getStringWriteSize(mime)
-                + Helper.getStringWriteSize(content);
+                + Helper.getByteArrayWriteSize(content); // content
     }
 
     public Message(long sendTime,
+                   long duration,
                    @NonNull Name senderGroup, @NonNull Name receiverGroup,
                    @NonNull String senderName,
                    @NonNull Name[] carriedNames,
                    @NonNull MessageType type,
-                   @NonNull String mime, @NonNull String content) {
-        this(sendTime, senderGroup, receiverGroup, senderName, carriedNames, type, mime, content,
+                   @NonNull String mime, @NonNull byte[] content) {
+        this(sendTime, duration, senderGroup, receiverGroup, senderName, carriedNames, type, mime, content,
                 calculateWriteSize(senderName, carriedNames.length, mime, content));
     }
 
     private Message(long sendTime,
+                    long duration,
                     @NonNull Name senderGroup, @NonNull Name receiverGroup,
                     @NonNull String senderName,
                     @NonNull Name[] carriedNames,
                     @NonNull MessageType type,
-                    @NonNull String mime, @NonNull String content,
+                    @NonNull String mime, @NonNull byte[] content,
                     int writeSize) {
+        this.duration = duration;
         this.sendTime = sendTime;
         this.senderGroup = senderGroup;
         this.receiverGroup = receiverGroup;
@@ -84,6 +88,7 @@ public class Message {
 
     public void write(ByteBuffer buffer) {
         buffer.putLong(sendTime);
+        buffer.putLong(duration);
         senderGroup.write(buffer);
         receiverGroup.write(buffer);
         Helper.writeString(buffer, senderName);
@@ -92,7 +97,7 @@ public class Message {
             carriedName.write(buffer);
         buffer.put(type.representation);
         Helper.writeString(buffer, mime);
-        Helper.writeString(buffer, content);
+        Helper.writeByteArray(buffer, content);
     }
 
     public static Message read(ByteBuffer buffer) {
@@ -100,6 +105,9 @@ public class Message {
         // sendTime
         if (buffer.remaining() < Helper.LONG_SIZE) return null;
         long sendTime = buffer.getLong();
+        // duration
+        if (buffer.remaining() < Helper.LONG_SIZE) return null;
+        long duration = buffer.getLong();
         // senderGroup
         Name senderGroup = Name.read(buffer);
         if (senderGroup == null) return null;
@@ -126,13 +134,12 @@ public class Message {
         String mime = Helper.readString(buffer);
         if (mime == null) return null;
         // content
-        String content = Helper.readString(buffer);
+        byte[] content = Helper.readByteArray(buffer);
         if (content == null) return null;
         int writeSize = buffer.position() - startPosition;
 
-        return new Message(sendTime, senderGroup, receiverGroup, senderName, carriedNames, type, mime, content, writeSize);
+        return new Message(sendTime, duration, senderGroup, receiverGroup, senderName, carriedNames, type, mime, content, writeSize);
     }
-
 
     public long getSendTime() {
         return sendTime;
@@ -162,12 +169,16 @@ public class Message {
         return mime;
     }
 
-    public String getContent() {
+    public byte[] getContent() {
         return content;
     }
 
     public int getWriteSize() {
         return writeSize;
+    }
+
+    public long getDuration() {
+        return duration;
     }
 
 }

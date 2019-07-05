@@ -6,16 +6,13 @@
     <string name="nav_drawer_close">Close navigation drawer</string>
     <string name="nav_header_title">ReDiCom</string>
     <string name="nav_header_subtitle">NIST Project 70NANB17H188</string>
-    <string name="nav_header_desc">Navigation header</string>
+    <!--<string name="nav_header_desc">Navigation header</string>-->
     <string name="nav_messaging">Messaging</string>
     <string name="nav_work_offload">Work Offloading</string>
     <string name="nav_link">Link Layer</string>
     <string name="nav_gossip">Store &amp; Forward</string>
     <string name="nav_naming">Naming Layer</string>
     <string name="nav_log">Log</string>
-
-    <string name="hello_messaging_fragment">Hello fragment messaging</string>
-    <string name="hello_work_offload_fragment">Hello fragment work offload</string>
 
     <string name="log_top">Move to top in the log view</string>
     <string name="link_wifi_direct_short">WiFi-D: </string>
@@ -83,8 +80,19 @@
     <string name="naming_siblings">Siblings</string>
     <string name="naming_children">Children</string>
     <string name="naming_descendants">Descendants</string>
-
-    <string name="millisecond">ms</string>
     <string name="naming_namespace_net">NET</string>
     <string name="naming_namespace_messaging">MSG</string>
+
+    <string name="millisecond">ms</string>
+
+    <string name="messaging_dst_input_hint">Search for target role&#8230;</string>
+    <string name="messaging_dst">Target:</string>
+    <string name="messaging_push_to_record">Push to record&#8230;</string>
+    <string name="messaging_release_to_send">Release to send&#8230;</string>
+    <string name="messaging_text">Input message here&#8230;</string>
+    <string name="messaging_auto_play_description">Turn auto play on/off.</string>
+    <string name="messaging_type_description">Switch between P&amp;T and MSG.</string>
+    <string name="messaging_text_notification">Select a role to send messages</string>
+    <string name="messaging_to_description">The left name sends the message to the right name.</string>
+    <string name="messaging_attach_description">The message has attached names.</string>
 </resources>

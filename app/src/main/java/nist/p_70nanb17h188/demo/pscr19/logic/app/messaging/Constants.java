@@ -27,7 +27,7 @@ public class Constants {
     }
 
     @Nullable
-    static Name getDefaultSubscription() {
+    public static Name getDefaultSubscription() {
         switch (Device.getName()) {
             case Device.NAME_M1:
                 return new Name(-125); // Rescue 1

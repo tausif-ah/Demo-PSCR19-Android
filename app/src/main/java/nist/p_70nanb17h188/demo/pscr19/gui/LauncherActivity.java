@@ -16,6 +16,7 @@ import java.util.Arrays;
 import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
+import nist.p_70nanb17h188.demo.pscr19.gui.messaging.MessagingFragmentViewModel;
 import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
@@ -37,7 +38,9 @@ public class LauncherActivity extends AppCompatActivity {
             Manifest.permission.CHANGE_NETWORK_STATE,
             Manifest.permission.CHANGE_WIFI_STATE,
             Manifest.permission.INTERNET,
-            Manifest.permission.READ_EXTERNAL_STORAGE
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
 
     private BroadcastReceiver notificationHandler = (context, intent) -> {
@@ -86,6 +89,7 @@ public class LauncherActivity extends AppCompatActivity {
         LinkLayer.init();
         NetLayer.init();
         MessagingNamespace.init();
+        MessagingFragmentViewModel.init();
         new Thread(new LoadClassifier()).start();
         Log.d("LAUNCHER", "INIT END");
 

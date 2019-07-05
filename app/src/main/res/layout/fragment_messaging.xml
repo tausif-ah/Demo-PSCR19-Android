@@ -1,13 +1,153 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".gui.messaging.MessagingFragment">
 
-    <TextView android:layout_gravity="center"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/hello_messaging_fragment" />
+        android:orientation="horizontal">
 
-</FrameLayout>
+        <nist.p_70nanb17h188.demo.pscr19.gui.ClearableAutoCompleteTextView
+            android:id="@+id/messaging_dst_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:hint="@string/messaging_dst_input_hint"
+            android:imeOptions="actionDone|flagNoFullscreen|actionGo" />
+
+        <ImageButton
+            android:id="@+id/messaging_auto_play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#FFFAFAFA"
+            android:contentDescription="@string/messaging_auto_play_description"
+            android:tint="@color/colorPrimary"
+            app:srcCompat="@drawable/ic_messaging_auto_play" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="?attr/colorPrimary" />
+
+    <android.support.design.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3">
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/messaging_btn_to_bottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|top"
+            android:layout_margin="16dp"
+            android:src="@drawable/ic_log_bottom"
+            app:fabSize="mini" />
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/messaging_messages"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </android.support.design.widget.CoordinatorLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="?attr/colorPrimary" />
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/messaging_txt_dst"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/messaging_dst"
+            app:layout_constraintBaseline_toBaselineOf="@id/messaging_btn_target"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/messaging_txt_warning"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="#FF999999"
+            android:textStyle="italic"
+            app:layout_constraintBaseline_toBaselineOf="@id/messaging_btn_target"
+            app:layout_constraintStart_toEndOf="@id/messaging_txt_dst"
+            android:text="@string/messaging_text_notification" />
+
+        <Button
+            android:id="@+id/messaging_btn_target"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:textAllCaps="false"
+            app:layout_constraintStart_toEndOf="@id/messaging_txt_dst"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="INCIDENTS" />
+
+        <ImageButton
+            android:id="@+id/messaging_pnt_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginEnd="4dp"
+            android:backgroundTint="#FFFAFAFA"
+            android:contentDescription="@string/messaging_type_description"
+            android:tint="@color/colorPrimary"
+            app:layout_constraintBottom_toBottomOf="@id/messaging_btn_target"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/messaging_btn_target"
+            app:srcCompat="@drawable/ic_messaging_pnt" />
+
+
+        <EditText
+            android:id="@+id/messaging_txt_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:ems="10"
+            android:gravity="start|top"
+            android:hint="@string/messaging_text"
+            android:imeOptions="actionSend"
+            android:inputType="textLongMessage|textAutoCorrect|text|textCapSentences|textAutoComplete"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/messaging_pnt_switch"
+            app:layout_constraintStart_toStartOf="@id/messaging_txt_dst"
+            app:layout_constraintTop_toBottomOf="@id/messaging_btn_target" />
+
+        <nist.p_70nanb17h188.demo.pscr19.gui.messaging.PntButton
+            android:id="@+id/messaging_pnt"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="@color/btn_pnt"
+            android:drawableStart="@drawable/ic_messaging_pnt"
+            android:drawableTint="@color/btn_pnt_foreground"
+            android:paddingStart="26dp"
+            android:paddingEnd="26dp"
+            android:text="@string/messaging_push_to_record"
+            android:textAllCaps="false"
+            android:textColor="@color/btn_pnt_foreground"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/messaging_pnt_switch"
+            app:layout_constraintStart_toStartOf="@id/messaging_txt_dst"
+            app:layout_constraintTop_toBottomOf="@id/messaging_btn_target" />
+
+    </android.support.constraint.ConstraintLayout>
+
+</LinearLayout>

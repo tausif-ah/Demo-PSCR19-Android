@@ -13,10 +13,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import java.util.Locale;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
@@ -60,10 +60,10 @@ public class LinkFragment extends Fragment {
         });
         Button txtWifiDiscoverUpdate = view.findViewById(R.id.link_wifi_discover_update);
         txtWifiDiscoverUpdate.setText(LinkFragmentViewModel.DATE_STRING_ON_NULL);
-        viewModel.strWifiDiscoverUpdateTime.observe(this, timeString -> txtWifiDiscoverUpdate.setText("Wifi-D: " + timeString));
+        viewModel.strWifiDiscoverUpdateTime.observe(this, timeString -> txtWifiDiscoverUpdate.setText(String.format(Locale.US, "Wifi-D: %s", timeString)));
         Button txtBluetoothUpdate = view.findViewById(R.id.link_bluetooth_update);
         txtBluetoothUpdate.setText(LinkFragmentViewModel.DATE_STRING_ON_NULL);
-        viewModel.strBluetoothUpdateTime.observe(this, timeString -> txtBluetoothUpdate.setText("BT: " + timeString));
+        viewModel.strBluetoothUpdateTime.observe(this, timeString -> txtBluetoothUpdate.setText(String.format(Locale.US, "BT: %s", timeString)));
         viewModel.wifiDiscovering.observe(this, discovering -> txtWifiDiscoverUpdate.setCompoundDrawablesWithIntrinsicBounds(0, 0, Constants.getDiscoverStatusImageResource(discovering), 0));
         viewModel.bluetoothDiscovering.observe(this, discovering -> txtBluetoothUpdate.setCompoundDrawablesWithIntrinsicBounds(0, 0, Constants.getDiscoverStatusImageResource(discovering), 0));
         txtWifiDiscoverUpdate.setOnClickListener(v -> LinkLayer.getDefaultImplementation().getWifiLinkManager().discoverPeers());
@@ -78,7 +78,7 @@ public class LinkFragment extends Fragment {
             @NonNull
             @Override
             public LinkViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int i) {
-                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_link, parent, false);
+                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_link2, parent, false);
                 return new LinkViewHolder(v);
             }
 
@@ -111,34 +111,36 @@ public class LinkFragment extends Fragment {
     }
 
     private class LinkViewHolder extends RecyclerView.ViewHolder {
-        private final TextView txtName;
+        private Button btnItem;
+        //        private final TextView txtName;
         //        private final SwitchCompat swEstablish;
-        private final ImageButton btnEstablish;
-        private final ImageView imgStatus;
-        private final LinearLayout container;
+        //        private final ImageButton btnEstablish;
+        //        private final ImageView imgStatus;
+        //        private final LinearLayout container;
         private final Observer<Link.LinkStatus> linkStatusObserver = new Observer<Link.LinkStatus>() {
             @Override
             public void onChanged(@Nullable Link.LinkStatus linkStatus) {
 //                Log.d(TAG, "updateWifiDevice, name=%s, linkStatus=%s", instance.name, linkStatus);
-                imgStatus.setImageResource(Constants.getLinkStatusImageResource(linkStatus));
+//                imgStatus.setImageResource(Constants.getLinkStatusImageResource(linkStatus));
+                btnItem.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, Constants.getLinkStatusImageResource(linkStatus), 0);
             }
         };
-        private final Observer<Boolean> linkEstablishObserver = new Observer<Boolean>() {
-            @Override
-            public void onChanged(@Nullable Boolean establish) {
+        private final Observer<Boolean> linkEstablishObserver = establish -> {
 //                Log.d(TAG, "updateWifiDeviceList, name=%s, establish=%b", instance.name, establish);
-                btnEstablish.setImageResource(Constants.getEstablishActionImageResource(establish));
-            }
+//                btnEstablish.setImageResource(Constants.getEstablishActionImageResource(establish));
         };
+
         private Link instance;
 
         LinkViewHolder(@NonNull View itemView) {
             super(itemView);
-            txtName = itemView.findViewById(R.id.link_name);
-            btnEstablish = itemView.findViewById(R.id.link_connect);
-            btnEstablish.setOnClickListener(view -> instance.onEstablishConnectionClick());
-            container = itemView.findViewById(R.id.link_container);
-            imgStatus = itemView.findViewById(R.id.link_status);
+            btnItem = itemView.findViewById(R.id.link_container);
+//            txtName = itemView.findViewById(R.id.link_name);
+//            btnEstablish = itemView.findViewById(R.id.link_connect);
+//            btnEstablish.setOnClickListener(view -> instance.onEstablishConnectionClick());
+//            container = itemView.findViewById(R.id.link_container);
+//            imgStatus = itemView.findViewById(R.id.link_status);
+            btnItem.setOnClickListener(view -> instance.onEstablishConnectionClick());
         }
 
         void bind(Link link) {
@@ -153,10 +155,13 @@ public class LinkFragment extends Fragment {
             link.getEstablishConnection().observe(LinkFragment.this, linkEstablishObserver);
             linkEstablishObserver.onChanged(link.establishConnection.getValue());
 
-            txtName.setText(link.name);
-            container.setBackgroundResource(Constants.getLinkTypeColorResource(instance.getClass()));
-            assert link.getStatus().getValue() != null;
-            imgStatus.setImageResource(Constants.getLinkStatusImageResource(link.getStatus().getValue()));
+            btnItem.setText(link.name);
+            assert getActivity() != null;
+            btnItem.setBackgroundTintList(getResources().getColorStateList(Constants.getLinkTypeColorResource(instance.getClass()), getActivity().getTheme()));
+//            txtName.setText(link.name);
+//            container.setBackgroundResource(Constants.getLinkTypeColorResource(instance.getClass()));
+//            assert link.getStatus().getValue() != null;
+//            imgStatus.setImageResource(Constants.getLinkStatusImageResource(link.getStatus().getValue()));
         }
     }
 }
