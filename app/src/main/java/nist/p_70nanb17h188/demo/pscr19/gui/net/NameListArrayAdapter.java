@@ -7,12 +7,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Filter;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import nist.p_70nanb17h188.demo.pscr19.R;
@@ -21,46 +18,9 @@ import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 
 public class NameListArrayAdapter extends ArrayAdapter<Name> {
-    private final boolean showName;
-    private final ArrayList<Name> allItems = new ArrayList<>();
 
-    public NameListArrayAdapter(@NonNull Context context, @NonNull List<Name> objects) {
-        this(context, true, objects);
-    }
-
-    public NameListArrayAdapter(@NonNull Context context, boolean showName, @NonNull List<Name> objects) {
+    NameListArrayAdapter(@NonNull Context context, @NonNull List<Name> objects) {
         super(context, android.R.layout.simple_spinner_dropdown_item, objects);
-        this.showName = showName;
-        allItems.addAll(objects);
-    }
-
-    public void clearNames() {
-        super.clear();
-        allItems.clear();
-    }
-
-    public void addName(Name object) {
-        allItems.add(object);
-    }
-
-    @Override
-    public void add(@Nullable Name object) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void addAll(@NonNull Collection<? extends Name> collection) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void addAll(Name... items) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void clear() {
-        throw new UnsupportedOperationException();
     }
 
     @NonNull
@@ -101,16 +61,7 @@ public class NameListArrayAdapter extends ArrayAdapter<Name> {
 
     private String getNameRepresentation(MessagingName mn) {
         String[] incidents = MessagingNamespace.getDefaultInstance().getNameIncidents(mn.getName());
-        if (showName)
-            return String.format("%s %s %s",
-                    mn.getAppName(),
-                    mn.getName(),
-                    incidents.length == 0 ? "" : Arrays.toString(incidents));
-        else
-            return String.format("%s %s",
-                    mn.getAppName(),
-                    incidents.length == 0 ? "" : Arrays.toString(incidents));
-
+        return String.format("%s %s %s", mn.getAppName(), mn.getName(), incidents.length == 0 ? "" : Arrays.toString(incidents));
     }
 
     private String getNameRepresentation(Name n) {
@@ -118,47 +69,4 @@ public class NameListArrayAdapter extends ArrayAdapter<Name> {
         if (mn == null) return n.toString();
         else return getNameRepresentation(mn);
     }
-
-    @NonNull
-    @Override
-    public Filter getFilter() {
-        return nameFilter;
-    }
-
-    private Filter nameFilter = new Filter() {
-        @Override
-        public String convertResultToString(Object resultValue) {
-            return getNameRepresentation((Name) resultValue);
-        }
-
-        @Override
-        protected FilterResults performFiltering(CharSequence constraint) {
-            ArrayList<Name> suggestions = new ArrayList<>();
-            if (constraint != null) {
-                String input = constraint.toString().toLowerCase();
-                for (Name n : allItems) {
-                    String representation = getNameRepresentation(n).toLowerCase();
-                    if (representation.contains(input)) suggestions.add(n);
-                }
-            } else {
-                for (int i = 0; i < getCount(); i++) {
-                    Name n = getItem(i);
-                    suggestions.add(n);
-                }
-            }
-            FilterResults filterResults = new FilterResults();
-            filterResults.values = suggestions;
-            filterResults.count = suggestions.size();
-            return filterResults;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        protected void publishResults(CharSequence constraint, FilterResults results) {
-            ArrayList<Name> filteredList = (ArrayList<Name>) results.values;
-            NameListArrayAdapter.super.clear();
-            if (results.count > 0) NameListArrayAdapter.super.addAll(filteredList);
-            NameListArrayAdapter.super.notifyDataSetChanged();
-        }
-    };
 }

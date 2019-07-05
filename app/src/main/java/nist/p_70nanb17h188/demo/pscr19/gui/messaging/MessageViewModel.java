@@ -1,8 +1,7 @@
 package nist.p_70nanb17h188.demo.pscr19.gui.messaging;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 
-import nist.p_70nanb17h188.demo.pscr19.logic.Tuple2;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.Message;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingName;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNameType;
@@ -10,44 +9,6 @@ import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 
 class MessageViewModel {
-    static class NameAttribute {
-        private final Name name;
-        private String appName;
-        private MessagingNameType type;
-
-        NameAttribute(Name name) {
-            this.name = name;
-            bindValue();
-        }
-
-        private void bindValue() {
-            MessagingName mn = MessagingNamespace.getDefaultInstance().getName(name);
-            if (mn == null)
-                if (appName == null) {
-                    appName = name.toString();
-                    type = null;
-                } else {
-                    type = null;
-                }
-            else {
-                appName = mn.getAppName();
-                type = mn.getType();
-            }
-        }
-
-        public Name getName() {
-            return name;
-        }
-
-        public String getAppName() {
-            return appName;
-        }
-
-        public MessagingNameType getType() {
-            return type;
-        }
-    }
-
     private final Message message;
     private NameAttribute senderAttribute, receiverAttribute;
     private NameAttribute[] nameCarryAttributes;
@@ -70,24 +31,32 @@ class MessageViewModel {
         return message;
     }
 
-    public NameAttribute getSenderAttribute() {
+    NameAttribute getSenderAttribute() {
         return senderAttribute;
     }
 
-    public NameAttribute getReceiverAttribute() {
+    NameAttribute getReceiverAttribute() {
         return receiverAttribute;
     }
 
-    public NameAttribute[] getNameCarryAttributes() {
+    NameAttribute[] getNameCarryAttributes() {
         return nameCarryAttributes;
     }
 
-    public boolean isPlayed() {
+    boolean isPlayed() {
         return played;
     }
 
-    public boolean isPlaying() {
+    void setPlayed(boolean played) {
+        this.played = played;
+    }
+
+    boolean isPlaying() {
         return playing;
+    }
+
+    void setPlaying(boolean playing) {
+        this.playing = playing;
     }
 
     void bindValues() {
@@ -98,15 +67,42 @@ class MessageViewModel {
         }
     }
 
-    private Tuple2<String, MessagingNameType> bindValue(MessagingNamespace namespace, Name name, Tuple2<String, MessagingNameType> origValue) {
-        MessagingName mn = namespace.getName(name);
-        if (mn == null)
-            if (origValue == null)
-                return new Tuple2<>(name.toString(), null);
-            else
-                return new Tuple2<>(origValue.getV1(), null);
-        return new Tuple2<>(mn.getAppName(), mn.getType());
+    static class NameAttribute {
+        private final Name name;
+        private String appName;
+        private MessagingNameType type;
+
+        NameAttribute(Name name) {
+            this.name = name;
+            bindValue();
+        }
+
+        private void bindValue() {
+            MessagingName mn = MessagingNamespace.getDefaultInstance().getName(name);
+            if (mn == null) if (appName == null) {
+                appName = name.toString();
+                type = null;
+            } else {
+                type = null;
+            }
+            else {
+                String[] incidents = MessagingNamespace.getDefaultInstance().getNameIncidents(mn.getName());
+                appName = String.format("%s %s", mn.getAppName(), incidents.length == 0 ? "" : Arrays.toString(incidents));
+                type = mn.getType();
+            }
+        }
+
+        Name getName() {
+            return name;
+        }
+
+        String getAppName() {
+            return appName;
+        }
+
+        MessagingNameType getType() {
+            return type;
+        }
+
     }
-
-
 }

@@ -144,7 +144,7 @@ public class NamingFragment extends Fragment {
     private final BroadcastReceiver onNamespaceChangeReceived = (context, intent) -> updateNames();
 
     private final BroadcastReceiver onAppNameChangeReceived = (context, intent) -> {
-        namesAdapter.getFilter().filter("");
+        namesAdapter.notifyDataSetChanged();
         ancestorsAdapter.notifyDataSetChanged();
         parentsAdapter.notifyDataSetChanged();
         childrenAdapter.notifyDataSetChanged();
@@ -159,20 +159,20 @@ public class NamingFragment extends Fragment {
         assert usingMessagingNamespace != null;
 
 
-        namesAdapter.clearNames();
+        namesAdapter.clear();
         if (usingMessagingNamespace) {
             MessagingName[] allNames = namespace.getAllNames().toArray(new MessagingName[0]);
             Arrays.sort(allNames, DEFAULT_MESSAGING_NAME_COMPARATOR);
-            for (MessagingName name : allNames) namesAdapter.addName(name.getName());
+            for (MessagingName name : allNames) namesAdapter.add(name.getName());
 
         } else {
             ArrayList<Name> allNameList = new ArrayList<>();
             NetLayer.forEachName(allNameList::add);
             Name[] allNames = allNameList.toArray(new Name[0]);
             Arrays.sort(allNames, DEFAULT_NAME_COMPARATOR);
-            for (Name name : allNames) namesAdapter.addName(name);
+            for (Name name : allNames) namesAdapter.add(name);
         }
-        namesAdapter.getFilter().filter("");
+        namesAdapter.notifyDataSetChanged();
 
         // if current name is removed, go back to incident root
         if (currName == null || namesAdapter.getPosition(currName) < 0)

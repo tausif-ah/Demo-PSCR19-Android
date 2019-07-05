@@ -112,25 +112,14 @@ public class LinkFragment extends Fragment {
 
     private class LinkViewHolder extends RecyclerView.ViewHolder {
         private Button btnItem;
+        private Link instance;
         //        private final TextView txtName;
         //        private final SwitchCompat swEstablish;
         //        private final ImageButton btnEstablish;
         //        private final ImageView imgStatus;
         //        private final LinearLayout container;
-        private final Observer<Link.LinkStatus> linkStatusObserver = new Observer<Link.LinkStatus>() {
-            @Override
-            public void onChanged(@Nullable Link.LinkStatus linkStatus) {
-//                Log.d(TAG, "updateWifiDevice, name=%s, linkStatus=%s", instance.name, linkStatus);
-//                imgStatus.setImageResource(Constants.getLinkStatusImageResource(linkStatus));
-                btnItem.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, Constants.getLinkStatusImageResource(linkStatus), 0);
-            }
-        };
-        private final Observer<Boolean> linkEstablishObserver = establish -> {
-//                Log.d(TAG, "updateWifiDeviceList, name=%s, establish=%b", instance.name, establish);
-//                btnEstablish.setImageResource(Constants.getEstablishActionImageResource(establish));
-        };
-
-        private Link instance;
+        private final Observer<Link.LinkStatus> linkStatusObserver = linkStatus -> updateLinkStatus();
+        private final Observer<Boolean> linkEstablishObserver = establish -> updateLinkStatus();
 
         LinkViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -141,6 +130,13 @@ public class LinkFragment extends Fragment {
 //            container = itemView.findViewById(R.id.link_container);
 //            imgStatus = itemView.findViewById(R.id.link_status);
             btnItem.setOnClickListener(view -> instance.onEstablishConnectionClick());
+        }
+
+        private void updateLinkStatus() {
+            Link.LinkStatus status = instance.getStatus().getValue();
+            Boolean establishConnection = instance.getEstablishConnection().getValue();
+            assert status != null && establishConnection != null;
+            btnItem.setCompoundDrawablesRelativeWithIntrinsicBounds(Constants.getLinkStatusImageResource(status), 0, Constants.getEstablishActionImageResource(establishConnection), 0);
         }
 
         void bind(Link link) {

@@ -95,4 +95,5 @@
     <string name="messaging_text_notification">Select a role to send messages</string>
     <string name="messaging_to_description">The left name sends the message to the right name.</string>
     <string name="messaging_attach_description">The message has attached names.</string>
+    <string name="messaging_clear_description">Clear all the messages.</string>
 </resources>

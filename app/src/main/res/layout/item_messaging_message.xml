@@ -111,6 +111,7 @@
             android:layout_marginStart="4dp"
             android:layout_marginTop="4dp"
             android:layout_marginEnd="4dp"
+            android:textSize="18sp"
             app:layout_constraintEnd_toEndOf="@id/messaging_container_sender_receiver"
             app:layout_constraintStart_toStartOf="@id/messaging_container_sender_receiver"
             app:layout_constraintTop_toBottomOf="@id/messaging_container_attachment" />

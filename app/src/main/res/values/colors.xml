@@ -12,5 +12,10 @@
     <color name="colorNameAdministrative">#FFD5AA</color>
     <color name="colorNameUnknown">#D5D5D5</color>
     <color name="colorNameNull">#FAFAFA</color>
-
+    <color name="colorAudioPlayedBackground">#CCCCCC</color>
+    <color name="colorAudioPlayingBackground">#336699</color>
+    <color name="colorAudioNotPlayedBackground">#51B053</color>
+    <color name="colorAudioPlayedForeground">#000000</color>
+    <color name="colorAudioPlayingForeground">#FFFFFF</color>
+    <color name="colorAudioNotPlayedForeground">#FFFFFF</color>
 </resources>

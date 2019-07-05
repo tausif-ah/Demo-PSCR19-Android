@@ -11,6 +11,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
@@ -28,20 +29,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 
 public class LauncherActivity extends AppCompatActivity {
-    private static final String[] REQUIRED_PERMISSIONS = {
-            Manifest.permission.BLUETOOTH,
-            Manifest.permission.BLUETOOTH_ADMIN,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_NETWORK_STATE,
-            Manifest.permission.ACCESS_WIFI_STATE,
-            Manifest.permission.CHANGE_NETWORK_STATE,
-            Manifest.permission.CHANGE_WIFI_STATE,
-            Manifest.permission.INTERNET,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-    };
+    private static final String[] REQUIRED_PERMISSIONS = {Manifest.permission.BLUETOOTH, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.ACCESS_WIFI_STATE, Manifest.permission.CHANGE_NETWORK_STATE, Manifest.permission.CHANGE_WIFI_STATE, Manifest.permission.INTERNET, Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
     private BroadcastReceiver notificationHandler = (context, intent) -> {
         String msg = intent.getExtra(Helper.EXTRA_NOTIFICATION_CONTENT);
@@ -53,16 +41,20 @@ public class LauncherActivity extends AppCompatActivity {
         int duration = (type.getVal() >= LogType.Warn.getVal()) ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT;
         Toast.makeText(this, msg, duration).show();
     };
+    private boolean nameClicked = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Context.getContext(Helper.CONTEXT_USER_INTERFACE).registerReceiver(notificationHandler, new IntentFilter().addAction(Helper.ACTION_NOTIFY_USER));
 
+        ArrayList<String> toRequire = new ArrayList<>();
         for (String s : REQUIRED_PERMISSIONS) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(s) != PackageManager.PERMISSION_GRANTED)
-                requestPermissions(new String[]{s}, 0);
+                toRequire.add(s);
         }
+        if (!toRequire.isEmpty()) requestPermissions(toRequire.toArray(new String[0]), 0);
+
         setContentView(R.layout.activity_launcher);
         Log.init(Log.DEFAULT_CAPACITY);
         ListView nameList = findViewById(R.id.launcher_names);
@@ -71,9 +63,6 @@ public class LauncherActivity extends AppCompatActivity {
         nameList.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, names));
         nameList.setOnItemClickListener(this::nameListClicked);
     }
-
-
-    private boolean nameClicked = false;
 
     private synchronized void nameListClicked(AdapterView<?> parent, View view, int position, long id) {
         if (nameClicked) return;

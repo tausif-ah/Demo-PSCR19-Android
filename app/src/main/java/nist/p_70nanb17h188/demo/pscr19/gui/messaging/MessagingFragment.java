@@ -2,6 +2,7 @@ package nist.p_70nanb17h188.demo.pscr19.gui.messaging;
 
 
 import android.app.Activity;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -36,15 +37,9 @@ import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.R;
 import nist.p_70nanb17h188.demo.pscr19.gui.WrapLinearLayoutManager;
 import nist.p_70nanb17h188.demo.pscr19.gui.net.Constants;
-import nist.p_70nanb17h188.demo.pscr19.gui.net.NameListArrayAdapter;
-import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
-import nist.p_70nanb17h188.demo.pscr19.imc.Context;
-import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
-import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.Message;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingName;
 import nist.p_70nanb17h188.demo.pscr19.logic.app.messaging.MessagingNamespace;
-import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 
 public class MessagingFragment extends Fragment {
@@ -54,7 +49,6 @@ public class MessagingFragment extends Fragment {
 
     private MessagingFragmentViewModel viewModel = MessagingFragmentViewModel.getDefaultInstance();
     private MessagingNamespace namespace = MessagingNamespace.getDefaultInstance();
-    private float scale;
     private FragmentActivity activity;
     private AutoCompleteTextView inputName;
     private NameListArrayAdapter inputNameAdapter;
@@ -66,7 +60,9 @@ public class MessagingFragment extends Fragment {
     private FloatingActionButton btnToBottom;
     private ImageButton btnAutoPlay;
     private ImageButton btnPntSwitch;
+    private ImageButton btnClearMessages;
     private RecyclerView listMessages;
+    private boolean scrollToBottom = true;
     private RecyclerView.Adapter<MessageViewHolder> listMessageAdapter = new RecyclerView.Adapter<MessageViewHolder>() {
         @NonNull
         @Override
@@ -77,12 +73,56 @@ public class MessagingFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull MessageViewHolder messageViewHolder, int i) {
-            messageViewHolder.bind(viewModel.getMessageAtPosition(i));
+            messageViewHolder.bind(viewModel.getMessageAtPosition(viewModel.getMessageListSize() - i - 1));
         }
 
         @Override
         public int getItemCount() {
             return viewModel.getMessageListSize();
+        }
+    };
+    private TextWatcher inputNameTextChanged = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            viewModel.searchInput.setValue(s.toString());
+        }
+    };
+    private TextWatcher inputMessageTextChanged = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            viewModel.text.setValue(s.toString());
+        }
+    };
+    private RecyclerView.OnScrollListener listMessagesScrolled = new RecyclerView.OnScrollListener() {
+        @Override
+        public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+            super.onScrolled(recyclerView, dx, dy);
+            int state = listMessages.getScrollState();
+            if (state == RecyclerView.SCROLL_STATE_DRAGGING || state == RecyclerView.SCROLL_STATE_SETTLING) {
+                boolean newIsBottomList = !recyclerView.canScrollVertically(1);
+                if (newIsBottomList != scrollToBottom) {
+                    scrollToBottom = newIsBottomList;
+                    if (scrollToBottom) btnToBottom.hide();
+                    else btnToBottom.show();
+                }
+            }
         }
     };
 
@@ -96,7 +136,6 @@ public class MessagingFragment extends Fragment {
         assert activity != null;
         assert getContext() != null;
         imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
-        scale = getContext().getResources().getDisplayMetrics().density;
 
         inputName = view.findViewById(R.id.messaging_dst_input);
         btnToBottom = view.findViewById(R.id.messaging_btn_to_bottom);
@@ -107,6 +146,7 @@ public class MessagingFragment extends Fragment {
         btnPnt = view.findViewById(R.id.messaging_pnt);
         txtWarning = view.findViewById(R.id.messaging_txt_warning);
         listMessages = view.findViewById(R.id.messaging_messages);
+        btnClearMessages = view.findViewById(R.id.messaging_btn_clear);
 
         inputName.setText(viewModel.searchInput.getValue(), TextView.BufferType.EDITABLE);
         inputNameAdapter = new NameListArrayAdapter(view.getContext(), false, new ArrayList<>());
@@ -130,20 +170,27 @@ public class MessagingFragment extends Fragment {
 
         btnToBottom.setOnClickListener(this::btnToBottomClicked);
 
+        WrapLinearLayoutManager layoutManager = new WrapLinearLayoutManager(view.getContext());
+        layoutManager.setReverseLayout(true);
         listMessages.setAdapter(listMessageAdapter);
-        listMessages.setLayoutManager(new WrapLinearLayoutManager(view.getContext()));
+        listMessages.setLayoutManager(layoutManager);
+        listMessages.addOnScrollListener(listMessagesScrolled);
+
+        btnClearMessages.setOnClickListener(this::btnClearClicked);
 
         viewModel.autoPlay.observe(this, this::autoPlayUpdated);
         viewModel.usingPnt.observe(this, this::usingPntUpdated);
         viewModel.recording.observe(this, this::recordingUpdated);
         viewModel.selectedName.observe(this, this::selectedNameUpdated);
+        viewModel.setNamespaceChangedHandler(this::namespaceChanged);
+        viewModel.setMessageAddedHandler(this::messageAdded);
+        viewModel.setMessagesClearedHandler(this::messagesCleared);
+        viewModel.setMessageUpdatedHandler(this::messageUpdated);
 
         selectedNameUpdated(viewModel.selectedName.getValue());
-        namespaceUpdated(null, null);
+        namespaceChanged();
+        scrollToBottom();
 
-
-        Context.getContext(MessagingNamespace.CONTEXT_MESSAGINGNAMESPACE).registerReceiver(namespaceUpdateReceiver,
-                new IntentFilter().addAction(MessagingNamespace.ACTION_NAMESPACE_CHANGED).addAction(MessagingNamespace.ACTION_APPNAME_CHANGED));
         return view;
     }
 
@@ -155,9 +202,9 @@ public class MessagingFragment extends Fragment {
         viewModel.recording.removeObservers(this);
         viewModel.selectedName.removeObservers(this);
         // text and search input do not have observers
-        Context.getContext(MessagingNamespace.CONTEXT_MESSAGINGNAMESPACE).unregisterReceiver(namespaceUpdateReceiver);
+        viewModel.setNamespaceChangedHandler(null);
+        viewModel.setMessageAddedHandler(null);
     }
-
 
     /**
      * Events from UI
@@ -165,8 +212,7 @@ public class MessagingFragment extends Fragment {
     private void inputNameItemClicked(AdapterView<?> parent, View view, int position, long id) {
         Name n = inputNameAdapter.getItem(position);
         if (n == null) viewModel.selectedName.postValue(null);
-        else
-            viewModel.selectedName.postValue(MessagingNamespace.getDefaultInstance().getName(n));
+        else viewModel.selectedName.postValue(MessagingNamespace.getDefaultInstance().getName(n));
         if (viewModel.usingPnt.getValue() == Boolean.FALSE) {
             inputMessage.requestFocus();
         } else {
@@ -174,24 +220,8 @@ public class MessagingFragment extends Fragment {
         }
     }
 
-    private TextWatcher inputNameTextChanged = new TextWatcher() {
-        @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-        }
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-        }
-
-        @Override
-        public void afterTextChanged(Editable s) {
-            viewModel.searchInput.setValue(s.toString());
-        }
-    };
-
     private void inputNameFocusChanged(View view, boolean hasFocus) {
-        if (!hasFocus) imm.hideSoftInputFromWindow(inputName.getWindowToken(), 0);
+        if (!hasFocus) imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
     private void btnAutoPlayClicked(View v) {
@@ -203,37 +233,31 @@ public class MessagingFragment extends Fragment {
     }
 
     private void btnPntPressed(View v, boolean pressed) {
-        viewModel.setRecording(pressed);
+        if (pressed) viewModel.setRecording(true);
+        else new android.os.Handler().postDelayed(() -> viewModel.setRecording(false), 200);
     }
 
     private boolean inputMessageEditorActionTriggered(TextView v, int actionId, KeyEvent event) {
-        Helper.notifyUser(LogType.Info, "editorAction: id=%d, msg=%s", actionId, inputMessage.getText());
+        if (viewModel.sendTextMessage()) {
+            inputMessage.setText("", TextView.BufferType.EDITABLE);
+            imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+        }
         return true;
-
     }
 
-    private TextWatcher inputMessageTextChanged = new TextWatcher() {
-        @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-        }
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-        }
-
-        @Override
-        public void afterTextChanged(Editable s) {
-            viewModel.text.setValue(s.toString());
-        }
-    };
-
     private void inputMessageFocusChanged(View view, boolean hasFocus) {
-        if (hasFocus) imm.showSoftInput(view, 0);
-        else imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        if (hasFocus) {
+            imm.showSoftInput(view, 0);
+            if (scrollToBottom) scrollToBottom();
+        } else imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
     private void btnToBottomClicked(View v) {
+        scrollToBottom();
+    }
 
+    private void btnClearClicked(View v) {
+        viewModel.clearMessages();
     }
 
     /**
@@ -273,9 +297,7 @@ public class MessagingFragment extends Fragment {
 
     private void recordingUpdated(Boolean recording) {
         assert recording != null;
-        btnPnt.setText(viewModel.selectedName.getValue() == null || !recording
-                ? R.string.messaging_push_to_record
-                : R.string.messaging_release_to_send);
+        btnPnt.setText(viewModel.selectedName.getValue() == null || !recording ? R.string.messaging_push_to_record : R.string.messaging_release_to_send);
     }
 
     private void autoPlayUpdated(Boolean autoPlay) {
@@ -283,13 +305,7 @@ public class MessagingFragment extends Fragment {
         btnAutoPlay.setImageResource(autoPlay ? R.drawable.ic_messaging_no_auto_play : R.drawable.ic_messaging_auto_play);
     }
 
-
-    /**
-     * Events from Context
-     */
-    private BroadcastReceiver namespaceUpdateReceiver = this::namespaceUpdated;
-
-    private void namespaceUpdated(Context context, Intent intent) {
+    private void namespaceChanged() {
         MessagingNamespace namespace = MessagingNamespace.getDefaultInstance();
 
         inputNameAdapter.clearNames();
@@ -300,6 +316,31 @@ public class MessagingFragment extends Fragment {
             MessagingName mn = namespace.getName(viewModel.selectedName.getValue().getName());
             viewModel.selectedName.postValue(mn);
         }
+        listMessageAdapter.notifyDataSetChanged();
+    }
+
+    private void messagesCleared() {
+        listMessageAdapter.notifyDataSetChanged();
+        scrollToBottom();
+    }
+
+    private void messageUpdated(Integer idx) {
+        assert idx != null;
+        listMessageAdapter.notifyItemRangeChanged(viewModel.getMessageListSize() - idx - 1, 1);
+    }
+
+    private void messageAdded(MessageViewModel msg) {
+        listMessageAdapter.notifyItemRangeInserted(0, 1);
+
+        if (scrollToBottom) {
+            scrollToBottom();
+        }
+    }
+
+    private void scrollToBottom() {
+        scrollToBottom = true;
+        btnToBottom.hide();
+        listMessages.scrollToPosition(0);
     }
 
     /**
@@ -310,25 +351,28 @@ public class MessagingFragment extends Fragment {
         private FlexboxLayout containerAttachment;
         private TextView txtTime, txtMessage;
         private ImageView imgAttachment;
-
+        private MessageViewModel msg;
 
         MessageViewHolder(@NonNull View itemView) {
             super(itemView);
             btnSender = itemView.findViewById(R.id.messaging_btn_sender);
+            btnSender.setOnClickListener(v -> viewModel.selectedName.postValue(MessagingNamespace.getDefaultInstance().getName(msg.getSenderAttribute().getName())));
             btnReceiver = itemView.findViewById(R.id.messaging_btn_receiver);
+            btnReceiver.setOnClickListener(v -> viewModel.selectedName.postValue(MessagingNamespace.getDefaultInstance().getName(msg.getReceiverAttribute().getName())));
             btnAudio = itemView.findViewById(R.id.messaging_btn_voice);
+            btnAudio.setOnClickListener(v -> viewModel.playMessage(msg));
             imgAttachment = itemView.findViewById(R.id.messaging_img_attachment);
 
             containerAttachment = itemView.findViewById(R.id.messaging_container_attachment);
             txtTime = itemView.findViewById(R.id.messaging_txt_time);
             txtMessage = itemView.findViewById(R.id.messaging_txt_message);
-//            btnSender.setMinimumHeight();
         }
 
-        void bind(MessageViewModel viewModel) {
+        void bind(MessageViewModel msg) {
+            this.msg = msg;
 
             containerAttachment.removeAllViews();
-            MessageViewModel.NameAttribute[] carriedNameAttributes = viewModel.getNameCarryAttributes();
+            MessageViewModel.NameAttribute[] carriedNameAttributes = msg.getNameCarryAttributes();
             if (carriedNameAttributes.length == 0) {
                 imgAttachment.setVisibility(View.GONE);
                 containerAttachment.setVisibility(View.GONE);
@@ -338,6 +382,7 @@ public class MessagingFragment extends Fragment {
                 for (MessageViewModel.NameAttribute attribute : carriedNameAttributes) {
                     Button btn = new Button(containerAttachment.getContext());
                     bindButton(btn, attribute);
+                    btn.setOnClickListener(v -> viewModel.selectedName.postValue(MessagingNamespace.getDefaultInstance().getName(attribute.getName())));
                     if (attribute.getType() == null) btn.setEnabled(false);
                     btn.setTransformationMethod(null);
                     btn.setMinHeight((int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, BTN_MIN_HEIGHT_DP, getResources().getDisplayMetrics()));
@@ -348,28 +393,29 @@ public class MessagingFragment extends Fragment {
                     containerAttachment.addView(btn, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
                 }
             }
-            bindButton(btnSender, viewModel.getSenderAttribute());
-            bindButton(btnReceiver, viewModel.getReceiverAttribute());
-            txtTime.setText(DEFAULT_TIME_FORMAT.format(new Date(viewModel.getMessage().getSendTime())));
-            if (viewModel.getMessage().getType() == Message.MessageType.PNT) {
+            bindButton(btnSender, msg.getSenderAttribute());
+            bindButton(btnReceiver, msg.getReceiverAttribute());
+            txtTime.setText(DEFAULT_TIME_FORMAT.format(new Date(msg.getMessage().getSendTime())));
+            if (msg.getMessage().getType() == Message.MessageType.PNT) {
                 txtMessage.setVisibility(View.GONE);
                 btnAudio.setVisibility(View.VISIBLE);
-                btnAudio.setText(String.format(Locale.US, "%.3f", viewModel.getMessage().getDuration() / 1000.0));
+                btnAudio.setText(String.format(Locale.US, "%.3f", msg.getMessage().getDuration() / 1000.0));
+                ColorStateList foregroundResource = getResources().getColorStateList(nist.p_70nanb17h188.demo.pscr19.gui.messaging.Constants.getPlayForegroundResource(msg.isPlaying(), msg.isPlayed()), activity.getTheme());
+                ColorStateList backgroundResource = getResources().getColorStateList(nist.p_70nanb17h188.demo.pscr19.gui.messaging.Constants.getPlayBackgroundResource(msg.isPlaying(), msg.isPlayed()), activity.getTheme());
+                btnAudio.setTextColor(foregroundResource);
+                btnAudio.setCompoundDrawableTintList(foregroundResource);
+                btnAudio.setBackgroundTintList(backgroundResource);
             } else {
                 txtMessage.setVisibility(View.VISIBLE);
-                txtMessage.setText(new String(viewModel.getMessage().getContent(), Helper.DEFAULT_CHARSET));
+                txtMessage.setText(new String(msg.getMessage().getContent(), Helper.DEFAULT_CHARSET));
                 btnAudio.setVisibility(View.GONE);
             }
-
 
         }
 
         private void bindButton(Button btn, MessageViewModel.NameAttribute attribute) {
             btn.setText(attribute.getAppName());
             btn.setBackgroundTintList(getResources().getColorStateList(Constants.getNameTypeColorResource(attribute.getType()), activity.getTheme()));
-
         }
     }
-
-
 }
