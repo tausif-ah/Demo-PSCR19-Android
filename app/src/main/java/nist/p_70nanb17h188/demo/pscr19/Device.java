@@ -11,7 +11,7 @@ public class Device {
     public static final String NAME_M2 = "Fire Fighter 1";
     public static final String NAME_ROUTER = "Coordination Center";
     public static final String NAME_MULE = "Patrol Car";
-    public static final String NAME_S11 = "Tech Support";
+    public static final String NAME_S11 = "Tac Support";
     public static final String NAME_S12 = "EMT 2";
     public static final String NAME_S13 = "EMT 1";
     public static final String NAME_S21 = "Rescue 2";

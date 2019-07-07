@@ -51,7 +51,7 @@ public class LinkLayer {
     public static void init() {
         try {
             defaultImplementation = new LinkLayer_Impl();
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             Log.e(TAG, e, "Failed in creating defaultImplementation!");
         }
     }

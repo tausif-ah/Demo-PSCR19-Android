@@ -76,7 +76,7 @@ public class Constants {
         ret.add(new MessagingName(new Name(-121), "EMT 1", MessagingNameType.Administrative));
         ret.add(new MessagingName(new Name(-122), "EMT 2", MessagingNameType.Administrative));
         ret.add(new MessagingName(new Name(-123), "Patrol Car", MessagingNameType.Administrative));
-        ret.add(new MessagingName(new Name(-124), "Tech Support", MessagingNameType.Administrative));
+        ret.add(new MessagingName(new Name(-124), "Tac Support", MessagingNameType.Administrative));
         ret.add(new MessagingName(new Name(-125), "Rescue 1", MessagingNameType.Administrative));
         ret.add(new MessagingName(new Name(-126), "Field Officer", MessagingNameType.Administrative));
 

@@ -147,7 +147,7 @@ public abstract class SocketWrapper implements AutoCloseable, Closeable {
                 close();
                 return;
             }
-            Log.d(TAG, "Next timeout time = nameTimeoutTime (%d)", nameTimeoutTime);
+//            Log.d(TAG, "Next timeout time = nameTimeoutTime (%d)", nameTimeoutTime);
             nextEventTime = nameTimeoutTime;
         }
         if (now >= lastReadTime + KEEP_ALIVE_TIMEOUT_MS) {
@@ -159,7 +159,7 @@ public abstract class SocketWrapper implements AutoCloseable, Closeable {
 
         synchronized (toSend) {
             // if the sender is sending, wait for a keepalive duration
-            Log.i(TAG, "toSend empty: %b, %d, %d", toSend.isEmpty(), now + KEEP_ALIVE_DURATION_MS, lastWriteTime + KEEP_ALIVE_DURATION_MS);
+//            Log.d(TAG, "toSend empty: %b, %d, %d", toSend.isEmpty(), now + KEEP_ALIVE_DURATION_MS, lastWriteTime + KEEP_ALIVE_DURATION_MS);
             if (!toSend.isEmpty())
                 nextEventTime = Math.min(nextEventTime, now + KEEP_ALIVE_DURATION_MS);
             else {
@@ -171,7 +171,7 @@ public abstract class SocketWrapper implements AutoCloseable, Closeable {
                 }
             }
         }
-        Log.d(TAG, "nextEventTime=%d", nextEventTime);
+//        Log.d(TAG, "nextEventTime=%d", nextEventTime);
         sendThreadHandler.postDelayed(this::checkWorker, nextEventTime - now);
     }
 
