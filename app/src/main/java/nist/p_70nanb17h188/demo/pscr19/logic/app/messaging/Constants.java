@@ -71,12 +71,12 @@ public class Constants {
         ret.add(new MessagingName(new Name(-116), "Bridgewater Twp", MessagingNameType.Administrative));
         ret.add(new MessagingName(new Name(-117), "Patrol Division", MessagingNameType.Administrative));
         ret.add(new MessagingName(new Name(-118), "Rahway F.D.", MessagingNameType.Administrative));
-        ret.add(new MessagingName(new Name(-119), "5-1 Pumper", MessagingNameType.Administrative));
-        ret.add(new MessagingName(new Name(-120), "5-2 Rescue", MessagingNameType.Administrative));
-        ret.add(new MessagingName(new Name(-121), "Ambulance 1", MessagingNameType.Administrative));
-        ret.add(new MessagingName(new Name(-122), "Ambulance 2", MessagingNameType.Administrative));
+        ret.add(new MessagingName(new Name(-119), "Fire Fighter 1", MessagingNameType.Administrative));
+        ret.add(new MessagingName(new Name(-120), "Rescue 2", MessagingNameType.Administrative));
+        ret.add(new MessagingName(new Name(-121), "EMT 1", MessagingNameType.Administrative));
+        ret.add(new MessagingName(new Name(-122), "EMT 2", MessagingNameType.Administrative));
         ret.add(new MessagingName(new Name(-123), "Patrol Car", MessagingNameType.Administrative));
-        ret.add(new MessagingName(new Name(-124), "TAC1", MessagingNameType.Administrative));
+        ret.add(new MessagingName(new Name(-124), "Tech Support", MessagingNameType.Administrative));
         ret.add(new MessagingName(new Name(-125), "Rescue 1", MessagingNameType.Administrative));
         ret.add(new MessagingName(new Name(-126), "Field Officer", MessagingNameType.Administrative));
 
@@ -266,7 +266,7 @@ public class Constants {
             HashSet<MessagingName> allnames = new HashSet<>();
             ArrayList<Tuple2<Name, Name>> allRelationships = new ArrayList<>();
 
-            allnames.add(new MessagingName(new Name(1), "Incident", MessagingNameType.Incident));
+            allnames.add(new MessagingName(new Name(1), "Search & Rescue", MessagingNameType.Incident));
             allnames.add(new MessagingName(new Name(2), "Task Force Leaders", MessagingNameType.Incident));
             allnames.add(new MessagingName(new Name(3), "Safety Officers", MessagingNameType.Incident));
             allnames.add(new MessagingName(new Name(4), "Search Team", MessagingNameType.Incident));
@@ -317,7 +317,7 @@ public class Constants {
             allRelationships.add(new Tuple2<>(new Name(23), new Name(24)));
             allRelationships.add(new Tuple2<>(new Name(23), new Name(25)));
 
-            new Template("Hurricane", new Name(1), new Name(2), allnames, allRelationships);
+            new Template("Search & Rescue", new Name(1), new Name(2), allnames, allRelationships);
 
         }
     }

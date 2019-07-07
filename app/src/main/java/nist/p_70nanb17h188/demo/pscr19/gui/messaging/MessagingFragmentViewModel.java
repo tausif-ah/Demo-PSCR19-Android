@@ -46,7 +46,7 @@ public class MessagingFragmentViewModel extends ViewModel {
 
     private MessagingFragmentViewModel() {
         this.usingPnt.setValue(true);
-        this.autoPlay.setValue(true);
+        this.autoPlay.setValue(false);
         this.recording.setValue(false);
         text.setValue("");
         // subscribe to channel.

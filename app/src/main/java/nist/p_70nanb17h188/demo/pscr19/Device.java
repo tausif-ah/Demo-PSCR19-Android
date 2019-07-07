@@ -8,13 +8,13 @@ public class Device {
     public static final String NAME_PC1 = "Field Officer";
     public static final String NAME_PC2 = "Commander";
     public static final String NAME_M1 = "Rescue 1";
-    public static final String NAME_M2 = "5-1 Pumper";
+    public static final String NAME_M2 = "Fire Fighter 1";
     public static final String NAME_ROUTER = "Coordination Center";
     public static final String NAME_MULE = "Patrol Car";
-    public static final String NAME_S11 = "TAC 1";
-    public static final String NAME_S12 = "Ambulance 2";
-    public static final String NAME_S13 = "Ambulance 1";
-    public static final String NAME_S21 = "5-2 Rescue";
+    public static final String NAME_S11 = "Tech Support";
+    public static final String NAME_S12 = "EMT 2";
+    public static final String NAME_S13 = "EMT 1";
+    public static final String NAME_S21 = "Rescue 2";
     private static final HashSet<String> ALL_NAMES = new HashSet<>(Arrays.asList(NAME_PC1, NAME_PC2, NAME_ROUTER, NAME_M1, NAME_M2, NAME_MULE, NAME_S11, NAME_S12, NAME_S13, NAME_S21));
     private static final HashSet<String> PHONES = new HashSet<>(Arrays.asList(NAME_M1, NAME_M2, NAME_MULE, NAME_S11, NAME_S12, NAME_S13, NAME_S21, NAME_ROUTER));
 
