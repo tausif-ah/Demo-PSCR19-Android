@@ -20,7 +20,7 @@ class AudioManager {
 
     private MessageViewModel currentMessage = null;
     private MediaPlayer currentPlayer = null;
-    private boolean autoPlay = true;
+    private boolean autoPlay = MessagingFragmentViewModel.DEFAULT_AUTO_PLAY;
     private ArrayList<MessageViewModel> pendingMessages = new ArrayList<>();
 
     AudioManager(Consumer<MessageViewModel> messagePlayStateChangedHandler) {

@@ -37,7 +37,7 @@
                 android:id="@+id/messaging_btn_sender"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|fill_vertical"
+                android:layout_gravity="center_vertical"
                 android:layout_weight="1"
                 android:minWidth="40dp"
                 android:minHeight="20dp"

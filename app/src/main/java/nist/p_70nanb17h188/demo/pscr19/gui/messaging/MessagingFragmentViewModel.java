@@ -26,6 +26,8 @@ import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 
 public class MessagingFragmentViewModel extends ViewModel {
     private static final String INITIATOR = "nist.p_70nanb17h188.demo.pscr19.gui.messaging.MessagingFragmentViewModel";
+    static final boolean DEFAULT_AUTO_PLAY = false;
+
     private static MessagingFragmentViewModel DEFAULT_INSTANCE;
     MutableLiveData<Boolean> usingPnt = new MutableLiveData<>();
     MutableLiveData<Boolean> autoPlay = new MutableLiveData<>();
@@ -46,7 +48,7 @@ public class MessagingFragmentViewModel extends ViewModel {
 
     private MessagingFragmentViewModel() {
         this.usingPnt.setValue(true);
-        this.autoPlay.setValue(false);
+        this.autoPlay.setValue(DEFAULT_AUTO_PLAY);
         this.recording.setValue(false);
         text.setValue("");
         // subscribe to channel.
