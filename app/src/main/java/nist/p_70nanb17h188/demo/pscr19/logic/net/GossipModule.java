@@ -20,6 +20,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.FIFOSet;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
+import nist.p_70nanb17h188.demo.pscr19.logic.log.LogType;
 
 public class GossipModule {
 
@@ -202,6 +203,7 @@ public class GossipModule {
 
         if (changed) {
             Context.getContext(CONTEXT_GOSSIP_MODULE).sendBroadcast(new Intent(ACTION_NEIGHBOR_CHANGED).putExtra(EXTRA_NEIGHBORS, connectedNeighbors.toArray(new NeighborID[0])));
+            Helper.notifyUser(LogType.Info, "Device %s %s!", neighborID, connected ? "connected" : "disconnected");
             if (connected) {
                 onNeighborConnected(neighborID);
             } else {

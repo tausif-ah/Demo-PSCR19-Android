@@ -4,10 +4,9 @@ import android.net.wifi.p2p.WifiP2pDevice;
 
 import nist.p_70nanb17h188.demo.pscr19.imc.DelayRunner;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
-import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
+//import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiThreadTCPConnectionManager;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
-//import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 class LinkWifiDirect extends Link {
     private static final long WIFI_DIRECT_CONNECTION_CLOSE_DELAY_MS = 500;

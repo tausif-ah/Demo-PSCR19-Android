@@ -5,6 +5,7 @@ import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.Transformations;
 import android.arch.lifecycle.ViewModel;
+import android.bluetooth.BluetoothDevice;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pGroup;
@@ -19,11 +20,14 @@ import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.Intent;
 import nist.p_70nanb17h188.demo.pscr19.imc.IntentFilter;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.BluetoothLinkManager;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.BluetoothThreadTCPConnectionManager;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
-import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiThreadTCPConnectionManager;
+
+//import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
 
 public class LinkFragmentViewModel extends ViewModel {
     static final String DATE_STRING_ON_NULL = "--:--:--.---";
@@ -48,6 +52,12 @@ public class LinkFragmentViewModel extends ViewModel {
                         .addAction(WifiLinkManager.ACTION_WIFI_DISCOVERY_STATE_CHANGED)
                         .addAction(WifiLinkManager.ACTION_WIFI_LIST_CHANGED)
         );
+        Context.getContext(BluetoothLinkManager.CONTEXT_BLUETOOTH_LINK_MANAGER).registerReceiver(
+                receiver,
+                new IntentFilter()
+                        .addAction(BluetoothLinkManager.ACTION_BLUETOOTH_DISCOVERY_STATE_CHANGED)
+                        .addAction(BluetoothLinkManager.ACTION_BLUETOOTH_LIST_CHANGED)
+        );
         Context.getContext(LinkLayer.CONTEXT_LINK_LAYER).registerReceiver(
                 receiver,
                 new IntentFilter()
@@ -69,6 +79,13 @@ public class LinkFragmentViewModel extends ViewModel {
                 wifiDiscoverUpdateTime.postValue(intent.getExtra(WifiLinkManager.EXTRA_TIME));
                 updateWifiDeviceList(intent.getExtra(WifiLinkManager.EXTRA_DEVICE_LIST));
                 break;
+            case BluetoothLinkManager.ACTION_BLUETOOTH_DISCOVERY_STATE_CHANGED:
+                bluetoothDiscovering.postValue(intent.getExtra(BluetoothLinkManager.EXTRA_IS_DISCOVERING));
+                break;
+            case BluetoothLinkManager.ACTION_BLUETOOTH_LIST_CHANGED:
+                bluetoothUpdateTime.postValue(intent.getExtra(BluetoothLinkManager.EXTRA_TIME));
+                updateBluetoothDeviceList(intent.getExtra(BluetoothLinkManager.EXTRA_DEVICE_LIST));
+                break;
             case LinkLayer.ACTION_LINK_CHANGED:
                 NeighborID neighborID = intent.getExtra(LinkLayer.EXTRA_NEIGHBOR_ID);
                 assert neighborID != null;
@@ -77,7 +94,7 @@ public class LinkFragmentViewModel extends ViewModel {
                 assert connected != null;
                 // Log.d(TAG, "received ACTION_TCP_CONNECTION_CHANGED %s tcp %s", name, connected ? "CONNECTED" : "DISCONNECTED");
                 for (Link l : links) {
-                    if (l instanceof LinkWifiDirect && l.name.equals(name)) {
+                    if (l.name.equals(name)) {
                         // Log.d(TAG, "received ACTION_TCP_CONNECTION_CHANGED %s tcp %s, l=%s", name, connected ? "CONNECTED" : "DISCONNECTED", l);
                         l.setTCPConnected(connected);
                     }
@@ -98,15 +115,14 @@ public class LinkFragmentViewModel extends ViewModel {
         wifiGroupInfo.postValue(wifiLinkManager.getLastGroupInfo());
         wifiDiscovering.postValue(wifiLinkManager.isWifiDiscovering());
         wifiDiscoverUpdateTime.postValue(wifiLinkManager.getLastDiscoverTime());
-        wifiGroupInfo.postValue(wifiLinkManager.getLastGroupInfo());
         updateWifiDeviceList(wifiLinkManager.getLastDiscoverList());
-        updateTCPConnectionList();
 
-        //if bluetoothLinkManager != null
-        {
-            bluetoothDiscovering.postValue(false);
-            bluetoothUpdateTime.postValue(null);
-        }
+        BluetoothLinkManager bluetoothLinkManager = LinkLayer.getDefaultImplementation().getBluetoothLinkManager();
+        bluetoothDiscovering.postValue(bluetoothLinkManager.isBluetoothDiscovering());
+        bluetoothUpdateTime.postValue(bluetoothLinkManager.getLastDiscoverTime());
+        updateBluetoothDeviceList(bluetoothLinkManager.getLastDiscoverList());
+
+        updateTCPConnectionList();
     }
 
     private void updateTCPConnectionList() {
@@ -116,6 +132,12 @@ public class LinkFragmentViewModel extends ViewModel {
             if (l instanceof LinkWifiDirect) {
 //                l.setTCPConnected(wifiTCPConnectionManager.isDeviceTCPConnected(l.name));
                 l.setTCPConnected(wifiThreadTCPConnectionManager.isDeviceTCPConnected(l.name));
+            }
+        }
+        BluetoothThreadTCPConnectionManager bluetoothThreadTCPConnectionManager = LinkLayer.getDefaultImplementation().getBluetoothThreadTCPConnectionManager();
+        for (Link l : links) {
+            if (l instanceof LinkBluetooth) {
+                l.setTCPConnected(bluetoothThreadTCPConnectionManager.isDeviceTCPConnected(l.name));
             }
         }
     }
@@ -140,6 +162,30 @@ public class LinkFragmentViewModel extends ViewModel {
             remaining.remove(name);
         }
         for (LinkWifiDirect l : remaining.values()) {
+            l.setDeviceInDiscovery(null);
+        }
+    }
+
+    private void updateBluetoothDeviceList(BluetoothDevice[] list) {
+        if (list == null) return;
+        HashMap<String, LinkBluetooth> remaining = new HashMap<>();
+        for (Link l : links) {
+            if (l instanceof LinkBluetooth) remaining.put(l.name, (LinkBluetooth) l);
+        }
+        for (BluetoothDevice device : list) {
+            String name = device.getName();
+            if (name == null) continue;
+//            if (name.startsWith("[Phone]")) name = name.substring(7).trim();
+
+            LinkBluetooth l = remaining.get(name);
+            if (l == null) {
+                continue;
+            }
+//                Log.d(TAG, "updateWifiDeviceList, name=%s, status=%d", device.deviceName, device.status);
+            l.setDeviceInDiscovery(device);
+            remaining.remove(name);
+        }
+        for (LinkBluetooth l : remaining.values()) {
             l.setDeviceInDiscovery(null);
         }
     }

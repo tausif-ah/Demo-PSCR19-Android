@@ -7,8 +7,8 @@ import android.support.annotation.Nullable;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
-import java.util.Locale;
 
+import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.MyApplication;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
 import nist.p_70nanb17h188.demo.pscr19.imc.DelayRunner;
@@ -36,11 +36,6 @@ public abstract class WifiThreadTCPConnectionManager {
         this.threadTCPConnectionManager = threadTCPConnectionManager;
     }
 
-    static void checkValidSendDataParams(@NonNull byte[] data, int start, int len) {
-        if (len < 0 || start + len > data.length)
-            throw new IllegalArgumentException(String.format(Locale.US, "wrong start(%d) or len(%d) value, data.length=%d", start, len, data.length));
-    }
-
     @NonNull
     ThreadTCPConnectionManager getThreadTCPConnectionManager() {
         return threadTCPConnectionManager;
@@ -65,7 +60,7 @@ class WifiThreadTCPConnectionManagerDoNothing extends WifiThreadTCPConnectionMan
 
     @Override
     public boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
-        checkValidSendDataParams(data, start, len);
+        Helper.checkValidSendDataParams(data, start, len);
         return false;
     }
 
@@ -111,7 +106,7 @@ class WifiThreadTCPConnectionManagerGroupOwner extends WifiThreadTCPConnectionMa
 
     @Override
     public boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
-        checkValidSendDataParams(data, start, len);
+        Helper.checkValidSendDataParams(data, start, len);
         SocketWrapper socketWrapper = connectedNeighbors.get(id.getName());
         if (socketWrapper == null) return false;
         byte[] buf = new byte[len];
@@ -300,7 +295,7 @@ class WifiThreadTCPConnectionManagerClient extends WifiThreadTCPConnectionManage
 
     @Override
     public boolean sendData(@NonNull NeighborID id, @NonNull byte[] data, int start, int len) {
-        checkValidSendDataParams(data, start, len);
+        Helper.checkValidSendDataParams(data, start, len);
         synchronized (this) {
             if (!id.getName().equals(connectedName) || currentSocket == null) return false;
             byte[] buf = new byte[len];

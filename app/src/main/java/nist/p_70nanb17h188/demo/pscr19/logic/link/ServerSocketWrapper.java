@@ -91,8 +91,13 @@ class ServerSocketWrapperBluetooth extends ServerSocketWrapper {
     @NonNull
     @Override
     protected SocketWrapper accept(ThreadTCPConnectionManager.SocketWrapperEventHandler socketWrapperEventHandler) throws IOException {
-        BluetoothSocket bluetoothSocket = serverSocket.accept();
-        return new SocketWrapperBluetooth(bluetoothSocket, socketWrapperEventHandler);
+        try {
+            BluetoothSocket bluetoothSocket = serverSocket.accept();
+            return new SocketWrapperBluetooth(bluetoothSocket, socketWrapperEventHandler);
+        } catch (IOException e) {
+            close();
+            throw e;
+        }
     }
 
     @Override

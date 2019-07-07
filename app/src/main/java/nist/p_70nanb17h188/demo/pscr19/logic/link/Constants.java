@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.UUID;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
 
@@ -15,8 +16,11 @@ public class Constants {
     static final int WIFI_DIRECT_SERVER_LISTEN_PORT = 10305;
     static final int BLUETOOTH_SERVER_LISTEN_PORT = 10307;
     static final InetAddress WIFI_DIRECT_SERVER_ADDRESS;
+    static final long BLUETOOTH_DISCOVERABLE_DURATION = 20;
 
     private static final HashSet<String> WIFI_DIRECT_GROUP_OWNERS = new HashSet<>(Arrays.asList(Device.NAME_M1, Device.NAME_ROUTER));
+    static final String BLUETOOTH_SDP_NAME = "ReDiCom";
+    static final UUID BLUETOOTH_SDP_UUID = UUID.fromString("eab9cb2a-c5ec-47ed-859d-8adf3990760e");
 
 
     static {

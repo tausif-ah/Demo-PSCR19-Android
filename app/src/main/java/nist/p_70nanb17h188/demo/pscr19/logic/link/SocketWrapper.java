@@ -65,7 +65,7 @@ public abstract class SocketWrapper implements AutoCloseable, Closeable {
             innerClose();
             socketWrapperEventHandler.onSocketWrapperClosed(this);
         } catch (IOException e) {
-            Log.e(TAG, "Failed in closing socket: %s", this);
+            Log.e(TAG, e, "Failed in closing socket: %s", this);
             socketWrapperEventHandler.onSocketWrapperCloseFailed(this);
         }
     }
@@ -414,6 +414,7 @@ public abstract class SocketWrapper implements AutoCloseable, Closeable {
 }
 
 class SocketWrapperTCP extends SocketWrapper {
+    private boolean connected = true;
     private final Socket socket;
 
     SocketWrapperTCP(InetAddress host, int port, ThreadTCPConnectionManager.SocketWrapperEventHandler socketWrapperEventHandler) throws IOException {
@@ -440,12 +441,15 @@ class SocketWrapperTCP extends SocketWrapper {
     }
 
     @Override
-    protected boolean isConnected() {
-        return socket.isConnected();
+    protected synchronized boolean isConnected() {
+        return connected && socket.isConnected();
     }
 
     @Override
-    protected void innerClose() throws IOException {
+    protected synchronized void innerClose() throws IOException {
+        connected = false;
+//        socket.getInputStream().close();
+//        socket.getOutputStream().close();
         socket.close();
     }
 
@@ -462,10 +466,12 @@ class SocketWrapperTCP extends SocketWrapper {
 }
 
 class SocketWrapperBluetooth extends SocketWrapper {
+    private boolean connected = true;
     private final BluetoothSocket socket;
 
     SocketWrapperBluetooth(BluetoothDevice device, UUID uuid, ThreadTCPConnectionManager.SocketWrapperEventHandler socketWrapperEventHandler) throws IOException {
         this(device.createRfcommSocketToServiceRecord(uuid), socketWrapperEventHandler);
+        this.socket.connect();
     }
 
     SocketWrapperBluetooth(BluetoothSocket socket, ThreadTCPConnectionManager.SocketWrapperEventHandler socketWrapperEventHandler) {
@@ -486,12 +492,16 @@ class SocketWrapperBluetooth extends SocketWrapper {
     }
 
     @Override
-    protected boolean isConnected() {
-        return socket.isConnected();
+    protected synchronized boolean isConnected() {
+        return connected && socket.isConnected();
     }
 
     @Override
-    protected void innerClose() throws IOException {
+    protected synchronized void innerClose() throws IOException {
+        connected = false;
+
+        socket.getInputStream().close();
+        socket.getOutputStream().close();
         socket.close();
     }
 

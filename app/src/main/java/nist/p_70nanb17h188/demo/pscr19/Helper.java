@@ -153,4 +153,10 @@ public class Helper {
         return content;
     }
 
+    public static void checkValidSendDataParams(@NonNull byte[] data, int start, int len) {
+        if (len < 0 || start + len > data.length)
+            throw new IllegalArgumentException(String.format(Locale.US, "wrong start(%d) or len(%d) value, data.length=%d", start, len, data.length));
+    }
+
+
 }

@@ -2,23 +2,25 @@ package nist.p_70nanb17h188.demo.pscr19.logic.link;
 
 import android.support.annotation.NonNull;
 
-import java.io.IOException;
-
 import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
 public final class LinkLayer_Impl {
     private static final String TAG = "LinkLayer_Impl";
-    //    @NonNull
-//    private final TCPConnectionManager tcpConnectionManager;
+    //@NonNull
+    //private final TCPConnectionManager tcpConnectionManager;
     @NonNull
     private final ThreadTCPConnectionManager threadTCPConnectionManager;
-    //    @NonNull
-//    private final WifiTCPConnectionManager wifiTCPConnectionManager;
+    @NonNull
+    private final WifiLinkManager wifiLinkManager;
+    //@NonNull
+    //private final WifiTCPConnectionManager wifiTCPConnectionManager;
     @NonNull
     private final WifiThreadTCPConnectionManager wifiThreadTCPConnectionManager;
     @NonNull
-    private final WifiLinkManager wifiLinkManager;
+    private final BluetoothLinkManager bluetoothLinkManager;
+    @NonNull
+    private final BluetoothThreadTCPConnectionManager bluetoothThreadTCPConnectionManager;
 
     /**
      * Singleton pattern, prevent the class to be instantiated by the others.
@@ -34,7 +36,9 @@ public final class LinkLayer_Impl {
 //        wifiTCPConnectionManager = WifiTCPConnectionManager.createWifiTCPConnectionManager(tcpConnectionManager);
         wifiThreadTCPConnectionManager = WifiThreadTCPConnectionManager.createWifiTCPConnectionManager(threadTCPConnectionManager);
 
-        //        WifiTCPConnectionManager.init(context);
+        bluetoothLinkManager = new BluetoothLinkManager();
+        bluetoothThreadTCPConnectionManager = BluetoothThreadTCPConnectionManager.createBluetoothTCPConnectionManager(threadTCPConnectionManager);
+
         Log.d("LinkLayer_Impl", "%s initialized", Device.getName());
     }
 
@@ -42,9 +46,10 @@ public final class LinkLayer_Impl {
         // prefer Wifi over Bluetooth
         Log.d(TAG, "send %d bytes to %s", len, id);
 //        return wifiTCPConnectionManager.sendData(id, data, start, len);
-        return wifiThreadTCPConnectionManager.sendData(id, data, start, len);
-
+        boolean sent = wifiThreadTCPConnectionManager.sendData(id, data, start, len);
+        if (sent) return true;
         // do bluetooth send
+        return bluetoothThreadTCPConnectionManager.sendData(id, data, start, len);
     }
 
 //    @NonNull
@@ -70,5 +75,15 @@ public final class LinkLayer_Impl {
     @NonNull
     public WifiThreadTCPConnectionManager getWifiThreadTCPConnectionManager() {
         return wifiThreadTCPConnectionManager;
+    }
+
+    @NonNull
+    public BluetoothLinkManager getBluetoothLinkManager() {
+        return bluetoothLinkManager;
+    }
+
+    @NonNull
+    public BluetoothThreadTCPConnectionManager getBluetoothThreadTCPConnectionManager() {
+        return bluetoothThreadTCPConnectionManager;
     }
 }
