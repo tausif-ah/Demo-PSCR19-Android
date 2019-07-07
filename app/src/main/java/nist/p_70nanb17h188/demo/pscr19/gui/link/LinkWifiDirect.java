@@ -5,6 +5,7 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import nist.p_70nanb17h188.demo.pscr19.imc.DelayRunner;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiThreadTCPConnectionManager;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 //import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
@@ -72,10 +73,12 @@ class LinkWifiDirect extends Link {
         Log.d("LAUNCHER", "onEstablishConnectionClick start");
         DelayRunner.getDefaultInstance().post(() -> {
             if (deviceInDiscovery != null) {
-                WifiTCPConnectionManager wifiTCPConnectionManager = LinkLayer.getDefaultImplementation().getWifiTCPConnectionManager();
+                WifiThreadTCPConnectionManager wifiThreadTCPConnectionManager = LinkLayer.getDefaultImplementation().getWifiThreadTCPConnectionManager();
+//                WifiTCPConnectionManager wifiTCPConnectionManager = LinkLayer.getDefaultImplementation().getWifiTCPConnectionManager();
                 Boolean establishConnectionInverse = establishConnection.getValue();
                 assert establishConnectionInverse != null;
-                wifiTCPConnectionManager.modifyConnection(deviceInDiscovery.deviceName, !establishConnectionInverse);
+                wifiThreadTCPConnectionManager.modifyConnection(deviceInDiscovery.deviceName, !establishConnectionInverse);
+//                wifiTCPConnectionManager.modifyConnection(deviceInDiscovery.deviceName, !establishConnectionInverse);
             }
             DelayRunner.getDefaultInstance().postDelayed(WIFI_DIRECT_CONNECTION_CLOSE_DELAY_MS, () -> LinkLayer.getDefaultImplementation().getWifiLinkManager().modifyConnection(deviceInDiscovery));
         });

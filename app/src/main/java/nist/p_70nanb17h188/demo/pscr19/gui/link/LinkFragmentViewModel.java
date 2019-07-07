@@ -23,6 +23,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.link.LinkLayer;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiLinkManager;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiTCPConnectionManager;
+import nist.p_70nanb17h188.demo.pscr19.logic.link.WifiThreadTCPConnectionManager;
 
 public class LinkFragmentViewModel extends ViewModel {
     static final String DATE_STRING_ON_NULL = "--:--:--.---";
@@ -109,10 +110,13 @@ public class LinkFragmentViewModel extends ViewModel {
     }
 
     private void updateTCPConnectionList() {
-        WifiTCPConnectionManager wifiTCPConnectionManager = LinkLayer.getDefaultImplementation().getWifiTCPConnectionManager();
+//        WifiTCPConnectionManager wifiTCPConnectionManager = LinkLayer.getDefaultImplementation().getWifiTCPConnectionManager();
+        WifiThreadTCPConnectionManager wifiThreadTCPConnectionManager = LinkLayer.getDefaultImplementation().getWifiThreadTCPConnectionManager();
         for (Link l : links) {
-            if (l instanceof LinkWifiDirect)
-                l.setTCPConnected(wifiTCPConnectionManager.isDeviceTCPConnected(l.name));
+            if (l instanceof LinkWifiDirect) {
+//                l.setTCPConnected(wifiTCPConnectionManager.isDeviceTCPConnected(l.name));
+                l.setTCPConnected(wifiThreadTCPConnectionManager.isDeviceTCPConnected(l.name));
+            }
         }
     }
 
