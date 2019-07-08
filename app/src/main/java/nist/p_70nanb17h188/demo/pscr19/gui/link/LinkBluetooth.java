@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import nist.p_70nanb17h188.demo.pscr19.Device;
+import nist.p_70nanb17h188.demo.pscr19.Helper;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.Constants;
 import nist.p_70nanb17h188.demo.pscr19.logic.log.Log;
 
@@ -75,6 +76,12 @@ class LinkBluetooth extends Link {
             try {
                 OutputStream outputStream = bluetoothSocket.getOutputStream();
 
+                ByteBuffer magicBuffer = ByteBuffer.allocate(Helper.INTEGER_SIZE);
+                magicBuffer.putInt(MAGIC);
+                magicBuffer.rewind();
+                outputStream.write(magicBuffer.array());
+                outputStream.flush();
+
 //            writing type byte
                 ByteBuffer typeBuffer = ByteBuffer.allocate(1);
                 typeBuffer.put(type);
@@ -123,12 +130,16 @@ class LinkBluetooth extends Link {
         @Override
         public void run() {
             super.run();
+            byte[] magicBuffer = new byte[Helper.INTEGER_SIZE];
             byte[] typeBuffer = new byte[1];
             byte[] sizeBuffer = new byte[4];
             int numBytes;
 
             while (true) {
                 try {
+                    numBytes = inputStream.read(magicBuffer);
+                    int magic = ByteBuffer.wrap(magicBuffer).getInt();
+                    Log.d("BT received magic", String.valueOf(magic));
 //                    reading type byte
                     numBytes = inputStream.read(typeBuffer);
                     byte type = ByteBuffer.wrap(typeBuffer).get();
