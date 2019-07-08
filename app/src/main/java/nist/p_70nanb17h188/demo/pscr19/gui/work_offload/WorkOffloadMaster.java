@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -118,10 +119,6 @@ public class WorkOffloadMaster extends ViewModel {
             return slaveName;
         }
 
-        SlaveState getSlaveState() {
-            return slaveState.getValue();
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -143,6 +140,7 @@ public class WorkOffloadMaster extends ViewModel {
     final MutableLiveData<String> faceResultPath = new MutableLiveData<>();
     final MutableLiveData<Boolean> offload = new MutableLiveData<>();
     final MutableLiveData<Boolean> face = new MutableLiveData<>();
+    final MutableLiveData<Boolean> isBigMat = new MutableLiveData<>();
     final MutableLiveData<Long> taskStart = new MutableLiveData<>();
     final MutableLiveData<Long> taskEnd = new MutableLiveData<>();
     final MutableLiveData<Boolean> showNoSlaveText = new MutableLiveData<>();
@@ -203,6 +201,8 @@ public class WorkOffloadMaster extends ViewModel {
         assert state != null;
         Integer currentTaskId = this.currentTaskId.getValue();
         assert currentTaskId != null;
+        Boolean face = this.face.getValue();
+        assert face != null;
         switch (state) {
             case WAIT_FOR_RESPONSE: {
                 // make sure that it is a correct response
@@ -218,12 +218,17 @@ public class WorkOffloadMaster extends ViewModel {
                 DataWorkResult result = DataWorkResult.fromBytes(data);
                 if (result == null) return;
                 if (result.getWorkId() != currentTaskId) return;
-                boolean allSlaveResultGot = true;
+                boolean allSlaveResultGot = false;
+                int numComplete = 0;
                 for (Slave s : slaves) {
-                    if (s.getSlaveName().equals(src))
+                    if (s.getSlaveName().equals(src)){
                         s.setSlaveResult(result);
-                    else if (s.getWorkResult() == null)
-                        allSlaveResultGot = false;
+                        numComplete++;
+                    } else if (s.getWorkResult() != null)
+                        numComplete++;
+                    if((face&&numComplete==slaves.size())||(!face&&numComplete==slaves.size()-1)){
+                        allSlaveResultGot = true;
+                    }
                 }
                 if (allSlaveResultGot) {
                     currState.postValue(MasterState.COMPUTE_RESULT);
@@ -326,6 +331,12 @@ public class WorkOffloadMaster extends ViewModel {
         }
     }
 
+    private long[] matrixResult;
+
+    long[] getMatrixResult(){
+        return matrixResult;
+    }
+
     private void performTaskLocally(int taskId) {
         Boolean face = this.face.getValue();
         assert face != null;
@@ -358,10 +369,15 @@ public class WorkOffloadMaster extends ViewModel {
                 faceResultPath.postValue(maxPath);
             }
         } else {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            Boolean isBig = this.isBigMat.getValue();
+            assert isBig!= null;
+            if(isBig){
+                int[] vec = genVector();
+                long[] a = matrixMultiplyVector(genMatrix(),vec,true);
+                long[] b = matrixMultiplyVector(genMatrix(),vec,true);
+                matrixResult = paste(a,b);
+            }else{
+                matrixResult = matrixMultiplyVector(smallMat,smallVector,false);
             }
         }
         synchronized (this) {
@@ -372,6 +388,49 @@ public class WorkOffloadMaster extends ViewModel {
                 taskEnd.postValue(System.currentTimeMillis());
             }
         }
+    }
+
+    private final int bigRow = 600;
+    private final int bigCol = 1000;
+    private final int smallRow = 3;
+    private final int smallCol = 2;
+    private final int range = 128;
+
+    int[][] smallMat = {{1,7},{2,8},{3,9},{4,9},{5,8},{6,7}};
+    int[][] smallMat1 = {{1,7},{2,8},{3,9}};
+    int[][] smallMat2 = {{4,9},{5,8},{6,7}};
+    int[] smallVector = {1,2};
+
+    private int[][] genMatrix(){
+        int[][] res = new int[bigRow][bigCol];
+        Random random = new Random();
+        for(int i = 0; i<bigRow; i++){
+            for(int j = 0; j<bigCol; j++){
+                res[i][j] = random.nextInt(range);
+            }
+        }
+        return res;
+    }
+
+    private int[] genVector(){
+        int[] res = new int[bigCol];
+        Random random = new Random();
+        for(int n = 0; n<bigCol; n++){
+            res[n] = random.nextInt(range);
+        }
+        return res;
+    }
+
+    private long[] matrixMultiplyVector(int[][] a, int[] b, boolean isBig){
+        int x = isBig ? bigRow : smallRow;
+        long[] result = new long[x];
+        int n = isBig ? bigCol : smallCol;
+        for(int k = 0; k<x; k++){
+            for(int c = 0; c<n; c++){
+                result[k] += a[k][c]*(long)b[c];
+            }
+        }
+        return result;
     }
 
     private opencv_core.Mat detectFaces(String filePath) {
@@ -420,13 +479,57 @@ public class WorkOffloadMaster extends ViewModel {
         return buffer.array();
     }
 
+    byte[] dataToBytes(int[][] a, int[] b, int seq, boolean isBig){
+        int row = isBig ? bigRow : smallRow;
+        int col = isBig ? bigCol : smallCol;
+        int totalSize = Helper.INTEGER_SIZE*(row*col)+Helper.INTEGER_SIZE*col+3*Helper.INTEGER_SIZE;
+        ByteBuffer buffer = ByteBuffer.allocate(totalSize);
+        buffer.putInt(seq);
+        buffer.putInt(row);
+        buffer.putInt(col);
+        for(int r = 0; r<row; r++){
+            for(int c = 0; c<col; c++){
+                buffer.putInt(a[r][c]);
+            }
+        }
+        for(int c = 0; c<col; c++){
+            buffer.putInt(b[c]);
+        }
+        return buffer.array();
+    }
+
+    private long[] vectorSub(long[] a, long[] b){
+        long[] res = new long[a.length];
+        for(int n = 0; n<a.length; n++){
+            res[n] = a[n]-b[n];
+        }
+        return res;
+    }
+
+    private int[][] matPlus(int[][] a, int[][] b){
+        int[][] res = new int[a.length][a[0].length];
+        for(int r = 0; r<a.length; r++){
+            for(int c = 0; c<a[0].length; c++){
+                res[r][c] = a[r][c]+b[r][c];
+            }
+        }
+        return res;
+    }
+
+    private long[] paste(long[] a, long[] b){
+        long[] c = new long[a.length+b.length];
+        System.arraycopy(a,0,c,0,a.length);
+        System.arraycopy(b,0,c, a.length, b.length);
+        return c;
+    }
+
     private void distributeTask(int taskId) {
         Boolean face = this.face.getValue();
         assert face != null;
         if (face) {
             int jobNum = 200 / (slaves.size() + 1);
             int localStart = 200 - 200 / (slaves.size() + 1) * slaves.size() + 1;
-            ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, localStart));
+            ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, target, localStart));
             int start = 1;
             for (Slave s : slaves) {
                 byte[] data = getGroupImage(start, jobNum);
@@ -437,7 +540,24 @@ public class WorkOffloadMaster extends ViewModel {
             }
             currState.postValue(MasterState.WAIT_FOR_RESULT);
         } else {
-            //TODO: Matrix Multiplication
+            Boolean isBig = isBigMat.getValue();
+            assert isBig != null;
+            byte type = 6;
+            Slave s1 = slaves.get(0);
+            int[][] firstHalf = isBig ? genMatrix() : smallMat1;
+            int[] vec = isBig ? genVector() : smallVector;
+            byte[] data1 = dataToBytes(firstHalf, vec,0,isBig);
+            DataWorkContent content1 = new DataWorkContent(taskId,type, data1);
+            s1.setSlaveTask(content1);
+            Slave s2 = slaves.get(1);
+            int[][] secondHalf = isBig ? genMatrix() : smallMat2;
+            byte[] data2 = dataToBytes(secondHalf, vec,1,isBig);
+            DataWorkContent content2 = new DataWorkContent(taskId,type, data2);
+            s2.setSlaveTask(content2);
+            Slave s3 = slaves.get(2);
+            byte[] data3 = dataToBytes(matPlus(firstHalf,secondHalf), vec,2,isBig);
+            DataWorkContent content3 = new DataWorkContent(taskId,type, data3);
+            s3.setSlaveTask(content3);
         }
     }
 
@@ -462,10 +582,10 @@ public class WorkOffloadMaster extends ViewModel {
                 e.printStackTrace();
             }
         }
-        for (Slave s : slaves) {
-            byte[] result = s.getWorkResult().getData();
-            ByteBuffer buffer = ByteBuffer.wrap(result);
-            if (face) {
+        if(face){
+            for (Slave s : slaves) {
+                byte[] result = s.getWorkResult().getData();
+                ByteBuffer buffer = ByteBuffer.wrap(result);
                 int id = buffer.getInt();
                 double acc = buffer.getDouble();
                 if (id != 0) {
@@ -474,12 +594,42 @@ public class WorkOffloadMaster extends ViewModel {
                         maxLevel = acc;
                     }
                 }
-            } else {
-
             }
-        }
-        if (face) {
             faceResult.postValue(seq);
+        }else{
+            Boolean isBig = isBigMat.getValue();
+            assert isBig != null;
+            int size = isBig ? bigRow : smallRow;
+            long[] r1 = null, r2 = null, r3 = null;
+            for (Slave s : slaves) {
+                DataWorkResult result = s.getWorkResult();
+                if(result!=null){
+                    ByteBuffer buffer = ByteBuffer.wrap(result.getData());
+                    int id = buffer.getInt();
+                    long[] temp = new long[size];
+                    for(int n = 0; n<size; n++){
+                        temp[n] = buffer.getLong();
+                    }
+                    switch (id) {
+                        case 0 :
+                            r1 = temp;
+                            break;
+                        case 1 :
+                            r2 = temp;
+                            break;
+                        case 2 :
+                            r3 = temp;
+                            break;
+                    }
+                }
+            }
+            if(r1==null){
+                matrixResult = paste(vectorSub(r3,r2),r2);
+            }else if(r2 == null) {
+                matrixResult = paste(r1, vectorSub(r3,r1));
+            }else {
+                matrixResult = paste(r1,r2);
+            }
         }
         taskEnd.postValue(System.currentTimeMillis());
         currState.postValue(MasterState.IDLE);

@@ -24,11 +24,13 @@ public class EachHelper implements Callable<double[]> {
     opencv_objdetect.CascadeClassifier faceDetector;
 
     int start;
+    int target;
 
-    public EachHelper(opencv_objdetect.CascadeClassifier faceDetector, opencv_face.FaceRecognizer faceRecognizer, int start){
+    public EachHelper(opencv_objdetect.CascadeClassifier faceDetector, opencv_face.FaceRecognizer faceRecognizer, int target, int start){
         this.faceDetector = faceDetector;
         this.faceRecognizer = faceRecognizer;
         this.start = start;
+        this.target = target;
     }
 
     @Override

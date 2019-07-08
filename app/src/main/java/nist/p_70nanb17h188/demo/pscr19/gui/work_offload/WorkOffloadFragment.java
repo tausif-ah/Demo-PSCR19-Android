@@ -259,6 +259,10 @@ public class WorkOffloadFragment extends Fragment {
         return view;
     }
 
+    private void displayVector(){
+        masterViewModel.getMatrixResult();
+    }
+
     private void displayImage(String name){
         String prefix = Environment.getExternalStorageDirectory().getPath()+"/faces/train/";
         String file;
