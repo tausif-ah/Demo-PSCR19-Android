@@ -59,7 +59,7 @@ class LinkBluetooth extends Link {
         assert connectionStatus != null;
         if (!connectionStatus) {
             try {
-                Log.d("BT action", "connect");
+//                Log.d("BT action", "connect");
                 bluetoothSocket = deviceInDiscovery.createRfcommSocketToServiceRecord(UUID.fromString(Constants.MY_UUID));
                 if (bluetoothSocket != null) {
                     bluetoothSocket.connect();
@@ -69,13 +69,17 @@ class LinkBluetooth extends Link {
 //                exchanging names
                     byte[] dataToSend = Device.getName().getBytes();
                     sendData(TYPE_NAME, dataToSend);
+
+////                    start of time recording code
+//                    sendBigData(20);
+////                    end of time recording code
                 }
             } catch (Exception ex) {
 
             }
         }
         else {
-            Log.d("BT action", "disconnect");
+//            Log.d("BT action", "disconnect");
             closeConnection(true);
         }
     }
@@ -140,6 +144,16 @@ class LinkBluetooth extends Link {
         }
     }
 
+//    private void sendBigData(int lengthMB) {
+//        int lengthBytes = lengthMB * 1024 * 1024;
+//        String big = "BIG";
+//        while (big.length() < lengthBytes) {
+//            big += big;
+//        }
+//        byte[] dataToSend = big.getBytes();
+//        sendData(TYPE_DATA, dataToSend);
+//    }
+
     private class DataListner extends Thread {
 
         DataListner(BluetoothSocket bluetoothSocket) {
@@ -162,12 +176,12 @@ class LinkBluetooth extends Link {
                 try {
                     numBytes = inputStream.read(magicBuffer);
                     int magic = ByteBuffer.wrap(magicBuffer).getInt();
-                    Log.d("BT received magic", String.valueOf(magic));
+//                    Log.d("BT received magic", String.valueOf(magic));
 
 //                    reading type byte+
                     numBytes = inputStream.read(typeBuffer);
                     byte type = ByteBuffer.wrap(typeBuffer).get();
-                    Log.d("BT data type", String.valueOf(type));
+//                    Log.d("BT data type", String.valueOf(type));
 
 //                    reading size bytes
                     numBytes = inputStream.read(lengthBuffer);
@@ -181,9 +195,24 @@ class LinkBluetooth extends Link {
                     int destPos = 0;
                     byte[] readBuffer;
                     int totalRead = 0;
+
+////                    start of time recording code
+//                    long startTime = 0, endTime = 0;
+//                    boolean timeRecordingStarted = false;
+////                    end of time recording code
+
                     while (totalRead < length) {
                         readBuffer = new byte[Constants.BLUETOOTH_DATA_CHUNK_SIZE];
                         numBytes = inputStream.read(readBuffer);
+
+////                        start of time recording code
+//                        endTime = System.currentTimeMillis();
+//                        if (!timeRecordingStarted) {
+//                            startTime =endTime;
+//                            timeRecordingStarted = true;
+//                        }
+////                        end of time recording code
+
                         System.arraycopy(readBuffer, 0, receivedData,destPos, numBytes);
                         destPos += numBytes;
                         totalRead += numBytes;
@@ -194,6 +223,12 @@ class LinkBluetooth extends Link {
                             Log.d("BT name exchanged", new String(receivedData));
                             break;
                         case TYPE_DATA:
+
+////                            start of time recording code
+//                            double timeTaken = (double)(endTime - startTime)/1000.0;
+//                            Log.d("BT total time taken", String.valueOf(timeTaken)+" seconds");
+////                            end of time recording code
+
                             break;
                         case TYPE_CONNECTION_CLOSE:
                             Log.d("BT action", "disconnect");
