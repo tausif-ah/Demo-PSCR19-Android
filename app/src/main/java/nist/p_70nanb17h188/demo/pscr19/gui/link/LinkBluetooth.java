@@ -22,7 +22,6 @@ class LinkBluetooth extends Link {
 
     private static final int MAGIC = 0xdeadbeef;
     private static final byte TYPE_NAME = 1;
-    private static final byte TYPE_KEEP_ALIVE = 2;
     private static final byte TYPE_DATA = 3;
     private static final byte TYPE_CONNECTION_CLOSE = 4;
 
@@ -90,13 +89,14 @@ class LinkBluetooth extends Link {
                 outputStream.write(typeBuffer.array());
                 outputStream.flush();
 
-//            writing size bytes
-                ByteBuffer sizeBuffer = ByteBuffer.allocate(4);
-                sizeBuffer.putInt(data.length);
-                sizeBuffer.rewind();
-                outputStream.write(sizeBuffer.array());
+//            writing length bytes
+                ByteBuffer lengthBuffer = ByteBuffer.allocate(4);
+                lengthBuffer.putInt(data.length);
+                lengthBuffer.rewind();
+                outputStream.write(lengthBuffer.array());
                 outputStream.flush();
 
+//                writing data
                 int fullWriteCount = data.length / Constants.BLUETOOTH_DATA_CHUNK_SIZE;
                 int remainder = data.length % Constants.BLUETOOTH_DATA_CHUNK_SIZE;
                 int srcPos = 0;
@@ -133,7 +133,7 @@ class LinkBluetooth extends Link {
             super.run();
             byte[] magicBuffer = new byte[Helper.INTEGER_SIZE];
             byte[] typeBuffer = new byte[1];
-            byte[] sizeBuffer = new byte[4];
+            byte[] lengthBuffer = new byte[Helper.INTEGER_SIZE];
             int numBytes;
 
             while (true) {
@@ -141,34 +141,31 @@ class LinkBluetooth extends Link {
                     numBytes = inputStream.read(magicBuffer);
                     int magic = ByteBuffer.wrap(magicBuffer).getInt();
                     Log.d("BT received magic", String.valueOf(magic));
-//                    reading type byte
+                    Log.d("BT actual magic", String.valueOf(MAGIC));
+
+//                    reading type byte+
                     numBytes = inputStream.read(typeBuffer);
                     byte type = ByteBuffer.wrap(typeBuffer).get();
+                    Log.d("BT data type", String.valueOf(type));
 
 //                    reading size bytes
-                    numBytes = inputStream.read(sizeBuffer);
-                    int size = ByteBuffer.wrap(sizeBuffer).getInt();
+                    numBytes = inputStream.read(lengthBuffer);
+                    int length = ByteBuffer.wrap(lengthBuffer).getInt();
+                    Log.d("BT data length", String.valueOf(length));
 
-                    Log.d("BT data type", String.valueOf(type));
-                    Log.d("BT data size", String.valueOf(size));
+                    if (magic != MAGIC || (type != TYPE_NAME && type != TYPE_DATA && type != TYPE_CONNECTION_CLOSE))
+                        continue;
 
-                    byte[] receivedData = new byte[size];
+                    byte[] receivedData = new byte[length];
                     int destPos = 0;
                     byte[] readBuffer;
-                    int fullRead = size / Constants.BLUETOOTH_DATA_CHUNK_SIZE;
-                    int remainder = size % Constants.BLUETOOTH_DATA_CHUNK_SIZE;
-                    for (int i=0; i<fullRead; i++) {
+                    int totalRead = 0;
+                    while (totalRead < length) {
                         readBuffer = new byte[Constants.BLUETOOTH_DATA_CHUNK_SIZE];
                         numBytes = inputStream.read(readBuffer);
-                        android.util.Log.d("BT bytes read", String.valueOf(numBytes));
-                        System.arraycopy(readBuffer, 0, receivedData, destPos, readBuffer.length);
-                        destPos += Constants.BLUETOOTH_DATA_CHUNK_SIZE;
-                    }
-                    if (remainder  > 0) {
-                        readBuffer = new byte[remainder];
-                        numBytes = inputStream.read(readBuffer);
-                        android.util.Log.d("BT bytes read", String.valueOf(numBytes));
-                        System.arraycopy(readBuffer, 0, receivedData, destPos, readBuffer.length);
+                        System.arraycopy(readBuffer, 0, receivedData,destPos, numBytes);
+                        destPos += numBytes;
+                        totalRead += numBytes;
                     }
                     Log.d("BT data recv", new String(receivedData));
                 } catch (IOException e) {
