@@ -63,6 +63,7 @@ class LinkBluetooth extends Link {
                 updateLinkStatus(LinkStatus.TCPEstablished, true);
                 DataListner dataListener = new DataListner(bluetoothSocket);
                 dataListener.start();
+//                exchanging names
                 byte[] dataToSend = Device.getName().getBytes();
                 sendData(TYPE_NAME, dataToSend);
             }
@@ -159,12 +160,14 @@ class LinkBluetooth extends Link {
                     for (int i=0; i<fullRead; i++) {
                         readBuffer = new byte[Constants.BLUETOOTH_DATA_CHUNK_SIZE];
                         numBytes = inputStream.read(readBuffer);
+                        android.util.Log.d("BT bytes read", String.valueOf(numBytes));
                         System.arraycopy(readBuffer, 0, receivedData, destPos, readBuffer.length);
                         destPos += Constants.BLUETOOTH_DATA_CHUNK_SIZE;
                     }
                     if (remainder  > 0) {
                         readBuffer = new byte[remainder];
                         numBytes = inputStream.read(readBuffer);
+                        android.util.Log.d("BT bytes read", String.valueOf(numBytes));
                         System.arraycopy(readBuffer, 0, receivedData, destPos, readBuffer.length);
                     }
                     Log.d("BT data recv", new String(receivedData));
