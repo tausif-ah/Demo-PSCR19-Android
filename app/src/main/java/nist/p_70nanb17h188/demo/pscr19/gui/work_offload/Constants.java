@@ -21,8 +21,8 @@ public class Constants {
         switch (Device.getName()) {
             case Device.NAME_M1:
                 return new Name(1);
-//            case Device.NAME_M2:
-//                return new Name(2);
+            case Device.NAME_M2:
+                return new Name(2);
 //            case Device.NAME_MULE:
 //                return new Name(3);
             case Device.NAME_S11:
@@ -31,8 +31,8 @@ public class Constants {
 //                return new Name(5);
             case Device.NAME_S13:
                 return new Name(6);
-            case Device.NAME_S21:
-                return new Name(7);
+//            case Device.NAME_S21:
+//                return new Name(7);
         }
         return null;
     }
