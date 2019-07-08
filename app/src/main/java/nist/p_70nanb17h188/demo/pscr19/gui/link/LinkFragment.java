@@ -67,7 +67,7 @@ public class LinkFragment extends Fragment {
         viewModel.wifiDiscovering.observe(this, discovering -> txtWifiDiscoverUpdate.setCompoundDrawablesWithIntrinsicBounds(0, 0, Constants.getDiscoverStatusImageResource(discovering), 0));
         viewModel.bluetoothDiscovering.observe(this, discovering -> txtBluetoothUpdate.setCompoundDrawablesWithIntrinsicBounds(0, 0, Constants.getDiscoverStatusImageResource(discovering), 0));
         txtWifiDiscoverUpdate.setOnClickListener(v -> LinkLayer.getDefaultImplementation().getWifiLinkManager().discoverPeers());
-        txtBluetoothUpdate.setOnClickListener(v -> LinkLayer.getDefaultImplementation().getBluetoothLinkManager().discoverPeers());
+        txtBluetoothUpdate.setOnClickListener(v -> LinkLayer.getDefaultImplementation().getBluetoothLinkManager().discoverPeers(getActivity()));
 
         RecyclerView list = view.findViewById(R.id.link_links);
         LinearLayoutManager listLayoutManager = new WrapLinearLayoutManager(view.getContext());

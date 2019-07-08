@@ -2,6 +2,7 @@ package nist.p_70nanb17h188.demo.pscr19.logic.link;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.ContextWrapper;
 import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
@@ -114,15 +115,16 @@ public class BluetoothLinkManager {
         }
     }
 
-    private void requestDiscoverable() {
+    private void requestDiscoverable(ContextWrapper context) {
         android.content.Intent intent = new android.content.Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         intent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, Constants.BLUETOOTH_DISCOVERABLE_DURATION);
-        MyApplication.getDefaultInstance().getApplicationContext().startActivity(intent);
+        context.startActivity(intent);
+//        MyApplication.getDefaultInstance().getApplicationContext().startActivity(intent);
     }
 
-    public void discoverPeers() {
+    public void discoverPeers(ContextWrapper context) {
         if (!enabled) return;
-        requestDiscoverable();
+        requestDiscoverable(context);
         if (bluetoothAdapter.isDiscovering()) {
             bluetoothAdapter.cancelDiscovery();
         }
