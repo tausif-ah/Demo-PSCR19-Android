@@ -55,17 +55,39 @@ class LinkBluetooth extends Link {
 
     @Override
     void onEstablishConnectionClick() {
-        try {
-            bluetoothSocket = deviceInDiscovery.createRfcommSocketToServiceRecord(UUID.fromString(Constants.MY_UUID));
-            if (bluetoothSocket != null) {
-                bluetoothSocket.connect();
-                updateLinkStatus(LinkStatus.TCPEstablished, true);
-                DataListner dataListener = new DataListner(bluetoothSocket);
-                dataListener.start();
+        Boolean connectionStatus = establishConnection.getValue();
+        assert connectionStatus != null;
+        if (!connectionStatus) {
+            try {
+                Log.d("BT action", "connect");
+                bluetoothSocket = deviceInDiscovery.createRfcommSocketToServiceRecord(UUID.fromString(Constants.MY_UUID));
+                if (bluetoothSocket != null) {
+                    bluetoothSocket.connect();
+                    updateLinkStatus(LinkStatus.TCPEstablished, true);
+                    DataListner dataListener = new DataListner(bluetoothSocket);
+                    dataListener.start();
 //                exchanging names
-                byte[] dataToSend = Device.getName().getBytes();
-                sendData(TYPE_NAME, dataToSend);
+                    byte[] dataToSend = Device.getName().getBytes();
+                    sendData(TYPE_NAME, dataToSend);
+                }
+            } catch (Exception ex) {
+
             }
+        }
+        else {
+            Log.d("BT action", "disconnect");
+            closeConnection(true);
+        }
+    }
+
+    private void closeConnection(boolean initiator) {
+        if (initiator) {
+            sendData(TYPE_CONNECTION_CLOSE, new byte[0]);
+        }
+        try {
+            inputStream.close();
+            bluetoothSocket.close();
+            updateLinkStatus(LinkStatus.NotConnected, false);
         } catch (Exception ex) {
 
         }
@@ -141,7 +163,6 @@ class LinkBluetooth extends Link {
                     numBytes = inputStream.read(magicBuffer);
                     int magic = ByteBuffer.wrap(magicBuffer).getInt();
                     Log.d("BT received magic", String.valueOf(magic));
-                    Log.d("BT actual magic", String.valueOf(MAGIC));
 
 //                    reading type byte+
                     numBytes = inputStream.read(typeBuffer);
@@ -167,7 +188,19 @@ class LinkBluetooth extends Link {
                         destPos += numBytes;
                         totalRead += numBytes;
                     }
-                    Log.d("BT data recv", new String(receivedData));
+
+                    switch (type) {
+                        case TYPE_NAME:
+                            Log.d("BT name exchanged", new String(receivedData));
+                            break;
+                        case TYPE_DATA:
+                            break;
+                        case TYPE_CONNECTION_CLOSE:
+                            Log.d("BT action", "disconnect");
+                            closeConnection(false);
+                            break;
+                    }
+
                 } catch (IOException e) {
                     break;
                 }
