@@ -44,7 +44,7 @@ class LinkBluetooth extends Link {
             DataListner dataListner = new DataListner(this.bluetoothSocket);
             dataListner.start();
             byte[] dataToSend = Device.getName().getBytes();
-            sendData(dataToSend);
+            sendData(TYPE_NAME, dataToSend);
         }
     }
 
@@ -55,61 +55,58 @@ class LinkBluetooth extends Link {
 
     @Override
     void onEstablishConnectionClick() {
-        if (!establishConnection.getValue()) {
-            try {
-                bluetoothSocket = deviceInDiscovery.createRfcommSocketToServiceRecord(UUID.fromString(Constants.MY_UUID));
-                if (bluetoothSocket != null) {
-                    bluetoothSocket.connect();
-                    updateLinkStatus(LinkStatus.TCPEstablished, true);
-                    DataListner dataListener = new DataListner(bluetoothSocket);
-                    dataListener.start();
-                    byte[] dataToSend = Device.getName().getBytes();
-                    sendData(dataToSend);
-                }
-            } catch (Exception ex) {
-
+        try {
+            bluetoothSocket = deviceInDiscovery.createRfcommSocketToServiceRecord(UUID.fromString(Constants.MY_UUID));
+            if (bluetoothSocket != null) {
+                bluetoothSocket.connect();
+                updateLinkStatus(LinkStatus.TCPEstablished, true);
+                DataListner dataListener = new DataListner(bluetoothSocket);
+                dataListener.start();
+                byte[] dataToSend = Device.getName().getBytes();
+                sendData(TYPE_NAME, dataToSend);
             }
-        }
-        else {
-//            Log.d("BT connection", "close");
+        } catch (Exception ex) {
+
         }
     }
 
-    private synchronized void sendData(byte[] data) {
-        try {
-            OutputStream outputStream = bluetoothSocket.getOutputStream();
+    private void sendData(byte type, byte[] data) {
+        synchronized (this) {
+            try {
+                OutputStream outputStream = bluetoothSocket.getOutputStream();
 
 //            writing type byte
-            ByteBuffer typeBuffer = ByteBuffer.allocate(1);
-            typeBuffer.put(TYPE_DATA);
-            typeBuffer.rewind();
-            outputStream.write(typeBuffer.array());
-            outputStream.flush();
+                ByteBuffer typeBuffer = ByteBuffer.allocate(1);
+                typeBuffer.put(type);
+                typeBuffer.rewind();
+                outputStream.write(typeBuffer.array());
+                outputStream.flush();
 
 //            writing size bytes
-            ByteBuffer sizeBuffer = ByteBuffer.allocate(4);
-            sizeBuffer.putInt(data.length);
-            sizeBuffer.rewind();
-            outputStream.write(sizeBuffer.array());
-            outputStream.flush();
+                ByteBuffer sizeBuffer = ByteBuffer.allocate(4);
+                sizeBuffer.putInt(data.length);
+                sizeBuffer.rewind();
+                outputStream.write(sizeBuffer.array());
+                outputStream.flush();
 
-            int fullWriteCount = data.length / Constants.BLUETOOTH_DATA_CHUNK_SIZE;
-            int remainder = data.length % Constants.BLUETOOTH_DATA_CHUNK_SIZE;
-            int srcPos = 0;
-            for (int i=0; i<fullWriteCount; i++) {
-                byte[] writeBuffer = new byte[Constants.BLUETOOTH_DATA_CHUNK_SIZE];
-                System.arraycopy(data, srcPos, writeBuffer, 0, Constants.BLUETOOTH_DATA_CHUNK_SIZE);
-                outputStream.write(writeBuffer);
-                outputStream.flush();
-                srcPos += Constants.BLUETOOTH_DATA_CHUNK_SIZE;
+                int fullWriteCount = data.length / Constants.BLUETOOTH_DATA_CHUNK_SIZE;
+                int remainder = data.length % Constants.BLUETOOTH_DATA_CHUNK_SIZE;
+                int srcPos = 0;
+                for (int i=0; i<fullWriteCount; i++) {
+                    byte[] writeBuffer = new byte[Constants.BLUETOOTH_DATA_CHUNK_SIZE];
+                    System.arraycopy(data, srcPos, writeBuffer, 0, Constants.BLUETOOTH_DATA_CHUNK_SIZE);
+                    outputStream.write(writeBuffer);
+                    outputStream.flush();
+                    srcPos += Constants.BLUETOOTH_DATA_CHUNK_SIZE;
+                }
+                if (remainder > 0) {
+                    byte[] writeBuffer = new byte[remainder];
+                    System.arraycopy(data, srcPos, writeBuffer, 0, remainder);
+                    outputStream.write(writeBuffer);
+                    outputStream.flush();
+                }
+            } catch (Exception writeEx) {
             }
-            if (remainder > 0) {
-                byte[] writeBuffer = new byte[remainder];
-                System.arraycopy(data, srcPos, writeBuffer, 0, remainder);
-                outputStream.write(writeBuffer);
-                outputStream.flush();
-            }
-        } catch (Exception writeEx) {
         }
     }
 
