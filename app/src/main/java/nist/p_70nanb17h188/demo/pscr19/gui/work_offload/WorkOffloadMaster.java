@@ -165,6 +165,7 @@ public class WorkOffloadMaster extends ViewModel {
         currentTaskId.setValue(0);
         offload.setValue(true);
         face.setValue(true);
+        isBigMat.setValue(false);
         showNoSlaveText.setValue(false);
         myName = Constants.getName();
         boolean succeed = NetLayer.subscribe(myName, dataReceivedHandler);
@@ -373,6 +374,12 @@ public class WorkOffloadMaster extends ViewModel {
             }else{
                 matrixResult = matrixMultiplyVector(smallMat,smallVector,false);
             }
+            Log.d(TAG,"result"+matrixResult[0]);
+            Log.d(TAG,"result"+matrixResult[1]);
+            Log.d(TAG,"result"+matrixResult[2]);
+            Log.d(TAG,"result"+matrixResult[3]);
+            Log.d(TAG,"result"+matrixResult[4]);
+            Log.d(TAG,"result"+matrixResult[5]);
         }
         synchronized (this) {
             Integer currentTaskId = this.currentTaskId.getValue();
@@ -387,6 +394,7 @@ public class WorkOffloadMaster extends ViewModel {
     private final int bigRow = 600;
     private final int bigCol = 1000;
     private final int smallRow = 3;
+    private final int smallRowLocal = 6;
     private final int smallCol = 2;
     private final int range = 128;
 
@@ -416,7 +424,7 @@ public class WorkOffloadMaster extends ViewModel {
     }
 
     private long[] matrixMultiplyVector(int[][] a, int[] b, boolean isBig){
-        int x = isBig ? bigRow : smallRow;
+        int x = isBig ? bigRow : smallRowLocal;
         long[] result = new long[x];
         int n = isBig ? bigCol : smallCol;
         for(int k = 0; k<x; k++){
@@ -624,6 +632,12 @@ public class WorkOffloadMaster extends ViewModel {
             }else {
                 matrixResult = paste(r1,r2);
             }
+            Log.d(TAG,"result"+matrixResult[0]);
+            Log.d(TAG,"result"+matrixResult[1]);
+            Log.d(TAG,"result"+matrixResult[2]);
+            Log.d(TAG,"result"+matrixResult[3]);
+            Log.d(TAG,"result"+matrixResult[4]);
+            Log.d(TAG,"result"+matrixResult[5]);
         }
         taskEnd.postValue(System.currentTimeMillis());
         currState.postValue(MasterState.IDLE);
