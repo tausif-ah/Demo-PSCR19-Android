@@ -23,6 +23,7 @@ class LinkBluetooth extends Link {
     private static final byte TYPE_NAME = 1;
     private static final byte TYPE_KEEP_ALIVE = 2;
     private static final byte TYPE_DATA = 3;
+    private static final byte TYPE_CONNECTION_CLOSE = 4;
 
     LinkBluetooth(String name) {
         super(name);
@@ -54,22 +55,27 @@ class LinkBluetooth extends Link {
 
     @Override
     void onEstablishConnectionClick() {
-        try {
-            bluetoothSocket = deviceInDiscovery.createRfcommSocketToServiceRecord(UUID.fromString(Constants.MY_UUID));
-            if (bluetoothSocket != null) {
-                bluetoothSocket.connect();
-                updateLinkStatus(LinkStatus.TCPEstablished, true);
-                DataListner dataListener = new DataListner(bluetoothSocket);
-                dataListener.start();
-                byte[] dataToSend = Device.getName().getBytes();
-                sendData(dataToSend);
-            }
-        } catch (Exception ex) {
+        if (!establishConnection.getValue()) {
+            try {
+                bluetoothSocket = deviceInDiscovery.createRfcommSocketToServiceRecord(UUID.fromString(Constants.MY_UUID));
+                if (bluetoothSocket != null) {
+                    bluetoothSocket.connect();
+                    updateLinkStatus(LinkStatus.TCPEstablished, true);
+                    DataListner dataListener = new DataListner(bluetoothSocket);
+                    dataListener.start();
+                    byte[] dataToSend = Device.getName().getBytes();
+                    sendData(dataToSend);
+                }
+            } catch (Exception ex) {
 
+            }
+        }
+        else {
+//            Log.d("BT connection", "close");
         }
     }
 
-    private void sendData(byte[] data) {
+    private synchronized void sendData(byte[] data) {
         try {
             OutputStream outputStream = bluetoothSocket.getOutputStream();
 
