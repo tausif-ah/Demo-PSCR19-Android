@@ -14,7 +14,7 @@ public class Constants {
     static final int MAX_GROUP_OWNER_INTENT = 15;
     static final int MIN_GROUP_OWNER_INTENT = 0;
     static final int WIFI_DIRECT_SERVER_LISTEN_PORT = 10305;
-    static final int BLUETOOTH_SERVER_LISTEN_PORT = 10307;
+    //    static final int BLUETOOTH_SERVER_LISTEN_PORT = 10307;
     static final InetAddress WIFI_DIRECT_SERVER_ADDRESS;
     static final long BLUETOOTH_DISCOVERABLE_DURATION = 20;
 
@@ -45,9 +45,8 @@ public class Constants {
     public static String[] getWifiDirectNeighbors() {
         switch (Device.getName()) {
             case Device.NAME_M1:
-                return new String[]{Device.NAME_PC1, Device.NAME_M2, Device.NAME_MULE, Device.NAME_S11};
+                return new String[]{Device.NAME_PC1, Device.NAME_M2, Device.NAME_MULE};
             case Device.NAME_M2:
-            case Device.NAME_S11:
             case Device.NAME_PC1:
                 return new String[]{Device.NAME_M1};
             case Device.NAME_MULE:

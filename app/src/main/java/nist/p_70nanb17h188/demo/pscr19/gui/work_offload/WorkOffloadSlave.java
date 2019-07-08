@@ -130,6 +130,7 @@ public class WorkOffloadSlave extends ViewModel {
         if (currMasterName.getValue() == null || !currMasterName.getValue().equals(src)) return;
         currState.postValue(SlaveState.WORKING);
         workerHandler.post(() -> performTask(content));
+
     }
 
     private synchronized void waitWorkTimeout(int workId, @NonNull Name master) {
@@ -190,40 +191,40 @@ public class WorkOffloadSlave extends ViewModel {
                 NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), false, INITIATOR_WORK_OFFLOAD_SLAVE);
                 currState.postValue(SlaveState.IDLE);
             }
-        }else{
+        } else {
             int seq = buffer.getInt();
             int row = buffer.getInt();
             int col = buffer.getInt();
             int[][] a = new int[row][col];
             int[] b = new int[col];
-            for(int i = 0; i<row; i++){
-                for(int j = 0; j<col; j++){
+            for (int i = 0; i < row; i++) {
+                for (int j = 0; j < col; j++) {
                     a[i][j] = buffer.getInt();
                 }
             }
-            for(int i = 0; i<col; i++){
+            for (int i = 0; i < col; i++) {
                 b[i] = buffer.getInt();
             }
-            long[] r = matrixMultiplyVector(a,b);
+            long[] r = matrixMultiplyVector(a, b);
             Name currMasterName = this.currMasterName.getValue();
             assert currMasterName != null;
             ByteBuffer buffer1 = ByteBuffer.allocate(row * Helper.LONG_SIZE + Helper.INTEGER_SIZE);
             buffer1.putInt(seq);
-            for(long n : r){
+            for (long n : r) {
                 buffer1.putLong(n);
             }
-            NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), false);
+            NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), false, INITIATOR_WORK_OFFLOAD_SLAVE);
             currState.postValue(SlaveState.IDLE);
         }
     }
 
-    private long[] matrixMultiplyVector(int[][] a, int[] b){
+    private long[] matrixMultiplyVector(int[][] a, int[] b) {
         int x = a.length;
         long[] result = new long[x];
         int n = b.length;
-        for(int k = 0; k<x; k++){
-            for(int c = 0; c<n; c++){
-                result[k] += a[k][c]*(long)b[c];
+        for (int k = 0; k < x; k++) {
+            for (int c = 0; c < n; c++) {
+                result[k] += a[k][c] * (long) b[c];
             }
         }
         return result;
