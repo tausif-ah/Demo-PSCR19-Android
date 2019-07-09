@@ -130,7 +130,6 @@ public class WorkOffloadSlave extends ViewModel {
         if (currMasterName.getValue() == null || !currMasterName.getValue().equals(src)) return;
         currState.postValue(SlaveState.WORKING);
         workerHandler.post(() -> performTask(content));
-
     }
 
     private synchronized void waitWorkTimeout(int workId, @NonNull Name master) {
@@ -151,10 +150,11 @@ public class WorkOffloadSlave extends ViewModel {
         ByteBuffer buffer = ByteBuffer.wrap(content.getData());
         if (content.getWorkType() == 5) {
             synchronized (FaceUtil.faceRecognizer) {
-                int resultId = 0;
-                double resultLevel = 50000;
-                int target = buffer.getInt();
                 int num = buffer.getInt();
+                if(num<0){
+                    taskEnd.postValue(System.currentTimeMillis());
+                    currState.postValue(SlaveState.IDLE);
+                }
                 while (num > 0) {
                     int seq = buffer.getInt();
                     int size = buffer.getInt();
@@ -175,21 +175,15 @@ public class WorkOffloadSlave extends ViewModel {
                         prediction = 0;
                         acceptanceLevel = 0;
                     }
-                    if (prediction == target && acceptanceLevel < resultLevel) {
-                        resultId = seq;
-                        resultLevel = acceptanceLevel;
-                    }
+                    Name currMasterName = this.currMasterName.getValue();
+                    assert currMasterName != null;
+                    ByteBuffer buffer1 = ByteBuffer.allocate(3 * Helper.INTEGER_SIZE + Helper.DOUBLE_SIZE);
+                    buffer1.putInt(seq);
+                    buffer1.putInt(prediction);
+                    buffer1.putDouble(acceptanceLevel);
+                    NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), false, INITIATOR_WORK_OFFLOAD_SLAVE);
                     num--;
                 }
-                taskEnd.postValue(System.currentTimeMillis());
-                // send the result back
-                Name currMasterName = this.currMasterName.getValue();
-                assert currMasterName != null;
-                ByteBuffer buffer1 = ByteBuffer.allocate(2 * Helper.INTEGER_SIZE + Helper.DOUBLE_SIZE);
-                buffer1.putInt(resultId);
-                buffer1.putDouble(resultLevel);
-                NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), false, INITIATOR_WORK_OFFLOAD_SLAVE);
-                currState.postValue(SlaveState.IDLE);
             }
         } else {
             int seq = buffer.getInt();

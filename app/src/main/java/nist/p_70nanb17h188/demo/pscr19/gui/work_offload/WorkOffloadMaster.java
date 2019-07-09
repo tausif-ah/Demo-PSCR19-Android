@@ -527,6 +527,8 @@ public class WorkOffloadMaster extends ViewModel {
         return c;
     }
 
+    static private final int initNumber = 10;
+
     private void distributeTask(int taskId) {
         Boolean face = this.face.getValue();
         assert face != null;
