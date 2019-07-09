@@ -150,14 +150,12 @@ public class WorkOffloadSlave extends ViewModel {
         ByteBuffer buffer = ByteBuffer.wrap(content.getData());
         if (content.getWorkType() == 5) {
             synchronized (FaceUtil.faceRecognizer) {
-                int num = buffer.getInt();
-                if(num<0){
+                int size = buffer.getInt();
+                if(size<0){
                     taskEnd.postValue(System.currentTimeMillis());
                     currState.postValue(SlaveState.IDLE);
-                }
-                while (num > 0) {
+                }else {
                     int seq = buffer.getInt();
-                    int size = buffer.getInt();
                     Log.d(TAG, "Slave is To seq=%d, size=%d", seq, size);
                     byte[] bytes = new byte[size];
                     buffer.get(bytes);
@@ -177,12 +175,13 @@ public class WorkOffloadSlave extends ViewModel {
                     }
                     Name currMasterName = this.currMasterName.getValue();
                     assert currMasterName != null;
-                    ByteBuffer buffer1 = ByteBuffer.allocate(3 * Helper.INTEGER_SIZE + Helper.DOUBLE_SIZE);
-                    buffer1.putInt(seq);
+                    ByteBuffer buffer1 = ByteBuffer.allocate(2 * Helper.INTEGER_SIZE + Helper.DOUBLE_SIZE);
                     buffer1.putInt(prediction);
                     buffer1.putDouble(acceptanceLevel);
-                    NetLayer.sendData(myName, currMasterName, new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(), false, INITIATOR_WORK_OFFLOAD_SLAVE);
-                    num--;
+                    buffer1.putInt(seq);
+                    NetLayer.sendData(myName, currMasterName,
+                            new DataWorkResult(content.getWorkId(), buffer1.array()).toBytes(),
+                            false, INITIATOR_WORK_OFFLOAD_SLAVE);
                 }
             }
         } else {

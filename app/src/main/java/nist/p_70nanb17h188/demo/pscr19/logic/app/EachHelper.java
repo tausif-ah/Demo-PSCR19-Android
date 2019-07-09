@@ -24,13 +24,11 @@ public class EachHelper implements Callable<double[]> {
     opencv_objdetect.CascadeClassifier faceDetector;
 
     int start;
-    int target;
 
-    public EachHelper(opencv_objdetect.CascadeClassifier faceDetector, opencv_face.FaceRecognizer faceRecognizer, int target, int start){
+    public EachHelper(opencv_objdetect.CascadeClassifier faceDetector, opencv_face.FaceRecognizer faceRecognizer, int start){
         this.faceDetector = faceDetector;
         this.faceRecognizer = faceRecognizer;
         this.start = start;
-        this.target = target;
     }
 
     @Override
@@ -39,26 +37,20 @@ public class EachHelper implements Callable<double[]> {
     }
 
     double[] local(){
-        double[] result = new double[2];//seq prediction confidence id
-        double maxLevel = 50000;
-        while(start<=200){
-            String testDir = Environment.getExternalStorageDirectory().getPath()+"/Movies/faces/test/img ("+start+").jpg";
-            opencv_core.Mat testImage = detectFaces(testDir);
-            if(testImage==null){
-                return result;
-            }
-            IntPointer label = new IntPointer(1);
-            DoublePointer reliability = new DoublePointer(1);
-            faceRecognizer.predict(testImage, label, reliability);
-            int prediction = label.get(0);
-            double acceptanceLevel = reliability.get(0);
-            if(prediction==1&&acceptanceLevel<maxLevel){
-                result[0] = start;
-                result[1] = acceptanceLevel;
-                maxLevel = acceptanceLevel;
-            }
-            start++;
+        double[] result = new double[3];//seq prediction confidence
+        String testDir = Environment.getExternalStorageDirectory().getPath()+"/Movies/faces/test/img ("+start+").jpg";
+        opencv_core.Mat testImage = detectFaces(testDir);
+        if(testImage==null){
+            return result;
         }
+        IntPointer label = new IntPointer(1);
+        DoublePointer reliability = new DoublePointer(1);
+        faceRecognizer.predict(testImage, label, reliability);
+        int prediction = label.get(0);
+        double acceptanceLevel = reliability.get(0);
+        result[0] = start;
+        result[1] = prediction;
+        result[1] = acceptanceLevel;
         return result;
     }
 

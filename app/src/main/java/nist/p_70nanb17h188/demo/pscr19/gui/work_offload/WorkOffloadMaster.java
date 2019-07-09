@@ -20,7 +20,9 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
@@ -97,15 +99,27 @@ public class WorkOffloadMaster extends ViewModel {
             slaveState.postValue(SlaveState.AVAILABLE);
         }
 
+        void setFinished(){
+            slaveState.postValue(SlaveState.FINISHED);
+        }
+
+        synchronized boolean isBusy(){
+            return workContent != null;
+        }
+
+        synchronized void finish(){
+            workContent = null;
+        }
+
         synchronized void setSlaveTask(DataWorkContent content) {
-            if (workContent != null || workResult != null) return;
+            //if (workContent != null || workResult != null) return;
             workContent = content;
             NetLayer.sendData(masterName, slaveName, content.toBytes(), false, INITIATOR_WORK_OFFLOAD_MASTER);
             slaveState.postValue(SlaveState.WORKING);
         }
 
         synchronized void setSlaveResult(DataWorkResult result) {
-            if (workContent == null || workResult != null) return;
+            //if (workContent == null || workResult != null) return;
             workResult = result;
             slaveState.postValue(SlaveState.FINISHED);
         }
@@ -195,6 +209,32 @@ public class WorkOffloadMaster extends ViewModel {
         this.slaveChangedHandler = slaveChangedHandler;
     }
 
+    private int resultSeq = 0;
+
+    private double resultAcc = 50000;
+
+    private synchronized void setResultAcc(double num){
+        resultAcc = num;
+    }
+
+    private synchronized double getResultAcc(){
+        return resultAcc;
+    }
+
+    private synchronized void setResultSeq(int num){
+        resultSeq = num;
+    }
+
+    private synchronized int getResultSeq(){
+        return resultSeq;
+    }
+
+    private int numCompleteFace = 0;
+
+    private synchronized int incr(){
+        return ++numCompleteFace;
+    }
+
     private void onDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, @NonNull String initiator) {
         if (!dst.equals(myName)) return;
         MasterState state = currState.getValue();
@@ -213,30 +253,51 @@ public class WorkOffloadMaster extends ViewModel {
                 addSlave(src);
                 break;
             }
-            case DISTRIBUTE_WORK:
             case COMPUTE_RESULT:{
                 //slaveState.postValue(SlaveState.FINISHED);
                 break;
             }
+            case DISTRIBUTE_WORK:
             case WAIT_FOR_RESULT: {
                 DataWorkResult result = DataWorkResult.fromBytes(data);
                 if (result == null) return;
                 if (result.getWorkId() != currentTaskId) return;
-                boolean allSlaveResultGot = false;
-                int numComplete = 0;
-                for (Slave s : slaves) {
-                    if (s.getSlaveName().equals(src)){
-                        s.setSlaveResult(result);
-                        numComplete++;
-                    } else if (s.getWorkResult() != null)
-                        numComplete++;
-                    if((face&&numComplete==slaves.size())||(!face&&numComplete==slaves.size()-1)){
-                        allSlaveResultGot = true;
+                if(face){
+                    for(Slave s : slaves){
+                        if (s.getSlaveName().equals(src)){
+                            byte[] resultBytes = result.getData();
+                            ByteBuffer buffer = ByteBuffer.wrap(resultBytes);
+                            if(buffer.getInt()==target){
+                                double acc = buffer.getDouble();
+                                if(getResultAcc()>acc){
+                                    setResultAcc(acc);
+                                    setResultSeq(buffer.getInt());
+                                }
+                            }
+                            s.finish();
+                            if(incr()>=200){
+                                workerHandler.post(() -> completeTask(currentTaskId));
+                            }
+                            break;
+                        }
                     }
-                }
-                if (allSlaveResultGot) {
-                    currState.postValue(MasterState.COMPUTE_RESULT);
-                    workerHandler.post(() -> completeTask(currentTaskId));
+                }else {
+                    boolean allSlaveResultGot = false;
+                    int numComplete = 0;
+                    for (Slave s : slaves) {
+                        if (s.getSlaveName().equals(src)){
+                            s.setSlaveResult(result);
+                            numComplete++;
+                        } else if (s.getWorkResult() != null)
+                            numComplete++;
+                        if(numComplete==slaves.size()-1){
+                            allSlaveResultGot = true;
+                        }
+                    }
+                    if (allSlaveResultGot) {
+                        currState.postValue(MasterState.COMPUTE_RESULT);
+                        workerHandler.post(() -> completeTask(currentTaskId));
+                    }
                 }
                 break;
             }
@@ -450,37 +511,24 @@ public class WorkOffloadMaster extends ViewModel {
         return capturedFace;
     }
 
-    private byte[] getOneImage(File file, int size) {
+    private byte[] getOneImage(int seq) {
+        String fileName = Environment.getExternalStorageDirectory().getPath() + "/faces/test/img (" + seq + ").jpg";
+        File file = new File(fileName);
+        int size = (int) file.length();
+        int totalSize = 2 * Helper.INTEGER_SIZE+size;
+        ByteBuffer buffer = ByteBuffer.allocate(totalSize);
+        buffer.putInt(size);
+        buffer.putInt(seq);
         try {
             InputStream in = new FileInputStream(file);
             byte[] fileBytes = new byte[size];
             in.read(fileBytes);
-            return fileBytes;
+            buffer.put(fileBytes);
+            return buffer.array();
         } catch (IOException e) {
             e.printStackTrace();
         }
         return new byte[20];
-    }
-
-    private byte[] getGroupImage(int start, int num) {
-        int[] sizes = new int[num];
-        File[] files = new File[num];
-        int totalSize = 2 * Helper.INTEGER_SIZE * num + 2 * Helper.INTEGER_SIZE;
-        for (int i = start; i < start + num; i++) {
-            String fileName = Environment.getExternalStorageDirectory().getPath() + "/faces/test/img (" + i + ").jpg";
-            files[i - start] = new File(fileName);
-            sizes[i - start] = (int) files[i - start].length();
-            totalSize += sizes[i - start];
-        }
-        ByteBuffer buffer = ByteBuffer.allocate(totalSize);
-        buffer.putInt(target);
-        buffer.putInt(num);
-        for (int i = start; i < start + num; i++) {
-            buffer.putInt(i);
-            buffer.putInt(sizes[i - start]);
-            buffer.put(getOneImage(files[i - start], sizes[i - start]));
-        }
-        return buffer.array();
     }
 
     byte[] dataToBytes(int[][] a, int[] b, int seq, boolean isBig){
@@ -527,24 +575,65 @@ public class WorkOffloadMaster extends ViewModel {
         return c;
     }
 
-    static private final int initNumber = 10;
+    private Queue<Integer> jobQueue = new LinkedList<>();
+
+    private synchronized void enqueue(int i){
+        jobQueue.offer(i);
+    }
+
+    private synchronized int dequeue(){
+        return jobQueue.isEmpty() ? -1 : jobQueue.poll();
+    }
+
+    private synchronized boolean isEmpty(){
+        return jobQueue.isEmpty();
+    }
 
     private void distributeTask(int taskId) {
         Boolean face = this.face.getValue();
         assert face != null;
         if (face) {
-            int jobNum = 200 / (slaves.size() + 1);
-            int localStart = 200 - 200 / (slaves.size() + 1) * slaves.size() + 1;
-            ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, target, localStart));
-            int start = 1;
-            for (Slave s : slaves) {
-                byte[] data = getGroupImage(start, jobNum);
-                byte type = 5;
-                DataWorkContent content = new DataWorkContent(taskId, type, data);
-                s.setSlaveTask(content);
-                start += jobNum;
+            byte type = 5;
+            int initNumber = 10;
+            int jobNum = 200;
+            for(int i = 1; i<=jobNum; i++){
+                enqueue(i);
+            }
+            for(int i = 0; i< initNumber; i++){
+                for(Slave s : slaves){
+                    s.setSlaveTask(new DataWorkContent(taskId, type, getOneImage(dequeue())));
+                }
             }
             currState.postValue(MasterState.WAIT_FOR_RESULT);
+            while(!isEmpty()){
+                ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, dequeue()));
+                for(Slave s : slaves){
+                    if(isEmpty()){
+                        break;
+                    }
+                    if(!s.isBusy()){
+                        s.setSlaveTask(new DataWorkContent(taskId, type, getOneImage(dequeue())));
+                    }
+                }
+                try {
+                    double[] localResult = ecs.take().get();
+                    if((int) localResult[1]==target){
+                        if(getResultAcc()>localResult[2]){
+                            setResultAcc(localResult[2]);
+                            setResultSeq((int) localResult[0]);
+                        }
+                    }
+                    if(incr()>=200){
+                        Integer currentTaskId = this.currentTaskId.getValue();
+                        assert currentTaskId != null;
+                        workerHandler.post(() -> completeTask(currentTaskId));
+                    }
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         } else {
             Boolean isBig = isBigMat.getValue();
             assert isBig != null;
@@ -564,6 +653,7 @@ public class WorkOffloadMaster extends ViewModel {
             byte[] data3 = dataToBytes(matPlus(firstHalf,secondHalf), vec,2,isBig);
             DataWorkContent content3 = new DataWorkContent(taskId,type, data3);
             s3.setSlaveTask(content3);
+            currState.postValue(MasterState.WAIT_FOR_RESULT);
         }
     }
 
@@ -571,37 +661,17 @@ public class WorkOffloadMaster extends ViewModel {
         Integer currentTaskId = this.currentTaskId.getValue();
         assert currentTaskId != null;
         if (currentTaskId != taskId) return;
-        double maxLevel = 50000;
-        int seq = 0;
         Boolean face = this.face.getValue();
         assert face != null;
-        if (face) {
-            try {
-                double[] localResult = ecs.take().get();
-                if ((int) localResult[0] == target) {
-                    seq = (int) localResult[0];
-                    maxLevel = localResult[1];
-                }
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
         if(face){
-            for (Slave s : slaves) {
-                byte[] result = s.getWorkResult().getData();
-                ByteBuffer buffer = ByteBuffer.wrap(result);
-                int id = buffer.getInt();
-                double acc = buffer.getDouble();
-                if (id != 0) {
-                    if (maxLevel > acc) {
-                        seq = id;
-                        maxLevel = acc;
-                    }
-                }
+            for(Slave s : slaves){
+                ByteBuffer buffer = ByteBuffer.allocate(Helper.INTEGER_SIZE);
+                buffer.putInt(-1);
+                byte type = 5;
+                s.setSlaveTask(new DataWorkContent(currentTaskId, type, buffer.array()));
+                s.setFinished();
             }
-            faceResult.postValue(seq);
+            faceResult.postValue(getResultSeq());
         }else{
             Boolean isBig = isBigMat.getValue();
             assert isBig != null;
