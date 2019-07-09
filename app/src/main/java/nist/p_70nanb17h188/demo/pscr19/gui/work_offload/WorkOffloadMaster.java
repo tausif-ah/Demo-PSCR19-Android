@@ -214,6 +214,10 @@ public class WorkOffloadMaster extends ViewModel {
                 break;
             }
             case DISTRIBUTE_WORK:
+            case COMPUTE_RESULT:{
+                //slaveState.postValue(SlaveState.FINISHED);
+                break;
+            }
             case WAIT_FOR_RESULT: {
                 DataWorkResult result = DataWorkResult.fromBytes(data);
                 if (result == null) return;
