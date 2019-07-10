@@ -11,6 +11,7 @@
     <string name="nav_work_offload">Work Offloading</string>
     <string name="nav_link">Link Layer</string>
     <string name="nav_gossip">Store &amp; Forward</string>
+    <string name="nav_routing">Routing</string>
     <string name="nav_naming">Naming Layer</string>
     <string name="nav_log">Log</string>
 
@@ -96,4 +97,8 @@
     <string name="messaging_to_description">The left name sends the message to the right name.</string>
     <string name="messaging_attach_description">The message has attached names.</string>
     <string name="messaging_clear_description">Clear all the messages.</string>
+
+    <string name="routing_txt_dst">DST Name: </string>
+    <string name="routing_input_size_hint">Size to send (B)&#8230;</string>
+    <string name="routing_btn_send_description">Press button to send.</string>
 </resources>

@@ -21,6 +21,7 @@ public class NetLayer_Impl {
 
     private final HashMap<Name, HashSet<DataReceivedHandler>> dataHandlers = new HashMap<>();
     private final GossipModule gossipModule;
+    private final RoutingModule routingModule;
     private final Namespace namespace;
 
     private static final byte TYPE_DATA = 1;
@@ -29,16 +30,18 @@ public class NetLayer_Impl {
     private static final int MAGIC = 0x87654321;
 
     NetLayer_Impl() {
-        gossipModule = new GossipModule();
-        namespace = new Namespace();
         Context.getContext(GossipModule.CONTEXT_GOSSIP_MODULE).registerReceiver((context, intent) -> {
-            if (!intent.getAction().equals(GossipModule.ACTION_DATA_RECEIVED)) {
-                return;
-            }
+            if (!intent.getAction().equals(GossipModule.ACTION_DATA_RECEIVED)) return;
             byte[] data = intent.getExtra(GossipModule.EXTRA_DATA);
             if (data == null) return;
-            onDataReceivedFromGossip(data);
+            onDataReceivedFromGossipOrRouting(data);
         }, new IntentFilter().addAction(GossipModule.ACTION_DATA_RECEIVED));
+        Context.getContext(RoutingModule.CONTEXT_ROUTING_MODULE).registerReceiver((context, intent) -> {
+            if (!intent.getAction().equals(GossipModule.ACTION_DATA_RECEIVED)) return;
+            byte[] data = intent.getExtra(GossipModule.EXTRA_DATA);
+            if (data == null) return;
+            onDataReceivedFromGossipOrRouting(data);
+        }, new IntentFilter().addAction(RoutingModule.ACTION_DATA_RECEIVED));
         Context.getContext(Namespace.CONTEXT_NAMESPACE).registerReceiver((context, intent) -> {
             switch (intent.getAction()) {
                 case Namespace.ACTION_NAME_CHANGED: {
@@ -62,6 +65,11 @@ public class NetLayer_Impl {
                     break;
             }
         }, new IntentFilter().addAction(Namespace.ACTION_NAME_CHANGED).addAction(Namespace.ACTION_RELATIONSHIP_CHANGED));
+
+
+        gossipModule = new GossipModule();
+        routingModule = new RoutingModule();
+        namespace = new Namespace();
     }
 
     public GossipModule getGossipModule() {
@@ -88,7 +96,8 @@ public class NetLayer_Impl {
         dst.write(buf);
         buf.putInt(len);
         buf.put(tmp);
-        gossipModule.addMessage(buf.array(), store);
+        if (dst.isMulticast() || store) gossipModule.addMessage(buf.array(), store);
+        else routingModule.sendMessage(dst, buf.array());
     }
 
     Name registerRandomName(@NonNull String initiator) {
@@ -162,7 +171,7 @@ public class NetLayer_Impl {
         }
     }
 
-    private void onDataReceivedFromGossip(@NonNull byte[] data) {
+    private void onDataReceivedFromGossipOrRouting(@NonNull byte[] data) {
         ByteBuffer buffer = ByteBuffer.wrap(data);
         if (buffer.remaining() < Helper.INTEGER_SIZE) {
             Log.e(TAG, "Receive size (%d) < INTEGER_SIZE (%d)", buffer.remaining(), Helper.INTEGER_SIZE);

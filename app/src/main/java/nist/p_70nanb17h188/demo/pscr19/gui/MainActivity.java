@@ -22,6 +22,7 @@ import nist.p_70nanb17h188.demo.pscr19.gui.log.LogFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.messaging.MessagingFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.net.GossipFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.net.NamingFragment;
+import nist.p_70nanb17h188.demo.pscr19.gui.net.RoutingFragment;
 import nist.p_70nanb17h188.demo.pscr19.gui.work_offload.WorkOffloadFragment;
 import nist.p_70nanb17h188.demo.pscr19.imc.BroadcastReceiver;
 import nist.p_70nanb17h188.demo.pscr19.imc.Context;
@@ -111,6 +112,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.main_nav_gossip:
                 setTitle(Device.getName() + " - " + getString(R.string.nav_gossip));
                 break;
+            case R.id.main_nav_routing:
+                setTitle(Device.getName() + " - " + getString(R.string.nav_routing));
+                break;
             case R.id.main_nav_naming:
                 setTitle(Device.getName() + " - " + getString(R.string.nav_naming));
                 break;
@@ -140,6 +144,10 @@ public class MainActivity extends AppCompatActivity {
             case R.id.main_nav_gossip:
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 fragment = new GossipFragment();
+                break;
+            case R.id.main_nav_routing:
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                fragment = new RoutingFragment();
                 break;
             case R.id.main_nav_naming:
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
