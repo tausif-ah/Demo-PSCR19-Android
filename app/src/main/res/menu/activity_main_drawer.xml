@@ -34,6 +34,10 @@
             android:icon="@drawable/ic_menu_gossip"
             android:title="@string/nav_gossip" />
         <item
+            android:id="@+id/main_nav_routing"
+            android:icon="@drawable/ic_menu_routing"
+            android:title="@string/nav_routing" />
+        <item
             android:id="@+id/main_nav_naming"
             android:icon="@drawable/ic_menu_naming"
             android:title="@string/nav_naming" />

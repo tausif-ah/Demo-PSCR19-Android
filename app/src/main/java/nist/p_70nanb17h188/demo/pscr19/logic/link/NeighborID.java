@@ -1,6 +1,11 @@
 package nist.p_70nanb17h188.demo.pscr19.logic.link;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
+import java.nio.ByteBuffer;
+
+import nist.p_70nanb17h188.demo.pscr19.Helper;
 
 /**
  * ID for neighbors. Unique for each neighbor.
@@ -40,6 +45,21 @@ public class NeighborID {
         }
         final NeighborID other = (NeighborID) obj;
         return this.name.equals(other.name);
+    }
+
+    public int getWriteSize() {
+        return Helper.getStringWriteSize(name);
+    }
+
+    public void write(@NonNull ByteBuffer buffer) {
+        Helper.writeString(buffer, name);
+    }
+
+    @Nullable
+    public static NeighborID read(@NonNull ByteBuffer buffer) {
+        String name = Helper.readString(buffer);
+        if (name == null) return null;
+        return new NeighborID(name);
     }
 
     @NonNull
