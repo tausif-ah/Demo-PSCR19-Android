@@ -594,16 +594,16 @@ public class WorkOffloadMaster extends ViewModel {
         assert face != null;
         if (face) {
             byte type = 5;
-            int initNumber = 10;
             int jobNum = 200;
             for(int i = 1; i<=jobNum; i++){
                 enqueue(i);
             }
-            for(int i = 0; i< initNumber; i++){
-                for(Slave s : slaves){
-                    s.setSlaveTask(new DataWorkContent(taskId, type, getOneImage(dequeue())));
-                }
-            }
+//            int initNumber = 10;
+//            for(int i = 0; i< initNumber; i++){
+//                for(Slave s : slaves){
+//                    s.setSlaveTask(new DataWorkContent(taskId, type, getOneImage(dequeue())));
+//                }
+//            }
             currState.postValue(MasterState.WAIT_FOR_RESULT);
             while(!isEmpty()){
                 ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, dequeue()));
