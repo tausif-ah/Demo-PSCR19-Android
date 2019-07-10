@@ -15,8 +15,8 @@ import nist.p_70nanb17h188.demo.pscr19.Helper;
  */
 public class Digest {
     private static final String TAG = "Digest";
-    private static final String DEFAULT_DIGEST_ALGORITHM = "SHA-1";
-    static final int DIGEST_SIZE;
+    public static final String DEFAULT_DIGEST_ALGORITHM = "SHA-1";
+    public static final int DIGEST_SIZE;
 
     static {
         try {

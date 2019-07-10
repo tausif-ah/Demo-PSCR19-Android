@@ -9,8 +9,21 @@ import nist.p_70nanb17h188.demo.pscr19.Device;
 import nist.p_70nanb17h188.demo.pscr19.logic.link.NeighborID;
 
 public class Constants {
+
+    public static Name[] knownNames() {
+        return new Name[]{
+                new Name(1),
+                new Name(2),
+                new Name(3),
+                new Name(4),
+                new Name(5),
+                new Name(6),
+                new Name(7),
+        };
+    }
+
     @Nullable
-    static NeighborID getNameDestination(@NonNull Name n) {
+    public static NeighborID getNameDestination(@NonNull Name n) {
 
         switch ((int) n.getValue()) {
             case 1:

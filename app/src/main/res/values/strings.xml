@@ -99,6 +99,8 @@
     <string name="messaging_clear_description">Clear all the messages.</string>
 
     <string name="routing_txt_dst">DST Name: </string>
+    <string name="routing_txt_my">My Name: </string>
+    <string name="routing_txt_size">Send Size:</string>
     <string name="routing_input_size_hint">Size to send (B)&#8230;</string>
     <string name="routing_btn_send_description">Press button to send.</string>
 </resources>

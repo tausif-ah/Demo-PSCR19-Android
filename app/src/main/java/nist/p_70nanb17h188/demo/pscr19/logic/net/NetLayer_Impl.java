@@ -37,8 +37,8 @@ public class NetLayer_Impl {
             onDataReceivedFromGossipOrRouting(data);
         }, new IntentFilter().addAction(GossipModule.ACTION_DATA_RECEIVED));
         Context.getContext(RoutingModule.CONTEXT_ROUTING_MODULE).registerReceiver((context, intent) -> {
-            if (!intent.getAction().equals(GossipModule.ACTION_DATA_RECEIVED)) return;
-            byte[] data = intent.getExtra(GossipModule.EXTRA_DATA);
+            if (!intent.getAction().equals(RoutingModule.ACTION_DATA_RECEIVED)) return;
+            byte[] data = intent.getExtra(RoutingModule.EXTRA_DATA);
             if (data == null) return;
             onDataReceivedFromGossipOrRouting(data);
         }, new IntentFilter().addAction(RoutingModule.ACTION_DATA_RECEIVED));

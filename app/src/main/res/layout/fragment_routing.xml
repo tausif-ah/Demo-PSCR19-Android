@@ -1,70 +1,138 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".gui.net.RoutingFragment">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/routing_txt_my"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="@string/routing_txt_my"
+        android:textAlignment="textEnd"
+        app:layout_constraintBottom_toBottomOf="@+id/routing_txt_my_name"
+        app:layout_constraintEnd_toEndOf="@+id/routing_txt_dst"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/routing_txt_dst"
+        app:layout_constraintTop_toTopOf="@+id/routing_txt_my_name" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:padding="4dp"
-            android:text="@string/routing_txt_dst" />
+    <TextView
+        android:id="@+id/routing_txt_my_name"
+        style="?android:attr/spinnerDropDownItemStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="?attr/dropdownListPreferredItemHeight"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp"
+        android:ellipsize="marquee"
+        android:singleLine="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/routing_txt_my"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="&lt;&lt;1234567887654321&gt;&gt;" />
 
-        <Spinner
-            android:id="@+id/routing_dst_name"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical" />
-    </LinearLayout>
+    <View
+        android:id="@+id/view2"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="2dp"
+        android:background="?attr/colorPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/routing_txt_my_name" />
+
+    <TextView
+        android:id="@+id/routing_txt_dst"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="@string/routing_txt_dst"
+        app:layout_constraintBottom_toBottomOf="@+id/routing_dst_name"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/routing_dst_name" />
+
+    <Spinner
+        android:id="@+id/routing_dst_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/routing_txt_dst"
+        app:layout_constraintTop_toBottomOf="@+id/routing_txt_my_name" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="?attr/colorPrimary" />
+        android:layout_marginTop="2dp"
+        android:background="?attr/colorPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/routing_dst_name" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/routing_txt_size"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_marginStart="4dp"
+        android:text="@string/routing_txt_size"
+        app:layout_constraintBaseline_toBaselineOf="@+id/routing_input_size"
+        app:layout_constraintEnd_toEndOf="@+id/routing_txt_dst"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/routing_txt_dst" />
 
-        <EditText
-            android:id="@+id/routing_input_size"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="1"
-            android:hint="@string/routing_input_size_hint"
-            android:imeOptions="actionSend"
-            android:inputType="number" />
+    <EditText
+        android:id="@+id/routing_input_size"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
+        android:ems="10"
+        android:hint="@string/routing_input_size_hint"
+        android:imeOptions="actionSend"
+        android:inputType="number"
+        app:layout_constraintEnd_toStartOf="@id/routing_btn_send"
+        app:layout_constraintStart_toEndOf="@+id/routing_txt_size"
+        app:layout_constraintTop_toBottomOf="@+id/routing_dst_name" />
 
-        <ImageButton
-            android:id="@+id/routing_btn_send"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:backgroundTint="@color/colorPrimary"
-            android:contentDescription="@string/routing_btn_send_description"
-            android:tint="#FFFFFFFF"
-            tools:src="@drawable/ic_routing_send" />
-
-    </LinearLayout>
+    <ImageButton
+        android:id="@+id/routing_btn_send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/colorPrimary"
+        android:contentDescription="@string/routing_btn_send_description"
+        android:tint="#FFFFFFFF"
+        app:layout_constraintBottom_toBottomOf="@id/routing_input_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/routing_input_size"
+        app:srcCompat="@drawable/ic_routing_send" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="?attr/colorPrimary" />
+        android:layout_marginTop="2dp"
+        android:background="?attr/colorPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/routing_input_size" />
 
     <fragment
         android:id="@+id/routing_log"
         android:name="nist.p_70nanb17h188.demo.pscr19.gui.log.LogContentFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-</LinearLayout>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/routing_input_size" />
+
+</android.support.constraint.ConstraintLayout>
