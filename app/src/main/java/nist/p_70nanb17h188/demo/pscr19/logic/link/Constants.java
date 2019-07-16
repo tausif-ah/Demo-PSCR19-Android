@@ -45,17 +45,15 @@ public class Constants {
     public static String[] getWifiDirectNeighbors() {
         switch (Device.getName()) {
             case Device.NAME_M1:
-                return new String[]{Device.NAME_PC1, Device.NAME_M2, Device.NAME_MULE, Device.NAME_S13};
+                return new String[]{Device.NAME_PC1, Device.NAME_M2, Device.NAME_S13};
             case Device.NAME_S13:
             case Device.NAME_M2:
             case Device.NAME_PC1:
                 return new String[]{Device.NAME_M1};
-            case Device.NAME_MULE:
-                return new String[]{Device.NAME_M1, Device.NAME_ROUTER};
             case Device.NAME_PC2:
                 return new String[]{Device.NAME_ROUTER};
             case Device.NAME_ROUTER:
-                return new String[]{Device.NAME_MULE, Device.NAME_PC2};
+                return new String[]{Device.NAME_PC2};
             default:
                 return new String[0];
         }
@@ -70,8 +68,10 @@ public class Constants {
     @NonNull
     public static String[] getBluetoothNeighbors() {
         switch (Device.getName()) {
+            case Device.NAME_MULE:
+                return new String[]{Device.NAME_M1, Device.NAME_ROUTER};
             case Device.NAME_M1:
-                return new String[]{Device.NAME_S11};
+                return new String[]{Device.NAME_S11, Device.NAME_MULE};
             case Device.NAME_M2:
                 return new String[]{Device.NAME_S21};
             case Device.NAME_S11:
@@ -80,6 +80,8 @@ public class Constants {
                 return new String[]{Device.NAME_S11};
             case Device.NAME_S21:
                 return new String[]{Device.NAME_M2};
+            case Device.NAME_ROUTER:
+                return new String[]{Device.NAME_MULE};
             default:
                 return new String[0];
         }

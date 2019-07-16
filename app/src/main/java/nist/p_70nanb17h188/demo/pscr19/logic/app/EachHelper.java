@@ -38,7 +38,7 @@ public class EachHelper implements Callable<double[]> {
 
     double[] local(){
         double[] result = new double[3];//seq prediction confidence
-        String testDir = Environment.getExternalStorageDirectory().getPath()+"/Movies/faces/test/img ("+start+").jpg";
+        String testDir = Environment.getExternalStorageDirectory().getPath()+"/faces/test/img ("+start+").jpg";
         opencv_core.Mat testImage = detectFaces(testDir);
         if(testImage==null){
             return result;
@@ -50,7 +50,7 @@ public class EachHelper implements Callable<double[]> {
         double acceptanceLevel = reliability.get(0);
         result[0] = start;
         result[1] = prediction;
-        result[1] = acceptanceLevel;
+        result[2] = acceptanceLevel;
         return result;
     }
 

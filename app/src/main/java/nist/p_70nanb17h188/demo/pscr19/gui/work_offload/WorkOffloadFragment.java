@@ -35,6 +35,8 @@ import nist.p_70nanb17h188.demo.pscr19.logic.net.Name;
 public class WorkOffloadFragment extends Fragment {
     private static final String EMPTY_DURATION_TEXT = "---";
     private static final String EMPTY_NAME_TEXT = "<<---------------->>";
+    private static final int DEFAULT_IMAGE_WIDTH = 448;
+    private static final int DEFAULT_IMAGE_HiGHT = 296;
 
 
     public WorkOffloadFragment() {
@@ -46,6 +48,8 @@ public class WorkOffloadFragment extends Fragment {
 
     private ImageView imageView1;
     private ImageView imageView2;
+
+    private TextView answer;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -145,9 +149,13 @@ public class WorkOffloadFragment extends Fragment {
         TextView txtTaskId = view.findViewById(R.id.work_offload_master_task_id);
         TextView txtDuration = view.findViewById(R.id.work_offload_master_duration);
         TextView txtShowNoSlave = view.findViewById(R.id.work_offload_master_no_slave_text);
+        TextView matrix = view.findViewById(R.id.textView2);
+        TextView vector = view.findViewById(R.id.textView3);
+        answer = view.findViewById(R.id.textView4);
         Button btnStart = view.findViewById(R.id.work_offload_master_btn_start);
         Button btnOffload = view.findViewById(R.id.work_offload_master_btn_offload);
         Button btnApp = view.findViewById(R.id.application_type);
+        Button btnIsBig = view.findViewById(R.id.small);
         RecyclerView list = view.findViewById(R.id.work_offload_master_list);
         RecyclerView nameList = view.findViewById(R.id.work_offload_name_list);
         List<String> names = new ArrayList<>();
@@ -204,18 +212,50 @@ public class WorkOffloadFragment extends Fragment {
             btnOffload.setText(offload ? R.string.work_offload_master_offload_offload : R.string.work_offload_master_offload_local);
         });
 
+        masterViewModel.isBigMat.observe(this, isBig -> {
+            assert isBig != null;
+            btnIsBig.setText(isBig ? R.string.work_offload_application_big : R.string.work_offload_application_small);
+            answer.setVisibility(View.GONE);
+            if(isBig){
+                matrix.setVisibility(View.GONE);
+                vector.setVisibility(View.GONE);
+            }else {
+                matrix.setVisibility(View.VISIBLE);
+                vector.setVisibility(View.VISIBLE);
+                //answer.setVisibility(View.VISIBLE);
+            }
+        });
+
         masterViewModel.face.observe(this, face ->{
             assert face != null;
             btnApp.setText(face ? R.string.work_offload_application_facial : R.string.work_offload_application_matrix);
             if(face){
                 nameList.setVisibility(View.VISIBLE);
+                matrix.setVisibility(View.GONE);
+                vector.setVisibility(View.GONE);
+                answer.setVisibility(View.GONE);
+                btnIsBig.setVisibility(View.GONE);
                 //imageView1.setVisibility(View.VISIBLE);
                 //imageView2.setVisibility(View.VISIBLE);
             } else{
                 nameList.setVisibility(View.GONE);
                 imageView1.setVisibility(View.GONE);
                 imageView2.setVisibility(View.GONE);
+                //matrix.setVisibility(View.VISIBLE);
+                //vector.setVisibility(View.VISIBLE);
+                btnIsBig.setVisibility(View.VISIBLE);
+                //answer.setVisibility(View.VISIBLE);
             }
+        });
+
+
+
+        masterViewModel.isAnsReady.observe(this, isReady -> {
+            assert isReady != null;
+            if(isReady)
+                displayVector();
+            else
+                answer.setVisibility(View.GONE);
         });
 
         masterViewModel.faceResult.observe(this, seq ->{
@@ -256,11 +296,15 @@ public class WorkOffloadFragment extends Fragment {
             masterViewModel.flipState();
         });
         btnApp.setOnClickListener(v -> masterViewModel.flipApp());
+        btnIsBig.setOnClickListener(v -> masterViewModel.flipBig());
         return view;
     }
 
     private void displayVector(){
-        masterViewModel.getMatrixResult();
+        long[] a = masterViewModel.getMatrixResult();
+        String s = String.format("%d\n%d\n%d\n%d\n%d\n%d",a[0],a[1],a[2],a[3],a[4],a[5]);
+        answer.setVisibility(View.VISIBLE);
+        answer.setText(s);
     }
 
     private void displayImage(String name){
@@ -283,7 +327,7 @@ public class WorkOffloadFragment extends Fragment {
                 file = "1-1.jpg";
         }
         Bitmap b1 = BitmapFactory.decodeFile(prefix+file);
-        Bitmap rb1 = Bitmap.createScaledBitmap(b1,210,210,false);
+        Bitmap rb1 = Bitmap.createScaledBitmap(b1,DEFAULT_IMAGE_WIDTH,DEFAULT_IMAGE_HiGHT,false);
         imageView1.setImageBitmap(rb1);
     }
 
@@ -291,17 +335,19 @@ public class WorkOffloadFragment extends Fragment {
         String prefix = Environment.getExternalStorageDirectory().getPath()+"/faces/test/img (";
         String postfix = ").jpg";
         Bitmap b1 = BitmapFactory.decodeFile(prefix+seq+postfix);
-        Bitmap rb1 = Bitmap.createScaledBitmap(b1,210,210,false);
+        Bitmap rb1 = Bitmap.createScaledBitmap(b1,DEFAULT_IMAGE_WIDTH,DEFAULT_IMAGE_HiGHT,false);
         imageView2.setImageBitmap(rb1);
     }
 
     private void displayFaceResult(String path){
         Bitmap b1 = BitmapFactory.decodeFile(path);
-        Bitmap rb1 = Bitmap.createScaledBitmap(b1,210,210,false);
+        Bitmap rb1 = Bitmap.createScaledBitmap(b1,DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HiGHT,false);
         imageView2.setImageBitmap(rb1);
     }
 
     private void destroyMasterView() {
+        masterViewModel.isBigMat.removeObservers(this);
+        masterViewModel.isAnsReady.removeObservers(this);
         masterViewModel.currState.removeObservers(this);
         masterViewModel.offload.removeObservers(this);
         masterViewModel.currentTaskId.removeObservers(this);

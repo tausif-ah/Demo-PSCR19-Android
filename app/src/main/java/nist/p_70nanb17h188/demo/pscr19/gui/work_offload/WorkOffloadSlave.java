@@ -118,10 +118,11 @@ public class WorkOffloadSlave extends ViewModel {
     }
 
     private synchronized void onUnicastDataReceived(@NonNull Name src, @NonNull Name dst, @NonNull byte[] data, @NonNull String initiator) {
+        Log.d(TAG, "src = %s dst = %s length = %d", src, dst, data.length);
         if (!dst.equals(myName)) return;
         SlaveState slaveState = currState.getValue();
         assert slaveState != null;
-        if (slaveState != SlaveState.WAIT_FOR_WORK) return;
+        if (slaveState != SlaveState.WAIT_FOR_WORK && slaveState != SlaveState.WORKING) return;
         DataWorkContent content = DataWorkContent.fromBytes(data);
         // cannot parse content
         if (content == null) return;
@@ -151,10 +152,10 @@ public class WorkOffloadSlave extends ViewModel {
         if (content.getWorkType() == 5) {
             synchronized (FaceUtil.faceRecognizer) {
                 int size = buffer.getInt();
-                if(size<0){
+                if (size < 0) {
                     taskEnd.postValue(System.currentTimeMillis());
                     currState.postValue(SlaveState.IDLE);
-                }else {
+                } else {
                     int seq = buffer.getInt();
                     Log.d(TAG, "Slave is To seq=%d, size=%d", seq, size);
                     byte[] bytes = new byte[size];

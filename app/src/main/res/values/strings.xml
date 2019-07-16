@@ -59,6 +59,8 @@
     <string name="work_offload_master_no_slave_text">Cannot find slaves. Give up task!</string>
     <string name="work_offload_application_facial">Facial Recognition</string>
     <string name="work_offload_application_matrix">Matrix Multiplication</string>
+    <string name="work_offload_application_big">BIG</string>
+    <string name="work_offload_application_small">SMALL</string>
     <string name="work_offload_slave_state_idle">Idle</string>
     <string name="work_offload_slave_state_wait_for_work">Waiting for work&#8230;</string>
     <string name="work_offload_slave_state_working">Working&#8230;</string>

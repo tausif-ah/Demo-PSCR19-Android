@@ -155,6 +155,7 @@ public class WorkOffloadMaster extends ViewModel {
     final MutableLiveData<Boolean> offload = new MutableLiveData<>();
     final MutableLiveData<Boolean> face = new MutableLiveData<>();
     final MutableLiveData<Boolean> isBigMat = new MutableLiveData<>();
+    final MutableLiveData<Boolean> isAnsReady = new MutableLiveData<>();
     final MutableLiveData<Long> taskStart = new MutableLiveData<>();
     final MutableLiveData<Long> taskEnd = new MutableLiveData<>();
     final MutableLiveData<Boolean> showNoSlaveText = new MutableLiveData<>();
@@ -177,7 +178,6 @@ public class WorkOffloadMaster extends ViewModel {
         Name tmpMyName = Constants.getName();
         assert  tmpMyName != null;
         myName = tmpMyName;
-
         address.put("Adam", 1);
         address.put("Jack", 2);
         address.put("Mary", 5);
@@ -186,6 +186,8 @@ public class WorkOffloadMaster extends ViewModel {
         currentTaskId.setValue(0);
         offload.setValue(true);
         face.setValue(true);
+        isBigMat.setValue(true);
+        isAnsReady.setValue(false);
         showNoSlaveText.setValue(false);
         boolean succeed = NetLayer.subscribe(myName, dataReceivedHandler, INITIATOR_INIT);
         Log.d(TAG, "Subscribe name: %s, succeed=%b", myName, succeed);
@@ -267,7 +269,7 @@ public class WorkOffloadMaster extends ViewModel {
                         if (s.getSlaveName().equals(src)){
                             byte[] resultBytes = result.getData();
                             ByteBuffer buffer = ByteBuffer.wrap(resultBytes);
-                            if(buffer.getInt()==target){
+                            if(buffer.getInt()== target){
                                 double acc = buffer.getDouble();
                                 if(getResultAcc()>acc){
                                     setResultAcc(acc);
@@ -371,6 +373,21 @@ public class WorkOffloadMaster extends ViewModel {
         Boolean origValue = face.getValue();
         assert origValue != null;
         face.setValue(!origValue);
+        showNotReady();
+    }
+
+    synchronized void flipBig(){
+        Boolean origValue = isBigMat.getValue();
+        assert origValue != null;
+        isBigMat.setValue(!origValue);
+        showNotReady();
+    }
+
+    synchronized void showNotReady(){
+        Boolean origValue1 = isAnsReady.getValue();
+        assert origValue1 != null;
+        if(origValue1)
+            isAnsReady.postValue(false);
     }
 
     private void workerThread() {
@@ -385,15 +402,15 @@ public class WorkOffloadMaster extends ViewModel {
         assert currentTaskId != null;
         if (currentTaskId != taskId) return;
         if (currState.getValue() != MasterState.WAIT_FOR_RESPONSE) return;
-        if (slaves.size() == 0) {
-            // give up task, no slaves available.
-            showNoSlaveText.postValue(true);
-            currState.postValue(MasterState.IDLE);
-        } else {
+//        if (slaves.size() == 0) {
+//            // give up task, no slaves available.
+//            showNoSlaveText.postValue(true);
+//            currState.postValue(MasterState.IDLE);
+//        } else {
             taskStart.postValue(System.currentTimeMillis());
             currState.postValue(MasterState.DISTRIBUTE_WORK);
             workerHandler.post(() -> distributeTask(taskId));
-        }
+        //}
     }
 
     private long[] matrixResult;
@@ -407,6 +424,7 @@ public class WorkOffloadMaster extends ViewModel {
         assert face != null;
         if (face) {
             synchronized (FaceUtil.faceRecognizer) {
+
                 String trainDir = Environment.getExternalStorageDirectory().getPath() + "/faces/test";
                 File root = new File(trainDir);
                 FilenameFilter imgFilter = (dir, name) -> {
@@ -434,6 +452,7 @@ public class WorkOffloadMaster extends ViewModel {
                 faceResultPath.postValue(maxPath);
             }
         } else {
+            isAnsReady.postValue(false);
             Boolean isBig = this.isBigMat.getValue();
             assert isBig!= null;
             if(isBig){
@@ -443,21 +462,26 @@ public class WorkOffloadMaster extends ViewModel {
                 matrixResult = paste(a,b);
             }else{
                 matrixResult = matrixMultiplyVector(smallMat,smallVector,false);
+                isAnsReady.postValue(true);
             }
+
         }
-        synchronized (this) {
-            Integer currentTaskId = this.currentTaskId.getValue();
-            assert currentTaskId != null;
-            if (currState.getValue() == MasterState.COMPUTE_RESULT && taskId == currentTaskId) {
-                currState.postValue(MasterState.IDLE);
-                taskEnd.postValue(System.currentTimeMillis());
-            }
-        }
+        currState.postValue(MasterState.IDLE);
+        taskEnd.postValue(System.currentTimeMillis());
+//        synchronized (this) {
+//            Integer currentTaskId = this.currentTaskId.getValue();
+//            assert currentTaskId != null;
+//            if (currState.getValue() == MasterState.COMPUTE_RESULT && taskId == currentTaskId) {
+//                currState.postValue(MasterState.IDLE);
+//                taskEnd.postValue(System.currentTimeMillis());
+//            }
+//        }
     }
 
     private final int bigRow = 600;
     private final int bigCol = 1000;
     private final int smallRow = 3;
+    private final int smallRowLocal = 6;
     private final int smallCol = 2;
     private final int range = 128;
 
@@ -487,7 +511,7 @@ public class WorkOffloadMaster extends ViewModel {
     }
 
     private long[] matrixMultiplyVector(int[][] a, int[] b, boolean isBig){
-        int x = isBig ? bigRow : smallRow;
+        int x = isBig ? bigRow : smallRowLocal;
         long[] result = new long[x];
         int n = isBig ? bigCol : smallCol;
         for(int k = 0; k<x; k++){
@@ -593,30 +617,42 @@ public class WorkOffloadMaster extends ViewModel {
         Boolean face = this.face.getValue();
         assert face != null;
         if (face) {
+            resultAcc = 50000;
+            resultSeq = 0;
+            numCompleteFace = 0;
             byte type = 5;
             int jobNum = 200;
             for(int i = 1; i<=jobNum; i++){
                 enqueue(i);
             }
-//            int initNumber = 10;
+//            int initNumber = 5;
 //            for(int i = 0; i< initNumber; i++){
 //                for(Slave s : slaves){
 //                    s.setSlaveTask(new DataWorkContent(taskId, type, getOneImage(dequeue())));
 //                }
 //            }
             currState.postValue(MasterState.WAIT_FOR_RESULT);
+            int localCounter = 0;
+            long time = 0;
             while(!isEmpty()){
                 ecs.submit(new EachHelper(FaceUtil.faceDetector, FaceUtil.faceRecognizer, dequeue()));
+                long start = System.nanoTime();
                 for(Slave s : slaves){
                     if(isEmpty()){
                         break;
                     }
                     if(!s.isBusy()){
-                        s.setSlaveTask(new DataWorkContent(taskId, type, getOneImage(dequeue())));
+                        int id = dequeue();
+                        s.setSlaveTask(new DataWorkContent(taskId, type, getOneImage(id)));
+                        Log.d(TAG, "Sending img %d to %s", id, s.slaveName);
                     }
                 }
+                long end = System.nanoTime();
+                time += end - start;
                 try {
                     double[] localResult = ecs.take().get();
+                    localCounter++;
+                    Log.d(TAG, "Local Number %d", localCounter);
                     if((int) localResult[1]==target){
                         if(getResultAcc()>localResult[2]){
                             setResultAcc(localResult[2]);
@@ -633,6 +669,7 @@ public class WorkOffloadMaster extends ViewModel {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                Log.d(TAG, "Time %.9f", time / Math.pow(10.0, 9));
             }
         } else {
             Boolean isBig = isBigMat.getValue();
@@ -673,6 +710,7 @@ public class WorkOffloadMaster extends ViewModel {
             }
             faceResult.postValue(getResultSeq());
         }else{
+            isAnsReady.postValue(false);
             Boolean isBig = isBigMat.getValue();
             assert isBig != null;
             int size = isBig ? bigRow : smallRow;
@@ -705,6 +743,9 @@ public class WorkOffloadMaster extends ViewModel {
                 matrixResult = paste(r1, vectorSub(r3,r1));
             }else {
                 matrixResult = paste(r1,r2);
+            }
+            if(!isBig){
+                isAnsReady.postValue(true);
             }
         }
         taskEnd.postValue(System.currentTimeMillis());
