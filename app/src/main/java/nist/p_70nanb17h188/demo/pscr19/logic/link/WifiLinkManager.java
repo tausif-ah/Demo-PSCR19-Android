@@ -62,54 +62,12 @@ public class WifiLinkManager {
     private static final int DEFAULT_CREATE_GROUP_RETRY_DELAY_MS = 2000;
 //    private static final int DEFAULT_DISCOVER_DURATION_MS = 20000;
 //    private static final int DISCOVER_PEERS_CHECK_DELAY_MS = 500;
-
-    @NonNull
-    private static String getDeviceString(WifiP2pDevice device) {
-        return (device == null) ?
-                "null" :
-                String.format("%s(%s) %s/%s",
-                        device.deviceName,
-                        device.deviceAddress,
-                        device.isGroupOwner() ? "M" : "S",
-                        getDeviceStatus(device.status));
-    }
-
-    @NonNull
-    private static String getDeviceStatus(int status) {
-        switch (status) {
-            case WifiP2pDevice.CONNECTED:
-                return "Connected";
-            case WifiP2pDevice.INVITED:
-                return "Invited";
-            case WifiP2pDevice.FAILED:
-                return "Failed";
-            case WifiP2pDevice.AVAILABLE:
-                return "Available";
-            case WifiP2pDevice.UNAVAILABLE:
-                return "Unavailable";
-            default:
-                return "Unknown";
-        }
-    }
-
-    private static void setWifiDirectName(@NonNull WifiP2pManager wifiP2pManager, WifiP2pManager.Channel channel, String name, WifiP2pManager.ActionListener listener) {
-        try {
-            Class[] paramTypes = new Class[]{WifiP2pManager.Channel.class, String.class, WifiP2pManager.ActionListener.class};
-            Method setDeviceName = WifiP2pManager.class.getMethod("setDeviceName", paramTypes);
-            Object[] argList = new Object[]{channel, name, listener};
-            setDeviceName.invoke(wifiP2pManager, argList);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            Log.e(TAG, e, "Fail to set Name.\nmanager=%s\nchannel=%s\nname=%s\nlistener=%s", wifiP2pManager, channel, name, listener);
-        }
-    }
-
     private final WifiP2pManager wifiP2pManager;
     private final WifiP2pManager.Channel channel;
     private boolean discovering = false;
     private Date lastDiscoverTime = null;
     private WifiP2pDeviceList lastDiscoverList = null;
     private WifiP2pGroup lastGroupInfo = null;
-
     WifiLinkManager() {
         android.content.Context context = MyApplication.getDefaultInstance().getApplicationContext();
         wifiP2pManager = (WifiP2pManager) context.getSystemService(android.content.Context.WIFI_P2P_SERVICE);
@@ -163,7 +121,7 @@ public class WifiLinkManager {
                     Log.d(TAG, "Changed name to: %s. Close the channel!", newName);
                     try {
                         channel.close();
-                    } catch (RuntimeException e) {
+                    } catch (RuntimeException | Error e) {
                         Log.e(TAG, e, "Failed in closing channel.");
                     }
                 }
@@ -173,11 +131,45 @@ public class WifiLinkManager {
                     Log.d(TAG, "Failed in changing name to: %s. Close the channel!", newName);
                     try {
                         channel.close();
-                    } catch (RuntimeException e) {
+                    } catch (RuntimeException | Error e) {
                         Log.e(TAG, e, "Failed in closing channel.");
                     }
                 }
             });
+        }
+    }
+
+    @NonNull
+    private static String getDeviceString(WifiP2pDevice device) {
+        return (device == null) ? "null" : String.format("%s(%s) %s/%s", device.deviceName, device.deviceAddress, device.isGroupOwner() ? "M" : "S", getDeviceStatus(device.status));
+    }
+
+    @NonNull
+    private static String getDeviceStatus(int status) {
+        switch (status) {
+            case WifiP2pDevice.CONNECTED:
+                return "Connected";
+            case WifiP2pDevice.INVITED:
+                return "Invited";
+            case WifiP2pDevice.FAILED:
+                return "Failed";
+            case WifiP2pDevice.AVAILABLE:
+                return "Available";
+            case WifiP2pDevice.UNAVAILABLE:
+                return "Unavailable";
+            default:
+                return "Unknown";
+        }
+    }
+
+    private static void setWifiDirectName(@NonNull WifiP2pManager wifiP2pManager, WifiP2pManager.Channel channel, String name, WifiP2pManager.ActionListener listener) {
+        try {
+            Class[] paramTypes = new Class[]{WifiP2pManager.Channel.class, String.class, WifiP2pManager.ActionListener.class};
+            Method setDeviceName = WifiP2pManager.class.getMethod("setDeviceName", paramTypes);
+            Object[] argList = new Object[]{channel, name, listener};
+            setDeviceName.invoke(wifiP2pManager, argList);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            Log.e(TAG, e, "Fail to set Name.\nmanager=%s\nchannel=%s\nname=%s\nlistener=%s", wifiP2pManager, channel, name, listener);
         }
     }
 

@@ -26,7 +26,7 @@ import nist.p_70nanb17h188.demo.pscr19.logic.net.NetLayer;
 
 public class MessagingFragmentViewModel extends ViewModel {
     private static final String INITIATOR = "nist.p_70nanb17h188.demo.pscr19.gui.messaging.MessagingFragmentViewModel";
-    static final boolean DEFAULT_AUTO_PLAY = false;
+    static final boolean DEFAULT_AUTO_PLAY = true;
 
     private static MessagingFragmentViewModel DEFAULT_INSTANCE;
     MutableLiveData<Boolean> usingPnt = new MutableLiveData<>();
